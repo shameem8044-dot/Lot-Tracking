@@ -244,6 +244,27 @@
         return local.toISOString().slice(0, 10);
       }
 
+      function formatDateDMY(val) {
+        if (!val) return '';
+        const m = String(val).match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+        return String(val);
+      }
+
+      function getColumnNameSuggestions(dept) {
+        const set = new Set();
+        state.rows.forEach(r => {
+          const n = dept === 'master' ? (r.masterName || '') : (r[dept]?.name || '');
+          if (n.trim()) set.add(n.trim());
+        });
+        return Array.from(set).sort((a, b) => a.localeCompare(b));
+      }
+
+      function buildDatalistHtml(id, dept) {
+        const list = getColumnNameSuggestions(dept);
+        return `<datalist id="${id}">${list.map(n => `<option value="${escapeHtml(n)}"></option>`).join('')}</datalist>`;
+      }
+
       function showToast(msg) {
         const el = document.getElementById('toast');
         el.textContent = msg;
@@ -591,7 +612,7 @@
 
             <!-- peice (Click opens entry modal) -->
             <td data-row-id="${row.id}" data-cell="peice" class="cell-trigger cursor-pointer px-2 py-2 border-r border-slate-200 text-center hover:bg-indigo-50/70 transition">
-              ${row.peice ? `<div class="font-bold text-slate-900">${escapeHtml(row.peice)}</div><div class="text-[10px] text-slate-400">${escapeHtml(row.date || '')}</div>` : `<span class="text-indigo-500 text-xs font-medium">+ Peice</span>`}
+              ${row.peice ? `<div class="font-bold text-slate-900">${escapeHtml(row.peice)}</div><div class="text-[10px] text-slate-400">${escapeHtml(formatDateDMY(row.date))}</div>` : `<span class="text-indigo-500 text-xs font-medium">+ Peice</span>`}
             </td>
 
             <!-- size (Manual or from peice modal) -->
@@ -714,11 +735,13 @@
               </div>
               <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">5. Master Name</label>
-                <input name="masterName" type="text" value="${escapeHtml(row.masterName)}" placeholder="Master ka naam" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+                <input name="masterName" list="dl_master" type="text" value="${escapeHtml(row.masterName)}" placeholder="Master ka naam" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+                ${buildDatalistHtml('dl_master', 'master')}
               </div>
               <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">6. Fabrication</label>
-                <input name="fabricationName" type="text" value="${escapeHtml(row.fabrication?.name || '')}" placeholder="Fabrication ka naam" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+                <input name="fabricationName" list="dl_fabrication" type="text" value="${escapeHtml(row.fabrication?.name || '')}" placeholder="Fabrication ka naam" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+                ${buildDatalistHtml('dl_fabrication', 'fabrication')}
               </div>
               <div class="pt-2 flex justify-end gap-2">
                 <button type="button" data-close-modal class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold">Cancel</button>
@@ -837,7 +860,8 @@
               </div>` : ''}
               <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">Name</label>
-                <input name="name" type="text" ${ro} value="${escapeHtml(data.name || '')}" placeholder="Karigar / Party Name" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm ${roClass}" />
+                <input name="name" list="dl_job_${cellType}" type="text" ${ro} value="${escapeHtml(data.name || '')}" placeholder="Karigar / Party Name" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm ${roClass}" />
+                ${buildDatalistHtml('dl_job_' + cellType, cellType)}
               </div>
               <div class="pt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200">
                 <button id="jobPaidBtn" type="button" ${data.paid ? 'disabled' : ''} class="px-4 py-2 rounded-lg font-bold text-xs sm:text-sm shadow transition ${data.paid ? 'bg-green-600 text-white opacity-80 cursor-not-allowed' : 'bg-emerald-500 hover:bg-emerald-600 text-slate-950'}">
@@ -914,7 +938,7 @@
           const comeRowsHtml = comeList.length
             ? comeList.map(c => `
                 <div class="flex items-center justify-between text-xs py-1 border-b border-slate-200 last:border-b-0">
-                  <span class="text-slate-600">${escapeHtml(c.date || '-')}</span>
+                  <span class="text-slate-600">${escapeHtml(formatDateDMY(c.date) || '-')}</span>
                   <span class="font-bold text-slate-900">${escapeHtml(c.peice || '0')} pcs</span>
                 </div>`).join('')
             : '<div class="text-xs text-slate-400 py-2 text-center">Abhi koi Come entry nahi</div>';
@@ -942,7 +966,8 @@
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-3">
                 <div>
                   <label class="block text-xs font-semibold text-slate-700 mb-1">Name</label>
-                  <input id="stageNameInput" type="text" ${ro} value="${escapeHtml(data.name || '')}" placeholder="${titles[dept]} Party / Karigar" class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm ${roClass}" />
+                  <input id="stageNameInput" list="dl_stage_${dept}" type="text" ${ro} value="${escapeHtml(data.name || '')}" placeholder="${titles[dept]} Party / Karigar" class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm ${roClass}" />
+                  ${buildDatalistHtml('dl_stage_' + dept, dept)}
                 </div>
                 <div>
                   <label class="block text-xs font-semibold text-slate-700 mb-1">Rate (₹)</label>
@@ -951,7 +976,8 @@
                 ${dept === 'tanki' ? `
                 <div class="sm:col-span-2">
                   <label class="block text-xs font-semibold text-slate-700 mb-1">Send To (Washing)</label>
-                  <input id="stageSendToWashingInput" type="text" ${ro} value="${escapeHtml(row.washing?.name || '')}" placeholder="Washing party ka naam (auto Washing column me jayega)" class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm ${roClass}" />
+                  <input id="stageSendToWashingInput" list="dl_send_washing" type="text" ${ro} value="${escapeHtml(row.washing?.name || '')}" placeholder="Washing party ka naam (auto Washing column me jayega)" class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm ${roClass}" />
+                  ${buildDatalistHtml('dl_send_washing', 'washing')}
                 </div>` : ''}
                 ${isWashing ? `
                 <div>
@@ -960,7 +986,8 @@
                 </div>
                 <div>
                   <label class="block text-xs font-semibold text-slate-700 mb-1">Send To (Packing)</label>
-                  <input id="stageSendToPackingInput" type="text" ${ro} value="${escapeHtml(row.packing?.name || '')}" placeholder="Packing party ka naam" class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm ${roClass}" />
+                  <input id="stageSendToPackingInput" list="dl_send_packing" type="text" ${ro} value="${escapeHtml(row.packing?.name || '')}" placeholder="Packing party ka naam" class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm ${roClass}" />
+                  ${buildDatalistHtml('dl_send_packing', 'packing')}
                 </div>` : ''}
               </div>
 
@@ -1351,7 +1378,7 @@
               </td>
               ${isTankiHisab ? `
               <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
-                <input type="text" data-hisab-lot-field="washingName" data-lot-id="${r.id}" value="${escapeHtml(r.washing?.name || '')}" placeholder="Washing" class="w-24 border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
+                <input type="text" list="dl_hisab_washing" data-hisab-lot-field="washingName" data-lot-id="${r.id}" value="${escapeHtml(r.washing?.name || '')}" placeholder="Washing" class="w-24 border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
               </td>` : ''}
             ` : `
               <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
@@ -1390,7 +1417,7 @@
               <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900">${escapeHtml(name)}</h2>
             </div>
             <div class="text-right text-xs text-slate-500">
-              <div>Date: <strong>${todayISO()}</strong></div>
+              <div>Date: <strong>${formatDateDMY(todayISO())}</strong></div>
               <div>By: <strong>${escapeHtml(state.activeUser)}</strong></div>
             </div>
           </div>
@@ -1419,6 +1446,7 @@
             </div>
           </div>
 
+          ${isTankiHisab ? buildDatalistHtml('dl_hisab_washing', 'washing') : ''}
           <!-- Hisab Table -->
           <div class="overflow-x-auto border border-slate-200 rounded-xl">
             <table class="w-full border-collapse text-xs sm:text-sm">
@@ -1682,7 +1710,7 @@
                   <button type="button" data-open-saved-hisab="${escapeHtml(h.id)}" class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 text-left transition">
                     <div>
                       <div class="font-extrabold text-indigo-700 text-sm">${escapeHtml(h.title)} — ${escapeHtml(h.name)}</div>
-                      <div class="text-xs text-slate-500">${escapeHtml(h.deptLabel)} • ${escapeHtml(h.savedDate)} • ${h.rows.length} Lots • By ${escapeHtml(h.savedBy)}</div>
+                      <div class="text-xs text-slate-500">${escapeHtml(h.deptLabel)} • ${escapeHtml(formatDateDMY(h.savedDate))} • ${h.rows.length} Lots • By ${escapeHtml(h.savedBy)}</div>
                     </div>
                     <div class="text-right">
                       <div class="text-xs font-bold text-slate-900">Bal: ₹${Number(h.finalBalance || 0).toFixed(0)}</div>
@@ -1722,7 +1750,7 @@
               <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900">${escapeHtml(h.name)}</h2>
             </div>
             <div class="text-right text-xs text-slate-500">
-              <div>Saved Date: <strong>${escapeHtml(h.savedDate)}</strong></div>
+              <div>Saved Date: <strong>${escapeHtml(formatDateDMY(h.savedDate))}</strong></div>
               <div>By: <strong>${escapeHtml(h.savedBy)}</strong></div>
             </div>
           </div>
@@ -1780,7 +1808,7 @@
                       ` : `<td class="px-2 py-2 text-right font-semibold border-r border-slate-200 whitespace-nowrap">${r.peice}</td>`}
                       <td class="px-2 py-2 text-right border-r border-slate-200 whitespace-nowrap">${Number(r.rate || 0).toFixed(2)}</td>
                       <td class="px-2 py-2 text-right font-bold text-slate-900 border-r border-slate-200 whitespace-nowrap">₹${Number(r.amount || 0).toFixed(0)}</td>
-                      <td class="px-2 py-2 border-r border-slate-200 whitespace-nowrap">${escapeHtml(r.date || '-')}</td>
+                      <td class="px-2 py-2 border-r border-slate-200 whitespace-nowrap">${escapeHtml(formatDateDMY(r.date) || '-')}</td>
                       <td class="px-1.5 py-2 text-right whitespace-nowrap">
                         <input type="number" step="0.01" data-saved-pay-idx="${rIdx}" value="${escapeHtml(r.payment ? String(r.payment) : '')}" placeholder="0" class="w-20 text-right border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
                       </td>
