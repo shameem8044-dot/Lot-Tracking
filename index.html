@@ -1335,10 +1335,11 @@
 
         if (!state.hisabMeta[type]) state.hisabMeta[type] = {};
         if (!state.hisabMeta[type][name]) {
-          state.hisabMeta[type][name] = { lastBalance: '', entries: {}, extraPayments: [] };
+          state.hisabMeta[type][name] = { lastBalance: '', entries: {}, extraPayments: [], draftRows: [] };
         }
         const meta = state.hisabMeta[type][name];
         if (!Array.isArray(meta.extraPayments)) meta.extraPayments = [];
+        if (!Array.isArray(meta.draftRows)) meta.draftRows = [];
         const label = DEPT_CONFIG[type]?.label || type;
         const matchingRows = getUnpaidDeptRows(type, name);
         const isStageDept = ['fabrication', 'tanki', 'washing', 'packing'].includes(type);
@@ -1405,6 +1406,51 @@
 
 
 
+        const draftRowsHtml = meta.draftRows.map((dr, dIdx) => {
+          const dCome = parseFloat(dr.come || dr.peice) || 0;
+          const dRate = parseFloat(dr.rate) || 0;
+          const dAmt = dCome * dRate;
+          const dPay = parseFloat(dr.payment) || 0;
+          totalPeice += dCome;
+          totalAmount += dAmt;
+          totalPayment += dPay;
+
+          return `<tr class="border-b border-slate-200 bg-indigo-50/40">
+            <td class="px-2 py-2 border-r border-slate-200">
+              <input type="text" data-draft-lot-input="${dIdx}" value="${escapeHtml(dr.lotNo || '')}" placeholder="Enter Lot" class="w-16 font-bold text-slate-900 border border-indigo-400 bg-white rounded px-1.5 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </td>
+            ${isStageDept ? `
+              <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
+                <input type="number" inputmode="numeric" data-draft-field="come" data-draft-idx="${dIdx}" value="${escapeHtml(dr.come || '')}" placeholder="0" class="w-16 text-right font-semibold border border-slate-300 bg-white rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
+              </td>
+              <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
+                <input type="number" inputmode="numeric" data-draft-field="gone" data-draft-idx="${dIdx}" value="${escapeHtml(dr.gone || '')}" placeholder="0" class="w-16 text-right font-semibold border border-slate-300 bg-white rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
+              </td>
+              ${isTankiHisab ? `
+              <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
+                <input type="text" list="dl_hisab_washing" data-draft-field="washingName" data-draft-idx="${dIdx}" value="${escapeHtml(dr.washingName || '')}" placeholder="Washing" class="w-24 border border-slate-300 bg-white rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
+              </td>` : ''}
+            ` : `
+              <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
+                <input type="number" inputmode="numeric" data-draft-field="peice" data-draft-idx="${dIdx}" value="${escapeHtml(dr.peice || '')}" placeholder="0" class="w-16 text-right font-semibold border border-slate-300 bg-white rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
+              </td>
+            `}
+            <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
+              <input type="number" step="0.01" inputmode="decimal" data-draft-field="rate" data-draft-idx="${dIdx}" value="${escapeHtml(dr.rate || '')}" placeholder="0" class="w-16 text-right border border-slate-300 bg-white rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
+            </td>
+            <td data-draft-amount-cell="${dIdx}" class="px-2 py-2 text-right font-bold text-slate-900 border-r border-slate-200 whitespace-nowrap">₹${dAmt.toFixed(0)}</td>
+            <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
+              <input type="date" data-draft-field="date" data-draft-idx="${dIdx}" value="${escapeHtml(dr.date || todayISO())}" class="w-28 border border-slate-300 bg-white rounded px-1 py-1 text-xs focus:outline-none focus:border-indigo-500" />
+            </td>
+            <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
+              <input type="number" step="0.01" data-draft-field="payment" data-draft-idx="${dIdx}" value="${escapeHtml(dr.payment || '')}" placeholder="0" class="w-20 text-right border border-slate-300 bg-white rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
+            </td>
+            <td class="px-2 py-2 text-center no-print" data-html2canvas-ignore="true">
+              <button type="button" data-remove-draft="${dIdx}" class="px-2 py-1 rounded text-[11px] font-bold bg-rose-100 hover:bg-rose-200 text-rose-700">Remove</button>
+            </td>
+          </tr>`;
+        }).join('');
+
         const lastBal = parseFloat(meta.lastBalance) || 0;
         const grandKaam = totalAmount + lastBal;
         const balance = grandKaam - totalPayment;
@@ -1466,7 +1512,7 @@
                 </tr>
               </thead>
               <tbody>
-                ${rowsHtml || `<tr><td colspan="${isTankiHisab ? 9 : (isStageDept ? 8 : 7)}" class="text-center py-6 text-slate-400">No unpaid entries</td></tr>`}
+                ${(rowsHtml || draftRowsHtml) ? (rowsHtml + draftRowsHtml) : `<tr><td colspan="${isTankiHisab ? 9 : (isStageDept ? 8 : 7)}" class="text-center py-6 text-slate-400">No unpaid entries</td></tr>`}
               </tbody>
             </table>
           </div>
@@ -1484,24 +1530,124 @@
         });
 
         document.getElementById('addHisabLotRowBtn').addEventListener('click', () => {
-          const newLot = createRow(getNextLotNo());
-          newLot.date = todayISO();
-          if (type === 'master') {
-            newLot.masterName = name;
-          } else if (['fabrication', 'tanki', 'washing', 'packing'].includes(type)) {
-            newLot[type].name = name;
-            newLot[type].goneEntries = [{ date: todayISO(), peice: '', ...(type === 'packing' ? { ripit: '' } : {}) }];
-          } else {
-            newLot[type].name = name;
-            newLot[type].date = todayISO();
-          }
-          newLot.updatedBy = state.activeUser;
-          newLot.updatedAt = Date.now();
-          state.rows.push(newLot);
+          meta.draftRows.push({
+            lotNo: '',
+            come: '',
+            gone: '',
+            peice: '',
+            washingName: '',
+            rate: '',
+            date: todayISO(),
+            payment: ''
+          });
           saveLocalState();
-          renderTable();
           renderHisabContent();
-          showToast('New row added to Hisab & Main Table');
+          const lastLotInp = area.querySelector(`[data-draft-lot-input="${meta.draftRows.length - 1}"]`);
+          if (lastLotInp) lastLotInp.focus();
+        });
+
+        area.querySelectorAll('[data-draft-field]').forEach(inp => {
+          inp.addEventListener('input', (e) => {
+            const dIdx = parseInt(e.target.getAttribute('data-draft-idx'), 10);
+            const field = e.target.getAttribute('data-draft-field');
+            if (meta.draftRows[dIdx]) {
+              meta.draftRows[dIdx][field] = e.target.value;
+              saveLocalState();
+              recalcHisabTotalsOnly();
+            }
+          });
+        });
+
+        area.querySelectorAll('[data-remove-draft]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const dIdx = parseInt(btn.getAttribute('data-remove-draft'), 10);
+            meta.draftRows.splice(dIdx, 1);
+            saveLocalState();
+            renderHisabContent();
+          });
+        });
+
+        area.querySelectorAll('[data-draft-lot-input]').forEach(inp => {
+          inp.addEventListener('change', (e) => {
+            const dIdx = parseInt(e.target.getAttribute('data-draft-lot-input'), 10);
+            const enteredLot = (e.target.value || '').trim();
+            if (!enteredLot) return;
+            const dr = meta.draftRows[dIdx];
+            if (!dr) return;
+
+            let targetRow = state.rows.find(r => (r.lotNo || '').trim().toLowerCase() === enteredLot.toLowerCase());
+            if (!targetRow) {
+              // Auto-create all intermediate rows up to enteredLot if numeric
+              const targetNum = /^\d+$/.test(enteredLot) ? parseInt(enteredLot, 10) : null;
+              let maxNum = 0;
+              state.rows.forEach(r => {
+                if (/^\d+$/.test((r.lotNo || '').trim())) {
+                  const n = parseInt(r.lotNo.trim(), 10);
+                  if (n > maxNum) maxNum = n;
+                }
+              });
+
+              if (targetNum !== null && targetNum > maxNum && maxNum > 0 && (targetNum - maxNum) <= 500) {
+                for (let n = maxNum + 1; n <= targetNum; n++) {
+                  const created = createRow(String(n));
+                  state.rows.push(created);
+                  if (n === targetNum) targetRow = created;
+                }
+              } else {
+                targetRow = createRow(enteredLot);
+                state.rows.push(targetRow);
+              }
+            }
+
+            normalizeRowStages(targetRow);
+
+            // Apply Hisab person name & status so it belongs to this Hisab
+            if (type === 'master') {
+              targetRow.masterName = name;
+              targetRow.masterPaid = false;
+              if (dr.peice) targetRow.peice = dr.peice;
+              if (dr.date) targetRow.date = dr.date;
+            } else if (isStageDept) {
+              targetRow[type].name = name;
+              targetRow[type].paid = false;
+              if (['fabrication', 'washing', 'packing'].includes(type)) {
+                targetRow[type].status = 'Clear';
+              }
+              if (dr.rate) targetRow[type].rate = dr.rate;
+              if (dr.gone) targetRow[type].goneEntries[0].peice = dr.gone;
+              if (dr.date) targetRow[type].goneEntries[0].date = dr.date;
+              if (dr.come) {
+                if (type === 'fabrication') targetRow.peice = dr.come;
+                else if (type === 'tanki') targetRow.fabrication.goneEntries[0].peice = dr.come;
+                else if (type === 'washing') targetRow.tanki.goneEntries[0].peice = dr.come;
+                else if (type === 'packing') targetRow.washing.goneEntries[0].peice = dr.come;
+              }
+              if (isTankiHisab && dr.washingName) {
+                targetRow.washing.name = dr.washingName;
+              }
+            } else {
+              targetRow[type].name = name;
+              targetRow[type].paid = false;
+              if (dr.peice) targetRow[type].peice = dr.peice;
+              if (dr.rate && DEPT_CONFIG[type]?.hasTableRate) targetRow[type].rate = dr.rate;
+              if (dr.date) targetRow[type].date = dr.date;
+            }
+
+            meta.entries[targetRow.id] = {
+              rate: dr.rate || meta.entries[targetRow.id]?.rate || '',
+              date: dr.date || meta.entries[targetRow.id]?.date || todayISO(),
+              payment: dr.payment || meta.entries[targetRow.id]?.payment || '',
+              ignored: false
+            };
+
+            targetRow.updatedBy = state.activeUser;
+            targetRow.updatedAt = Date.now();
+            meta.draftRows.splice(dIdx, 1);
+            saveLocalState();
+            renderTable();
+            renderHisabContent();
+            showToast('Lot ' + enteredLot + ' updated in Hisab & Main Table');
+          });
         });
 
         area.querySelectorAll('[data-hisab-lot-field]').forEach(inp => {
@@ -1601,6 +1747,16 @@
             }
           });
 
+          meta.draftRows.forEach((dr, dIdx) => {
+            const dCome = parseFloat(dr.come || dr.peice) || 0;
+            const dRate = parseFloat(dr.rate) || 0;
+            const dAmt = dCome * dRate;
+            tPcs += dCome;
+            tAmt += dAmt;
+            tPay += parseFloat(dr.payment) || 0;
+            const dAmtCell = area.querySelector(`[data-draft-amount-cell="${dIdx}"]`);
+            if (dAmtCell) dAmtCell.textContent = '₹' + dAmt.toFixed(0);
+          });
           const lb = parseFloat(meta.lastBalance) || 0;
           const bal = (tAmt + lb) - tPay;
           const pcsEl = document.getElementById('hisabTotalPeice');
