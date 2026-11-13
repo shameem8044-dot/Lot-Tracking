@@ -43,6 +43,9 @@
     .cell-status-clear .sub-text {
       color: #854d0e !important;
     }
+    body.view-mode-active .edit-only-control {
+      display: none !important;
+    }
     .sticky-lot {
       position: sticky;
       left: 0;
@@ -93,6 +96,9 @@
               <span id="syncStatusDot" class="w-2 h-2 rounded-full bg-sky-400"></span>
               <span id="syncStatusText">Local Auto-Sync</span>
             </button>
+            <button id="appModeToggleBtn" type="button" class="inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 border border-emerald-500 px-2.5 py-0.5 rounded-full text-xs font-bold text-white transition">
+              ✏️ Edit Mode
+            </button>
           </div>
         </div>
       </div>
@@ -108,7 +114,7 @@
         <button id="backupRestoreBtn" type="button" class="px-3 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-600 text-slate-950 font-bold text-xs sm:text-sm shadow transition">
           💾 Backup
         </button>
-        <button id="addRowBtn" type="button" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs sm:text-sm shadow transition">
+        <button id="addRowBtn" type="button" class="edit-only-control px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs sm:text-sm shadow transition">
           + Add Row
         </button>
       </div>
@@ -211,6 +217,7 @@
 
       const bc = ('BroadcastChannel' in window) ? new BroadcastChannel('lot_tracker_sync_channel') : null;
 
+      let appMode = 'edit'; // 'edit' | 'view'
       let state = {
         activeUser: 'Shameem',
         rows: [],
@@ -607,7 +614,7 @@
           return `<tr class="hover:bg-slate-50/80 transition">
             <!-- Lot no (Bold, manual entry supported) -->
             <td class="sticky-lot px-2 py-2 border-r border-slate-200 text-center">
-              <input type="text" data-lot-input="${row.id}" value="${escapeHtml(row.lotNo)}" placeholder="${isFirst ? 'Lot #' : ''}" class="lot-bold w-full text-center bg-transparent border border-transparent hover:border-slate-300 focus:border-indigo-500 focus:bg-white rounded px-1 py-1 text-slate-900 text-sm focus:outline-none" />
+              <input type="text" ${appMode === 'view' ? 'readonly disabled' : ''} data-lot-input="${row.id}" value="${escapeHtml(row.lotNo)}" placeholder="${isFirst ? 'Lot #' : ''}" class="lot-bold w-full text-center bg-transparent border border-transparent hover:border-slate-300 focus:border-indigo-500 focus:bg-white rounded px-1 py-1 text-slate-900 text-sm focus:outline-none" />
             </td>
 
             <!-- peice (Click opens entry modal) -->
@@ -617,12 +624,12 @@
 
             <!-- size (Manual or from peice modal) -->
             <td class="px-1.5 py-2 border-r border-slate-200 text-center">
-              <input type="text" data-inline-field="size" data-row-id="${row.id}" value="${escapeHtml(row.size)}" placeholder="-" class="w-full text-center bg-transparent border border-transparent hover:border-slate-300 focus:border-indigo-500 focus:bg-white rounded px-1 py-1 text-xs sm:text-sm focus:outline-none" />
+              <input type="text" ${appMode === 'view' ? 'readonly disabled' : ''} data-inline-field="size" data-row-id="${row.id}" value="${escapeHtml(row.size)}" placeholder="-" class="w-full text-center bg-transparent border border-transparent hover:border-slate-300 focus:border-indigo-500 focus:bg-white rounded px-1 py-1 text-xs sm:text-sm focus:outline-none" />
             </td>
 
             <!-- fabric (Manual or from peice modal) -->
             <td class="px-1.5 py-2 border-r border-slate-200 text-center">
-              <input type="text" data-inline-field="fabric" data-row-id="${row.id}" value="${escapeHtml(row.fabric)}" placeholder="-" class="w-full text-center bg-transparent border border-transparent hover:border-slate-300 focus:border-indigo-500 focus:bg-white rounded px-1 py-1 text-xs sm:text-sm focus:outline-none" />
+              <input type="text" ${appMode === 'view' ? 'readonly disabled' : ''} data-inline-field="fabric" data-row-id="${row.id}" value="${escapeHtml(row.fabric)}" placeholder="-" class="w-full text-center bg-transparent border border-transparent hover:border-slate-300 focus:border-indigo-500 focus:bg-white rounded px-1 py-1 text-xs sm:text-sm focus:outline-none" />
             </td>
 
             <!-- Master (Name from peice modal; click opens Paid toggle; green when paid) -->
@@ -707,45 +714,48 @@
       function openPeiceModal(rowId) {
         const row = getRow(rowId);
         if (!row) return;
+        const isView = appMode === 'view';
+        const ro = isView ? 'readonly disabled' : '';
+        const roClass = isView ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-white';
         openModal(`
           <div class="p-4 sm:p-5">
             <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
               <div>
                 <h3 class="text-base font-bold text-slate-900">Lot <span class="text-indigo-600">${escapeHtml(row.lotNo || 'New')}</span> — Peice Entry</h3>
-                <p class="text-xs text-slate-500">Save karne par respected row me data update hoga</p>
+                <p class="text-xs text-slate-500">${isView ? 'View Mode (Read Only)' : 'Save karne par respected row me data update hoga'}</p>
               </div>
               <button type="button" data-close-modal class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold">✕</button>
             </div>
             <form id="peiceForm" class="space-y-3">
               <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">1. Date</label>
-                <input name="date" type="date" value="${escapeHtml(row.date || todayISO())}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+                <input name="date" type="date" ${ro} value="${escapeHtml(row.date || todayISO())}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none ${roClass}" />
               </div>
               <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">2. Peice</label>
-                <input name="peice" type="number" inputmode="numeric" value="${escapeHtml(row.peice)}" placeholder="e.g. 120" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+                <input name="peice" type="number" inputmode="numeric" ${ro} value="${escapeHtml(row.peice)}" placeholder="e.g. 120" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none ${roClass}" />
               </div>
               <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">3. Size</label>
-                <input name="size" type="text" value="${escapeHtml(row.size)}" placeholder="e.g. 28-34" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+                <input name="size" type="text" ${ro} value="${escapeHtml(row.size)}" placeholder="e.g. 28-34" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none ${roClass}" />
               </div>
               <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">4. Fabric</label>
-                <input name="fabric" type="text" value="${escapeHtml(row.fabric)}" placeholder="e.g. 3/1 Denim" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+                <input name="fabric" type="text" ${ro} value="${escapeHtml(row.fabric)}" placeholder="e.g. 3/1 Denim" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none ${roClass}" />
               </div>
               <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">5. Master Name</label>
-                <input name="masterName" list="dl_master" type="text" value="${escapeHtml(row.masterName)}" placeholder="Master ka naam" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+                <input name="masterName" list="dl_master" type="text" ${ro} value="${escapeHtml(row.masterName)}" placeholder="Master ka naam" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none ${roClass}" />
                 ${buildDatalistHtml('dl_master', 'master')}
               </div>
               <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">6. Fabrication</label>
-                <input name="fabricationName" list="dl_fabrication" type="text" value="${escapeHtml(row.fabrication?.name || '')}" placeholder="Fabrication ka naam" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+                <input name="fabricationName" list="dl_fabrication" type="text" ${ro} value="${escapeHtml(row.fabrication?.name || '')}" placeholder="Fabrication ka naam" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none ${roClass}" />
                 ${buildDatalistHtml('dl_fabrication', 'fabrication')}
               </div>
               <div class="pt-2 flex justify-end gap-2">
-                <button type="button" data-close-modal class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold">Cancel</button>
-                <button type="submit" class="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold shadow">Save &amp; Close</button>
+                <button type="button" data-close-modal class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold">Close</button>
+                ${!isView ? '<button type="submit" class="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold shadow">Save &amp; Close</button>' : ''}
               </div>
             </form>
           </div>
@@ -753,6 +763,7 @@
 
         document.getElementById('peiceForm').addEventListener('submit', (e) => {
           e.preventDefault();
+          if (appMode === 'view') return;
           const fd = new FormData(e.target);
           row.date = fd.get('date') || '';
           row.peice = fd.get('peice') || '';
@@ -792,7 +803,7 @@
                   <div class="text-sm font-bold text-slate-900">Master Payment Status</div>
                   <div class="text-xs text-slate-600">Paid ON karne par cell bright green hoga aur Top Master list me nahi judega</div>
                 </div>
-                <button id="toggleMasterPaidBtn" type="button" class="px-4 py-2 rounded-lg font-bold text-sm shadow transition ${row.masterPaid ? 'bg-green-600 text-white' : 'bg-slate-900 text-white hover:bg-slate-800'}">
+                <button id="toggleMasterPaidBtn" type="button" ${appMode === 'view' ? 'disabled' : ''} class="px-4 py-2 rounded-lg font-bold text-sm shadow transition ${appMode === 'view' ? 'bg-slate-300 text-slate-600 cursor-not-allowed' : (row.masterPaid ? 'bg-green-600 text-white' : 'bg-slate-900 text-white hover:bg-slate-800')}">
                   ${row.masterPaid ? '✓ PAID (ON)' : 'Mark Paid'}
                 </button>
               </div>
@@ -801,6 +812,7 @@
         `);
 
         document.getElementById('toggleMasterPaidBtn').addEventListener('click', () => {
+          if (appMode === 'view') return;
           row.masterPaid = !row.masterPaid;
           row.updatedBy = state.activeUser;
           row.updatedAt = Date.now();
@@ -827,8 +839,9 @@
         const isWashing = cellType === 'washing';
         const isEmbroidery = cellType === 'embroidery';
         const btnLabel = isEmbroidery ? 'Paid' : 'Payment Done';
-        const ro = data.paid ? 'readonly disabled' : '';
-        const roClass = data.paid ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-white';
+        const isLocked = data.paid || appMode === 'view';
+        const ro = isLocked ? 'readonly disabled' : '';
+        const roClass = isLocked ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-white';
 
         openModal(`
           <div class="p-4 sm:p-5">
@@ -864,12 +877,12 @@
                 ${buildDatalistHtml('dl_job_' + cellType, cellType)}
               </div>
               <div class="pt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200">
-                <button id="jobPaidBtn" type="button" ${data.paid ? 'disabled' : ''} class="px-4 py-2 rounded-lg font-bold text-xs sm:text-sm shadow transition ${data.paid ? 'bg-green-600 text-white opacity-80 cursor-not-allowed' : 'bg-emerald-500 hover:bg-emerald-600 text-slate-950'}">
+                <button id="jobPaidBtn" type="button" ${isLocked ? 'disabled' : ''} class="px-4 py-2 rounded-lg font-bold text-xs sm:text-sm shadow transition ${data.paid ? 'bg-green-600 text-white opacity-80 cursor-not-allowed' : (appMode === 'view' ? 'hidden' : 'bg-emerald-500 hover:bg-emerald-600 text-slate-950')}">
                   ${data.paid ? '✓ ' + btnLabel : btnLabel}
                 </button>
                 <div class="flex gap-2">
                   <button type="button" data-close-modal class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold">Close</button>
-                  ${!data.paid ? '<button type="submit" class="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold shadow">Save</button>' : ''}
+                  ${!isLocked ? '<button type="submit" class="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold shadow">Save</button>' : ''}
                 </div>
               </div>
             </form>
@@ -926,8 +939,9 @@
         const isWashing = dept === 'washing';
         const isPacking = dept === 'packing';
         const paid = !!data.paid;
-        const ro = paid ? 'readonly disabled' : '';
-        const roClass = paid ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-white';
+        const isLocked = paid || appMode === 'view';
+        const ro = isLocked ? 'readonly disabled' : '';
+        const roClass = isLocked ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-white';
 
         function renderStageModalBody() {
           const comeList = getStageComeEntries(row, dept);
@@ -948,7 +962,7 @@
               <input type="date" ${ro} data-gone-field="date" data-gone-idx="${idx}" value="${escapeHtml(g.date || '')}" class="flex-1 min-w-[115px] border border-slate-300 rounded px-2 py-1 text-xs ${roClass}" />
               <input type="number" inputmode="numeric" ${ro} data-gone-field="peice" data-gone-idx="${idx}" value="${escapeHtml(g.peice || '')}" placeholder="Peice" class="w-20 border border-slate-300 rounded px-2 py-1 text-xs ${roClass}" />
               ${isPacking ? `<input type="text" ${ro} data-gone-field="ripit" data-gone-idx="${idx}" value="${escapeHtml(g.ripit || '')}" placeholder="Ripit" class="w-20 border border-slate-300 rounded px-2 py-1 text-xs ${roClass}" />` : ''}
-              ${(!paid && data.goneEntries.length > 1) ? `<button type="button" data-remove-gone="${idx}" class="text-rose-500 hover:text-rose-700 font-bold text-xs px-1.5 py-1" title="Remove">✕</button>` : ''}
+              ${(!isLocked && data.goneEntries.length > 1) ? `<button type="button" data-remove-gone="${idx}" class="text-rose-500 hover:text-rose-700 font-bold text-xs px-1.5 py-1" title="Remove">✕</button>` : ''}
             </div>
           `).join('');
 
@@ -1013,7 +1027,7 @@
                   <div class="sm:col-span-4 px-3 py-2 border-b sm:border-b-0 sm:border-r border-slate-700">Come (Date &amp; Peice)</div>
                   <div class="sm:col-span-8 px-3 py-2 flex items-center justify-between">
                     <span>Gone (Date &amp; Peice)</span>
-                    ${!paid ? `<button id="addGoneRowBtn" type="button" class="px-2 py-0.5 rounded bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-[11px] font-bold">+ Add Gone</button>` : ''}
+                    ${!isLocked ? `<button id="addGoneRowBtn" type="button" class="px-2 py-0.5 rounded bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-[11px] font-bold">+ Add Gone</button>` : ''}
                   </div>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-12">
@@ -1028,12 +1042,12 @@
 
               <!-- Action Buttons -->
               <div class="pt-2 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200">
-                <button id="stagePaidBtn" type="button" ${paid ? 'disabled' : ''} class="px-4 py-2 rounded-lg font-bold text-xs sm:text-sm shadow transition ${paid ? 'bg-green-600 text-white opacity-80 cursor-not-allowed' : 'bg-emerald-500 hover:bg-emerald-600 text-slate-950'}">
+                <button id="stagePaidBtn" type="button" ${isLocked ? 'disabled' : ''} class="px-4 py-2 rounded-lg font-bold text-xs sm:text-sm shadow transition ${paid ? 'bg-green-600 text-white opacity-80 cursor-not-allowed' : (appMode === 'view' ? 'hidden' : 'bg-emerald-500 hover:bg-emerald-600 text-slate-950')}">
                   ${paid ? '✓ Payment Done' : 'Payment Done'}
                 </button>
                 <div class="flex gap-2">
                   <button type="button" data-close-modal class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold">Close</button>
-                  ${!paid ? '<button id="stageSaveBtn" type="button" class="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold shadow">Save</button>' : ''}
+                  ${!isLocked ? '<button id="stageSaveBtn" type="button" class="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold shadow">Save</button>' : ''}
                 </div>
               </div>
             </div>
@@ -1323,7 +1337,7 @@
         const overlay = document.getElementById('hisabOverlay');
         const label = DEPT_CONFIG[type]?.label || type;
         document.getElementById('hisabTitle').textContent = label + ' Hisab: ' + name;
-        document.getElementById('hisabSaveBtn').classList.remove('hidden');
+        document.getElementById('hisabSaveBtn').classList.toggle('hidden', appMode === 'view');
         overlay.classList.remove('hidden');
         overlay.classList.add('flex');
         renderHisabContent();
@@ -1379,6 +1393,9 @@
               </td>
               ${isTankiHisab ? `
               <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
+                <input type="text" list="dl_hisab_fabrication" data-hisab-lot-field="fabricationName" data-lot-id="${r.id}" value="${escapeHtml(r.fabrication?.name || '')}" placeholder="Fabrication" class="w-24 border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
+              </td>
+              <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
                 <input type="text" list="dl_hisab_washing" data-hisab-lot-field="washingName" data-lot-id="${r.id}" value="${escapeHtml(r.washing?.name || '')}" placeholder="Washing" class="w-24 border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
               </td>` : ''}
             ` : `
@@ -1428,6 +1445,9 @@
               </td>
               ${isTankiHisab ? `
               <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
+                <input type="text" list="dl_hisab_fabrication" data-draft-field="fabricationName" data-draft-idx="${dIdx}" value="${escapeHtml(dr.fabricationName || '')}" placeholder="Fabrication" class="w-24 border border-slate-300 bg-white rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
+              </td>
+              <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
                 <input type="text" list="dl_hisab_washing" data-draft-field="washingName" data-draft-idx="${dIdx}" value="${escapeHtml(dr.washingName || '')}" placeholder="Washing" class="w-24 border border-slate-300 bg-white rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
               </td>` : ''}
             ` : `
@@ -1440,7 +1460,7 @@
             </td>
             <td data-draft-amount-cell="${dIdx}" class="px-2 py-2 text-right font-bold text-slate-900 border-r border-slate-200 whitespace-nowrap">₹${dAmt.toFixed(0)}</td>
             <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
-              <input type="date" data-draft-field="date" data-draft-idx="${dIdx}" value="${escapeHtml(dr.date || todayISO())}" class="w-28 border border-slate-300 bg-white rounded px-1 py-1 text-xs focus:outline-none focus:border-indigo-500" />
+              <input type="date" data-draft-field="date" data-draft-idx="${dIdx}" value="${escapeHtml(dr.date || '')}" class="w-28 border border-slate-300 bg-white rounded px-1 py-1 text-xs focus:outline-none focus:border-indigo-500" />
             </td>
             <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
               <input type="number" step="0.01" data-draft-field="payment" data-draft-idx="${dIdx}" value="${escapeHtml(dr.payment || '')}" placeholder="0" class="w-20 text-right border border-slate-300 bg-white rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
@@ -1492,7 +1512,7 @@
             </div>
           </div>
 
-          ${isTankiHisab ? buildDatalistHtml('dl_hisab_washing', 'washing') : ''}
+          ${isTankiHisab ? buildDatalistHtml('dl_hisab_fabrication', 'fabrication') + buildDatalistHtml('dl_hisab_washing', 'washing') : ''}
           <!-- Hisab Table -->
           <div class="overflow-x-auto border border-slate-200 rounded-xl">
             <table class="w-full border-collapse text-xs sm:text-sm">
@@ -1502,7 +1522,7 @@
                   ${isStageDept ? `
                     <th class="px-2.5 py-2 text-right border-r border-slate-700">Come</th>
                     <th class="px-2.5 py-2 text-right border-r border-slate-700">Gone</th>
-                    ${isTankiHisab ? '<th class="px-2.5 py-2 text-left border-r border-slate-700">Washing</th>' : ''}
+                    ${isTankiHisab ? '<th class="px-2.5 py-2 text-left border-r border-slate-700">Fabrication</th><th class="px-2.5 py-2 text-left border-r border-slate-700">Washing</th>' : ''}
                   ` : `<th class="px-2.5 py-2 text-right border-r border-slate-700">Peice</th>`}
                   <th class="px-2.5 py-2 text-right border-r border-slate-700">Rate</th>
                   <th class="px-2.5 py-2 text-right border-r border-slate-700">Amount (Kaam)</th>
@@ -1512,12 +1532,12 @@
                 </tr>
               </thead>
               <tbody>
-                ${(rowsHtml || draftRowsHtml) ? (rowsHtml + draftRowsHtml) : `<tr><td colspan="${isTankiHisab ? 9 : (isStageDept ? 8 : 7)}" class="text-center py-6 text-slate-400">No unpaid entries</td></tr>`}
+                ${(rowsHtml || draftRowsHtml) ? (rowsHtml + draftRowsHtml) : `<tr><td colspan="${isTankiHisab ? 10 : (isStageDept ? 8 : 7)}" class="text-center py-6 text-slate-400">No unpaid entries</td></tr>`}
               </tbody>
             </table>
           </div>
           <div class="mt-3 flex justify-end no-print">
-            <button id="addHisabLotRowBtn" type="button" class="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm shadow transition">
+            <button id="addHisabLotRowBtn" type="button" class="edit-only-control px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm shadow transition">
               + Add Row
             </button>
           </div>
@@ -1535,9 +1555,10 @@
             come: '',
             gone: '',
             peice: '',
+            fabricationName: '',
             washingName: '',
             rate: '',
-            date: todayISO(),
+            date: '',
             payment: ''
           });
           saveLocalState();
@@ -1622,6 +1643,9 @@
                 else if (type === 'washing') targetRow.tanki.goneEntries[0].peice = dr.come;
                 else if (type === 'packing') targetRow.washing.goneEntries[0].peice = dr.come;
               }
+              if (isTankiHisab && dr.fabricationName) {
+                targetRow.fabrication.name = dr.fabricationName;
+              }
               if (isTankiHisab && dr.washingName) {
                 targetRow.washing.name = dr.washingName;
               }
@@ -1635,7 +1659,7 @@
 
             meta.entries[targetRow.id] = {
               rate: dr.rate || meta.entries[targetRow.id]?.rate || '',
-              date: dr.date || meta.entries[targetRow.id]?.date || todayISO(),
+              date: dr.date || meta.entries[targetRow.id]?.date || '',
               payment: dr.payment || meta.entries[targetRow.id]?.payment || '',
               ignored: false
             };
@@ -1672,6 +1696,8 @@
             } else if (field === 'gone') {
               normalizeRowStages(row);
               row[type].goneEntries[0].peice = e.target.value;
+            } else if (field === 'fabricationName') {
+              row.fabrication.name = e.target.value;
             } else if (field === 'washingName') {
               row.washing.name = e.target.value;
             } else if (field === 'peice') {
@@ -1730,6 +1756,14 @@
             renderHisabContent();
           });
         });
+
+        if (appMode === 'view') {
+          area.querySelectorAll('input').forEach(inp => {
+            inp.setAttribute('readonly', 'readonly');
+            inp.setAttribute('disabled', 'disabled');
+          });
+          area.querySelectorAll('[data-toggle-ignore], [data-remove-draft]').forEach(btn => btn.classList.add('hidden'));
+        }
 
         function recalcHisabTotalsOnly() {
           let tPcs = 0;
@@ -1794,6 +1828,7 @@
             peice: vals.pcs,
             come: vals.come,
             gone: vals.gone,
+            fabricationName: r.fabrication?.name || '',
             washingName: r.washing?.name || '',
             rate: vals.rate,
             amount: vals.amount,
@@ -1945,7 +1980,7 @@
                     ${isStage ? `
                       <th class="px-2.5 py-2 text-right border-r border-slate-700">Come</th>
                       <th class="px-2.5 py-2 text-right border-r border-slate-700">Gone</th>
-                      ${isTanki ? '<th class="px-2.5 py-2 text-left border-r border-slate-700">Washing</th>' : ''}
+                      ${isTanki ? '<th class="px-2.5 py-2 text-left border-r border-slate-700">Fabrication</th><th class="px-2.5 py-2 text-left border-r border-slate-700">Washing</th>' : ''}
                     ` : '<th class="px-2.5 py-2 text-right border-r border-slate-700">Peice</th>'}
                     <th class="px-2.5 py-2 text-right border-r border-slate-700">Rate</th>
                     <th class="px-2.5 py-2 text-right border-r border-slate-700">Amount (Kaam)</th>
@@ -1960,13 +1995,13 @@
                       ${isStage ? `
                         <td class="px-2 py-2 text-right font-semibold border-r border-slate-200 whitespace-nowrap">${r.come ?? r.peice}</td>
                         <td class="px-2 py-2 text-right font-semibold border-r border-slate-200 whitespace-nowrap">${r.gone ?? r.peice}</td>
-                        ${isTanki ? `<td class="px-2 py-2 border-r border-slate-200 whitespace-nowrap">${escapeHtml(r.washingName || '-')}</td>` : ''}
+                        ${isTanki ? `<td class="px-2 py-2 border-r border-slate-200 whitespace-nowrap">${escapeHtml(r.fabricationName || '-')}</td><td class="px-2 py-2 border-r border-slate-200 whitespace-nowrap">${escapeHtml(r.washingName || '-')}</td>` : ''}
                       ` : `<td class="px-2 py-2 text-right font-semibold border-r border-slate-200 whitespace-nowrap">${r.peice}</td>`}
                       <td class="px-2 py-2 text-right border-r border-slate-200 whitespace-nowrap">${Number(r.rate || 0).toFixed(2)}</td>
                       <td class="px-2 py-2 text-right font-bold text-slate-900 border-r border-slate-200 whitespace-nowrap">₹${Number(r.amount || 0).toFixed(0)}</td>
                       <td class="px-2 py-2 border-r border-slate-200 whitespace-nowrap">${escapeHtml(formatDateDMY(r.date) || '-')}</td>
                       <td class="px-1.5 py-2 text-right whitespace-nowrap">
-                        <input type="number" step="0.01" data-saved-pay-idx="${rIdx}" value="${escapeHtml(r.payment ? String(r.payment) : '')}" placeholder="0" class="w-20 text-right border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
+                        <input type="number" step="0.01" ${appMode === 'view' ? 'readonly disabled' : ''} data-saved-pay-idx="${rIdx}" value="${escapeHtml(r.payment ? String(r.payment) : '')}" placeholder="0" class="w-20 text-right border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500 ${appMode === 'view' ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : ''}" />
                       </td>
                     </tr>
                   `).join('')}
@@ -1978,6 +2013,7 @@
 
         area.querySelectorAll('[data-saved-pay-idx]').forEach(inp => {
           inp.addEventListener('input', (e) => {
+            if (appMode === 'view') return;
             const idx = parseInt(e.target.getAttribute('data-saved-pay-idx'), 10);
             if (!h.rows[idx]) return;
             h.rows[idx].payment = parseFloat(e.target.value) || 0;
@@ -2331,6 +2367,10 @@
         const statusToggle = e.target.closest('[data-toggle-stage-status]');
         if (statusToggle) {
           e.stopPropagation();
+          if (appMode === 'view') {
+            showToast('View Mode me edit nahi kar sakte');
+            return;
+          }
           const rId = statusToggle.getAttribute('data-toggle-stage-status');
           const dept = statusToggle.getAttribute('data-stage-dept');
           const row = getRow(rId);
@@ -2356,6 +2396,7 @@
       });
 
       document.getElementById('lotTableBody').addEventListener('input', (e) => {
+        if (appMode === 'view') return;
         const lotId = e.target.getAttribute('data-lot-input');
         if (lotId) {
           const row = getRow(lotId);
@@ -2380,6 +2421,22 @@
         }
       });
 
+      document.getElementById('appModeToggleBtn').addEventListener('click', () => {
+        appMode = appMode === 'edit' ? 'view' : 'edit';
+        const btn = document.getElementById('appModeToggleBtn');
+        if (appMode === 'view') {
+          document.body.classList.add('view-mode-active');
+          btn.textContent = '👁️ View Mode';
+          btn.className = 'inline-flex items-center gap-1 bg-sky-600 hover:bg-sky-700 border border-sky-500 px-2.5 py-0.5 rounded-full text-xs font-bold text-white transition';
+          showToast('View Mode ON (Read Only)');
+        } else {
+          document.body.classList.remove('view-mode-active');
+          btn.textContent = '✏️ Edit Mode';
+          btn.className = 'inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 border border-emerald-500 px-2.5 py-0.5 rounded-full text-xs font-bold text-white transition';
+          showToast('Edit Mode ON');
+        }
+        renderTable();
+      });
       document.getElementById('addRowBtn').addEventListener('click', addNewRow);
       document.querySelectorAll('[data-hisab-dept]').forEach(btn => {
         btn.addEventListener('click', () => openDeptListModal(btn.getAttribute('data-hisab-dept')));
