@@ -26,6 +26,23 @@
       color: #064e3b !important;
       font-weight: 600;
     }
+    .cell-paid-light {
+      background-color: #bbf7d0 !important;
+      color: #064e3b !important;
+      border-color: #4ade80 !important;
+    }
+    .cell-paid-light .sub-text {
+      color: #065f46 !important;
+      font-weight: 600;
+    }
+    .cell-status-clear {
+      background-color: #fef08a !important;
+      color: #713f12 !important;
+      border-color: #eab308 !important;
+    }
+    .cell-status-clear .sub-text {
+      color: #854d0e !important;
+    }
     .sticky-lot {
       position: sticky;
       left: 0;
@@ -82,6 +99,12 @@
 
       <!-- Top Utility Buttons: Backup, Add Row -->
       <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+        <button id="pendingLotsBtn" type="button" class="px-3 py-1.5 rounded-lg bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-bold text-xs sm:text-sm shadow transition">
+          ⏳ Pending Lots
+        </button>
+        <button id="savedHisabBtn" type="button" class="px-3 py-1.5 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white font-bold text-xs sm:text-sm shadow transition">
+          📑 Saved Hisab
+        </button>
         <button id="backupRestoreBtn" type="button" class="px-3 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-600 text-slate-950 font-bold text-xs sm:text-sm shadow transition">
           💾 Backup
         </button>
@@ -165,7 +188,8 @@
         <button id="hisabBackBtn" type="button" class="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs sm:text-sm font-semibold">← Back</button>
         <h2 id="hisabTitle" class="text-sm sm:text-base font-bold">Hisab</h2>
       </div>
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-1.5 sm:gap-2">
+        <button id="hisabSaveBtn" type="button" class="px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold text-xs sm:text-sm">💾 Save Hisab</button>
         <button id="hisabPrintBtn" type="button" class="px-3 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-600 text-slate-950 font-bold text-xs sm:text-sm">🖨️ Print</button>
         <button id="hisabShareBtn" type="button" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs sm:text-sm">📲 JPEG / WhatsApp</button>
       </div>
@@ -190,6 +214,7 @@
       let state = {
         activeUser: 'Shameem',
         rows: [],
+        savedHisabs: [],
         hisabMeta: {
           master: {},
           embroidery: {},
@@ -265,10 +290,10 @@
           masterName: '',
           masterPaid: false,
           embroidery: { date: '', peice: '', rate: '', name: '', paid: false },
-          fabrication: { date: '', peice: '', rate: '', name: '', paid: false },
-          tanki: { date: '', peice: '', rate: '', name: '', paid: false },
-          washing: { date: '', peice: '', washingType: '', rate: '', name: '', paid: false },
-          packing: { lines: createEmptyPackingLines(), paid: false },
+          fabrication: { rate: '', name: '', goneEntries: [{ date: '', peice: '' }], status: 'Pending', paid: false },
+          tanki: { rate: '', name: '', goneEntries: [{ date: '', peice: '' }], status: 'Pending', paid: false },
+          washing: { washingType: '', rate: '', name: '', goneEntries: [{ date: '', peice: '' }], status: 'Pending', paid: false },
+          packing: { rate: '', name: '', goneEntries: [{ date: '', peice: '', ripit: '' }], status: 'Pending', paid: false },
           laser: { date: '', peice: '', name: '', paid: false },
           print: { date: '', peice: '', name: '', paid: false },
           updatedBy: state.activeUser,
@@ -284,7 +309,7 @@
         r1.fabric = '3/1 Denim';
         r1.masterName = 'Master Akram';
         r1.embroidery = { date: todayISO(), peice: '120', rate: '12', name: 'Raju Emb', paid: false };
-        r1.fabrication = { date: todayISO(), peice: '120', rate: '45', name: 'Imran Fab', paid: false };
+        r1.fabrication = { rate: '45', name: 'Imran Fab', goneEntries: [{ date: todayISO(), peice: '100' }], paid: false };
 
         const r2 = createRow('102');
         r2.date = todayISO();
@@ -295,6 +320,36 @@
         r2.masterPaid = false;
 
         state.rows = [r1, r2];
+      }
+
+      function normalizeRowStages(r) {
+        if (!r.laser && r.damage) { r.laser = r.damage; delete r.damage; }
+        if (!r.laser) r.laser = { date: '', peice: '', name: '', paid: false };
+
+        ['fabrication', 'tanki', 'washing'].forEach(d => {
+          if (!r[d]) r[d] = { rate: '', name: '', goneEntries: [{ date: '', peice: '' }], status: 'Pending', paid: false };
+          if (!r[d].status) r[d].status = 'Pending';
+          if (!Array.isArray(r[d].goneEntries)) {
+            r[d].goneEntries = (r[d].peice || r[d].date)
+              ? [{ date: r[d].date || '', peice: r[d].peice || '' }]
+              : [{ date: '', peice: '' }];
+          }
+          if (r[d].goneEntries.length === 0) r[d].goneEntries.push({ date: '', peice: '' });
+        });
+
+        if (!r.packing) r.packing = { rate: '', name: '', goneEntries: [{ date: '', peice: '', ripit: '' }], status: 'Pending', paid: false };
+        if (!r.packing.status) r.packing.status = 'Pending';
+        if (!Array.isArray(r.packing.goneEntries)) {
+          const oldLines = Array.isArray(r.packing.lines) ? r.packing.lines.filter(l => l.peice || l.date || l.name) : [];
+          const firstNamed = oldLines.find(l => l.name);
+          if (!r.packing.name && firstNamed) r.packing.name = firstNamed.name;
+          if (!r.packing.rate && firstNamed) r.packing.rate = firstNamed.rate || '';
+          r.packing.goneEntries = oldLines.length
+            ? oldLines.map(l => ({ date: l.date || '', peice: l.peice || '', ripit: l.ripit || '' }))
+            : [{ date: '', peice: '', ripit: '' }];
+        }
+        if (r.packing.goneEntries.length === 0) r.packing.goneEntries.push({ date: '', peice: '', ripit: '' });
+        return r;
       }
 
       function loadLocalState() {
@@ -311,11 +366,8 @@
           if (raw) {
             const parsed = JSON.parse(raw);
             if (parsed && Array.isArray(parsed.rows)) {
-              state.rows = parsed.rows.map(r => {
-                if (!r.laser && r.damage) { r.laser = r.damage; delete r.damage; }
-                if (!r.laser) r.laser = { date: '', peice: '', name: '', paid: false };
-                return r;
-              });
+              state.rows = parsed.rows.map(normalizeRowStages);
+              state.savedHisabs = Array.isArray(parsed.savedHisabs) ? parsed.savedHisabs : [];
               state.hisabMeta = Object.assign({ master: {}, embroidery: {}, fabrication: {}, washing: {}, tanki: {}, packing: {}, laser: {}, print: {} }, parsed.hisabMeta || {});
               return;
             }
@@ -332,6 +384,7 @@
           localStorage.setItem(SYNC_CONFIG_KEY, JSON.stringify(state.syncConfig));
           localStorage.setItem(STORAGE_KEY, JSON.stringify({
             rows: state.rows,
+            savedHisabs: state.savedHisabs,
             hisabMeta: state.hisabMeta,
             updatedAt: Date.now()
           }));
@@ -339,7 +392,7 @@
           // Ignore storage quota errors
         }
         if (!skipBroadcast && bc) {
-          bc.postMessage({ type: 'SYNC_UPDATE', rows: state.rows, hisabMeta: state.hisabMeta });
+          bc.postMessage({ type: 'SYNC_UPDATE', rows: state.rows, savedHisabs: state.savedHisabs, hisabMeta: state.hisabMeta });
         }
         scheduleCloudPush();
       }
@@ -378,6 +431,7 @@
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 rows: state.rows,
+                savedHisabs: state.savedHisabs,
                 hisabMeta: state.hisabMeta,
                 updatedBy: state.activeUser,
                 updatedAt: Date.now()
@@ -403,8 +457,9 @@
           if (!res.ok) return;
           const data = await res.json();
           if (data && Array.isArray(data.rows)) {
-            state.rows = data.rows;
-            state.hisabMeta = data.hisabMeta || { master: {}, embroidery: {} };
+            state.rows = data.rows.map(normalizeRowStages);
+            state.savedHisabs = Array.isArray(data.savedHisabs) ? data.savedHisabs : [];
+            state.hisabMeta = Object.assign({ master: {}, embroidery: {}, fabrication: {}, washing: {}, tanki: {}, packing: {}, laser: {}, print: {} }, data.hisabMeta || {});
             saveLocalState(true);
             renderTable();
             updateSyncBadge('synced', 'Cloud Synced');
@@ -427,6 +482,7 @@
         bc.onmessage = (ev) => {
           if (ev.data && ev.data.type === 'SYNC_UPDATE') {
             state.rows = ev.data.rows;
+            state.savedHisabs = ev.data.savedHisabs || state.savedHisabs;
             state.hisabMeta = ev.data.hisabMeta || state.hisabMeta;
             renderTable();
             updateSyncBadge('synced', 'Tab Synced');
@@ -434,15 +490,36 @@
         };
       }
 
+      function getStageComeEntries(row, dept) {
+        if (dept === 'fabrication') {
+          return (row.peice || row.date) ? [{ date: row.date || '', peice: row.peice || '' }] : [];
+        }
+        if (dept === 'tanki') {
+          return (row.fabrication?.goneEntries || []).filter(g => (g.peice || '').trim() !== '' || (g.date || '').trim() !== '');
+        }
+        if (dept === 'washing') {
+          return (row.tanki?.goneEntries || []).filter(g => (g.peice || '').trim() !== '' || (g.date || '').trim() !== '');
+        }
+        if (dept === 'packing') {
+          return (row.washing?.goneEntries || []).filter(g => (g.peice || '').trim() !== '' || (g.date || '').trim() !== '');
+        }
+        return [];
+      }
+
+      function getStageTotals(row, dept) {
+        const comeList = getStageComeEntries(row, dept);
+        const goneList = (row[dept]?.goneEntries || []).filter(g => (g.peice || '').trim() !== '' || (g.date || '').trim() !== '');
+        const come = comeList.reduce((s, x) => s + (parseFloat(x.peice) || 0), 0);
+        const gone = goneList.reduce((s, x) => s + (parseFloat(x.peice) || 0), 0);
+        return { come, gone, balance: come - gone, comeList, goneList };
+      }
+
       function getPackingTotalPeice(row) {
-        if (!row.packing || !Array.isArray(row.packing.lines)) return 0;
-        return row.packing.lines.reduce((sum, l) => sum + (parseFloat(l.peice) || 0), 0);
+        return getStageTotals(row, 'packing').gone;
       }
 
       function getPackingPrimaryName(row) {
-        if (!row.packing || !Array.isArray(row.packing.lines)) return '';
-        const names = row.packing.lines.map(l => (l.name || '').trim()).filter(Boolean);
-        return names.length ? names[names.length - 1] : '';
+        return (row.packing?.name || '').trim();
       }
 
       function renderTable() {
@@ -478,13 +555,31 @@
           const jamaTotal = getPackingTotalPeice(row);
           const packName = getPackingPrimaryName(row);
 
-          function renderJobCell(cellType, data, extraSub) {
+          function renderJobCell(cellType, data, stageStats) {
             const hasName = (data?.name || '').trim() !== '';
-            const hasPcs = (data?.peice || '').trim() !== '' || extraSub;
-            const paidClass = data?.paid ? 'cell-paid-bright' : 'hover:bg-indigo-50/70';
+            const isStage = !!stageStats;
+            const isClear = isStage && data?.status === 'Clear';
+            const paidClass = data?.paid
+              ? (data?.paidLight ? 'cell-paid-light' : 'cell-paid-bright')
+              : (isClear ? 'cell-status-clear' : 'hover:bg-indigo-50/70');
+
+            let subHtml = '';
+            if (isStage) {
+              if (stageStats.come || stageStats.gone) {
+                subHtml = `<div class="sub-text text-[11px] text-slate-700 mt-0.5 font-medium">${stageStats.come} - ${stageStats.gone} <span class="text-rose-600 font-bold">(${stageStats.balance})</span></div>`;
+              }
+            } else if (data?.peice) {
+              subHtml = `<div class="sub-text text-[11px] text-slate-600 mt-0.5">${escapeHtml(data.peice + ' pcs')}</div>`;
+            }
+
+            const statusBtnHtml = isStage
+              ? `<div class="mt-1"><button type="button" data-toggle-stage-status="${row.id}" data-stage-dept="${cellType}" class="px-2 py-0.5 rounded-full text-[10px] font-bold border transition ${isClear ? 'bg-amber-400 border-amber-600 text-slate-950' : 'bg-slate-200 border-slate-300 text-slate-700 hover:bg-slate-300'}">${isClear ? 'Clear' : 'Pending'}</button></div>`
+              : '';
+
             return `<td data-row-id="${row.id}" data-cell="${cellType}" class="cell-trigger cursor-pointer px-2 py-2 border-r border-slate-200 text-center align-middle transition ${paidClass}">
               ${hasName ? `<div class="font-semibold text-xs sm:text-sm leading-tight">${escapeHtml(data.name)}</div>` : `<div class="text-slate-300 text-xs">+ Entry</div>`}
-              ${hasPcs ? `<div class="sub-text text-[11px] text-slate-600 mt-0.5">${escapeHtml(extraSub !== undefined ? extraSub : (data.peice ? data.peice + ' pcs' : ''))}</div>` : ''}
+              ${subHtml}
+              ${statusBtnHtml}
             </td>`;
           }
 
@@ -509,25 +604,25 @@
               <input type="text" data-inline-field="fabric" data-row-id="${row.id}" value="${escapeHtml(row.fabric)}" placeholder="-" class="w-full text-center bg-transparent border border-transparent hover:border-slate-300 focus:border-indigo-500 focus:bg-white rounded px-1 py-1 text-xs sm:text-sm focus:outline-none" />
             </td>
 
-            <!-- Master (Name from peice modal; click opens Paid toggle; bright green when paid) -->
-            <td data-row-id="${row.id}" data-cell="master" class="cell-trigger cursor-pointer px-2 py-2 border-r border-slate-200 text-center transition ${row.masterPaid ? 'cell-paid-bright' : 'hover:bg-amber-50'}">
+            <!-- Master (Name from peice modal; click opens Paid toggle; green when paid) -->
+            <td data-row-id="${row.id}" data-cell="master" class="cell-trigger cursor-pointer px-2 py-2 border-r border-slate-200 text-center transition ${row.masterPaid ? (row.masterPaidLight ? 'cell-paid-light' : 'cell-paid-bright') : 'hover:bg-amber-50'}">
               ${row.masterName ? `<div class="font-semibold text-xs sm:text-sm">${escapeHtml(row.masterName)}</div><div class="sub-text text-[10px] text-slate-500">${row.masterPaid ? 'PAID' : 'Unpaid'}</div>` : `<span class="text-slate-300 text-xs">-</span>`}
             </td>
 
             <!-- Embroidery -->
             ${renderJobCell('embroidery', row.embroidery)}
 
-            <!-- Fabrication -->
-            ${renderJobCell('fabrication', row.fabrication)}
+            <!-- Fabrication (Come - Gone (Balance)) -->
+            ${renderJobCell('fabrication', row.fabrication, getStageTotals(row, 'fabrication'))}
 
-            <!-- Tanki -->
-            ${renderJobCell('tanki', row.tanki)}
+            <!-- Tanki (Come - Gone (Balance)) -->
+            ${renderJobCell('tanki', row.tanki, getStageTotals(row, 'tanki'))}
 
-            <!-- washing -->
-            ${renderJobCell('washing', row.washing)}
+            <!-- washing (Come - Gone (Balance)) -->
+            ${renderJobCell('washing', row.washing, getStageTotals(row, 'washing'))}
 
-            <!-- packing (4 lines) -->
-            ${renderJobCell('packing', { name: packName, peice: jamaTotal ? String(jamaTotal) : '', paid: row.packing?.paid }, jamaTotal ? jamaTotal + ' pcs' : '')}
+            <!-- packing (Come - Gone (Balance)) -->
+            ${renderJobCell('packing', { name: packName, status: row.packing?.status, paid: row.packing?.paid, paidLight: row.packing?.paidLight }, getStageTotals(row, 'packing'))}
 
             <!-- Jama (Auto total from packing) -->
             <td class="px-2 py-2 border-r border-slate-200 text-center bg-sky-50/50">
@@ -544,7 +639,7 @@
         }).join('');
       }
 
-      function addNewRow() {
+      function getNextLotNo() {
         let nextLot = '101';
         if (state.rows.length > 0) {
           const lastLot = (state.rows[state.rows.length - 1].lotNo || '').trim();
@@ -559,6 +654,11 @@
             nextLot = lastLot + '-2';
           }
         }
+        return nextLot;
+      }
+
+      function addNewRow() {
+        const nextLot = getNextLotNo();
         state.rows.push(createRow(nextLot));
         saveLocalState();
         renderTable();
@@ -639,7 +739,6 @@
           const fabName = (fd.get('fabricationName') || '').trim();
           if (fabName || row.fabrication.name) {
             row.fabrication.name = fabName;
-            if (!row.fabrication.peice && row.peice) row.fabrication.peice = row.peice;
           }
           row.updatedBy = state.activeUser;
           row.updatedAt = Date.now();
@@ -789,6 +888,211 @@
         });
       }
 
+      function openStageModal(rowId, dept) {
+        const row = getRow(rowId);
+        if (!row) return;
+        normalizeRowStages(row);
+        const data = row[dept];
+        const titles = {
+          fabrication: 'Fabrication',
+          tanki: 'Tanki',
+          washing: 'Washing',
+          packing: 'Packing'
+        };
+        const isWashing = dept === 'washing';
+        const isPacking = dept === 'packing';
+        const paid = !!data.paid;
+        const ro = paid ? 'readonly disabled' : '';
+        const roClass = paid ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-white';
+
+        function renderStageModalBody() {
+          const comeList = getStageComeEntries(row, dept);
+          const comeTotal = comeList.reduce((s, x) => s + (parseFloat(x.peice) || 0), 0);
+          const goneTotal = (data.goneEntries || []).reduce((s, x) => s + (parseFloat(x.peice) || 0), 0);
+          const balance = comeTotal - goneTotal;
+
+          const comeRowsHtml = comeList.length
+            ? comeList.map(c => `
+                <div class="flex items-center justify-between text-xs py-1 border-b border-slate-200 last:border-b-0">
+                  <span class="text-slate-600">${escapeHtml(c.date || '-')}</span>
+                  <span class="font-bold text-slate-900">${escapeHtml(c.peice || '0')} pcs</span>
+                </div>`).join('')
+            : '<div class="text-xs text-slate-400 py-2 text-center">Abhi koi Come entry nahi</div>';
+
+          const goneRowsHtml = (data.goneEntries || []).map((g, idx) => `
+            <div class="flex flex-wrap items-center gap-1.5 py-1.5 border-b border-slate-200 last:border-b-0">
+              <input type="date" ${ro} data-gone-field="date" data-gone-idx="${idx}" value="${escapeHtml(g.date || '')}" class="flex-1 min-w-[115px] border border-slate-300 rounded px-2 py-1 text-xs ${roClass}" />
+              <input type="number" inputmode="numeric" ${ro} data-gone-field="peice" data-gone-idx="${idx}" value="${escapeHtml(g.peice || '')}" placeholder="Peice" class="w-20 border border-slate-300 rounded px-2 py-1 text-xs ${roClass}" />
+              ${isPacking ? `<input type="text" ${ro} data-gone-field="ripit" data-gone-idx="${idx}" value="${escapeHtml(g.ripit || '')}" placeholder="Ripit" class="w-20 border border-slate-300 rounded px-2 py-1 text-xs ${roClass}" />` : ''}
+              ${(!paid && data.goneEntries.length > 1) ? `<button type="button" data-remove-gone="${idx}" class="text-rose-500 hover:text-rose-700 font-bold text-xs px-1.5 py-1" title="Remove">✕</button>` : ''}
+            </div>
+          `).join('');
+
+          openModal(`
+            <div class="p-4 sm:p-5">
+              <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-3">
+                <div>
+                  <h3 class="text-base font-bold text-slate-900">${titles[dept]} — Lot ${escapeHtml(row.lotNo)}</h3>
+                  ${paid ? '<span class="inline-block mt-1 px-2 py-0.5 bg-green-500 text-white text-[11px] font-bold rounded-full">✓ PAYMENT DONE / READ ONLY</span>' : ''}
+                </div>
+                <button type="button" data-close-modal class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold">✕</button>
+              </div>
+
+              <!-- Name, Rate & Washing Type -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-3">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Name</label>
+                  <input id="stageNameInput" type="text" ${ro} value="${escapeHtml(data.name || '')}" placeholder="${titles[dept]} Party / Karigar" class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm ${roClass}" />
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Rate (₹)</label>
+                  <input id="stageRateInput" type="number" step="0.01" inputmode="decimal" ${ro} value="${escapeHtml(data.rate || '')}" placeholder="Rate per peice" class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm ${roClass}" />
+                </div>
+                ${dept === 'tanki' ? `
+                <div class="sm:col-span-2">
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Send To (Washing)</label>
+                  <input id="stageSendToWashingInput" type="text" ${ro} value="${escapeHtml(row.washing?.name || '')}" placeholder="Washing party ka naam (auto Washing column me jayega)" class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm ${roClass}" />
+                </div>` : ''}
+                ${isWashing ? `
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Washing Type</label>
+                  <input id="stageWashingTypeInput" type="text" ${ro} value="${escapeHtml(data.washingType || '')}" placeholder="e.g. Double Dye / Enzyme" class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm ${roClass}" />
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Send To (Packing)</label>
+                  <input id="stageSendToPackingInput" type="text" ${ro} value="${escapeHtml(row.packing?.name || '')}" placeholder="Packing party ka naam" class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm ${roClass}" />
+                </div>` : ''}
+              </div>
+
+              <!-- Summary Strip: Come - Gone (Balance) -->
+              <div class="grid grid-cols-3 gap-2 mb-3 text-center">
+                <div class="p-2 rounded-lg bg-sky-50 border border-sky-200">
+                  <div class="text-[10px] font-semibold text-sky-700 uppercase">Come</div>
+                  <div class="text-base font-extrabold text-sky-900">${comeTotal}</div>
+                </div>
+                <div class="p-2 rounded-lg bg-emerald-50 border border-emerald-200">
+                  <div class="text-[10px] font-semibold text-emerald-700 uppercase">Gone</div>
+                  <div id="stageGoneTotalBox" class="text-base font-extrabold text-emerald-900">${goneTotal}</div>
+                </div>
+                <div class="p-2 rounded-lg bg-amber-50 border border-amber-200">
+                  <div class="text-[10px] font-semibold text-amber-800 uppercase">Balance</div>
+                  <div id="stageBalanceBox" class="text-base font-extrabold text-amber-900">${balance}</div>
+                </div>
+              </div>
+
+              <!-- Come & Gone Table -->
+              <div class="border border-slate-200 rounded-xl overflow-hidden mb-3">
+                <div class="grid grid-cols-1 sm:grid-cols-12 bg-slate-800 text-white text-xs font-bold">
+                  <div class="sm:col-span-4 px-3 py-2 border-b sm:border-b-0 sm:border-r border-slate-700">Come (Date &amp; Peice)</div>
+                  <div class="sm:col-span-8 px-3 py-2 flex items-center justify-between">
+                    <span>Gone (Date &amp; Peice)</span>
+                    ${!paid ? `<button id="addGoneRowBtn" type="button" class="px-2 py-0.5 rounded bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-[11px] font-bold">+ Add Gone</button>` : ''}
+                  </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-12">
+                  <div class="sm:col-span-4 p-2.5 bg-slate-50 border-b sm:border-b-0 sm:border-r border-slate-200">
+                    ${comeRowsHtml}
+                  </div>
+                  <div class="sm:col-span-8 p-2.5 bg-white">
+                    ${goneRowsHtml}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="pt-2 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200">
+                <button id="stagePaidBtn" type="button" ${paid ? 'disabled' : ''} class="px-4 py-2 rounded-lg font-bold text-xs sm:text-sm shadow transition ${paid ? 'bg-green-600 text-white opacity-80 cursor-not-allowed' : 'bg-emerald-500 hover:bg-emerald-600 text-slate-950'}">
+                  ${paid ? '✓ Payment Done' : 'Payment Done'}
+                </button>
+                <div class="flex gap-2">
+                  <button type="button" data-close-modal class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold">Close</button>
+                  ${!paid ? '<button id="stageSaveBtn" type="button" class="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold shadow">Save</button>' : ''}
+                </div>
+              </div>
+            </div>
+          `);
+
+          function syncInputsToData() {
+            if (paid) return;
+            const nameEl = document.getElementById('stageNameInput');
+            const rateEl = document.getElementById('stageRateInput');
+            const washEl = document.getElementById('stageWashingTypeInput');
+            const sendWashEl = document.getElementById('stageSendToWashingInput');
+            const sendPackEl = document.getElementById('stageSendToPackingInput');
+            if (nameEl) data.name = nameEl.value.trim();
+            if (rateEl) data.rate = rateEl.value;
+            if (washEl) data.washingType = washEl.value.trim();
+            if (sendWashEl) row.washing.name = sendWashEl.value.trim();
+            if (sendPackEl) row.packing.name = sendPackEl.value.trim();
+
+            document.querySelectorAll('[data-gone-field]').forEach(inp => {
+              const idx = parseInt(inp.getAttribute('data-gone-idx'), 10);
+              const field = inp.getAttribute('data-gone-field');
+              if (data.goneEntries[idx]) data.goneEntries[idx][field] = inp.value;
+            });
+
+            const newGone = (data.goneEntries || []).reduce((s, x) => s + (parseFloat(x.peice) || 0), 0);
+            const gBox = document.getElementById('stageGoneTotalBox');
+            const bBox = document.getElementById('stageBalanceBox');
+            if (gBox) gBox.textContent = newGone;
+            if (bBox) bBox.textContent = comeTotal - newGone;
+          }
+
+          ['stageNameInput', 'stageRateInput', 'stageWashingTypeInput', 'stageSendToWashingInput', 'stageSendToPackingInput'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('input', syncInputsToData);
+          });
+          document.querySelectorAll('[data-gone-field]').forEach(inp => {
+            inp.addEventListener('input', syncInputsToData);
+          });
+
+          const addBtn = document.getElementById('addGoneRowBtn');
+          if (addBtn) {
+            addBtn.addEventListener('click', () => {
+              syncInputsToData();
+              data.goneEntries.push(isPacking ? { date: todayISO(), peice: '', ripit: '' } : { date: todayISO(), peice: '' });
+              renderStageModalBody();
+            });
+          }
+
+          document.querySelectorAll('[data-remove-gone]').forEach(btn => {
+            btn.addEventListener('click', () => {
+              syncInputsToData();
+              const idx = parseInt(btn.getAttribute('data-remove-gone'), 10);
+              data.goneEntries.splice(idx, 1);
+              renderStageModalBody();
+            });
+          });
+
+          const saveBtn = document.getElementById('stageSaveBtn');
+          if (saveBtn) {
+            saveBtn.addEventListener('click', () => {
+              syncInputsToData();
+              row.updatedBy = state.activeUser;
+              row.updatedAt = Date.now();
+              saveLocalState();
+              renderTable();
+              closeModal();
+              showToast(titles[dept] + ' saved');
+            });
+          }
+
+          document.getElementById('stagePaidBtn').addEventListener('click', () => {
+            if (data.paid) return;
+            syncInputsToData();
+            data.paid = true;
+            row.updatedBy = state.activeUser;
+            row.updatedAt = Date.now();
+            saveLocalState();
+            renderTable();
+            closeModal();
+            showToast(titles[dept] + ' Payment Done');
+          });
+        }
+
+        renderStageModalBody();
+      }
+
       function openPackingModal(rowId) {
         const row = getRow(rowId);
         if (!row) return;
@@ -906,20 +1210,10 @@
               const n = r.masterName.trim();
               counts[n] = (counts[n] || 0) + 1;
             }
-          } else if (dept === 'packing') {
-            if (!r.packing?.paid && Array.isArray(r.packing?.lines)) {
-              const seenInRow = new Set();
-              r.packing.lines.forEach(l => {
-                const n = (l.name || '').trim();
-                if (n && !seenInRow.has(n)) {
-                  seenInRow.add(n);
-                  counts[n] = (counts[n] || 0) + 1;
-                }
-              });
-            }
           } else {
             const d = r[dept];
-            if (d && !d.paid && (d.name || '').trim()) {
+            const needsClear = ['fabrication', 'washing', 'packing'].includes(dept);
+            if (d && !d.paid && (!needsClear || d.status === 'Clear') && (d.name || '').trim()) {
               const n = d.name.trim();
               counts[n] = (counts[n] || 0) + 1;
             }
@@ -932,10 +1226,9 @@
         if (dept === 'master') {
           return state.rows.filter(r => !r.masterPaid && (r.masterName || '').trim() === name);
         }
-        if (dept === 'packing') {
-          return state.rows.filter(r => !r.packing?.paid && Array.isArray(r.packing?.lines) && r.packing.lines.some(l => (l.name || '').trim() === name));
-        }
-        return state.rows.filter(r => r[dept] && !r[dept].paid && (r[dept].name || '').trim() === name);
+
+        const needsClear = ['fabrication', 'washing', 'packing'].includes(dept);
+        return state.rows.filter(r => r[dept] && !r[dept].paid && (!needsClear || r[dept].status === 'Clear') && (r[dept].name || '').trim() === name);
       }
 
       function getDeptRowValues(dept, r, name, entry) {
@@ -944,28 +1237,20 @@
           const rate = parseFloat(entry.rate) || 0;
           return { pcs, rate, amount: pcs * rate, date: entry.date || r.date || '', rateReadonly: false };
         }
-        if (dept === 'packing') {
-          const matchingLines = (r.packing?.lines || []).filter(l => (l.name || '').trim() === name);
-          let pcs = 0;
-          let amt = 0;
-          let firstDate = '';
-          let lastRate = '';
-          matchingLines.forEach(l => {
-            const lp = parseFloat(l.peice) || 0;
-            const lr = parseFloat(l.rate) || 0;
-            pcs += lp;
-            amt += lp * lr;
-            if (!firstDate && l.date) firstDate = l.date;
-            if (l.rate) lastRate = l.rate;
-          });
-          const effRate = pcs > 0 ? (amt / pcs) : (parseFloat(lastRate) || 0);
-          return { pcs, rate: effRate, amount: amt, date: entry.date || firstDate || r.date || '', rateReadonly: true };
+        if (['fabrication', 'tanki', 'washing', 'packing'].includes(dept)) {
+          const d = r[dept] || {};
+          const st = getStageTotals(r, dept);
+          const come = st.come;
+          const gone = st.gone;
+          const rate = parseFloat(d.rate || entry.rate) || 0;
+          const firstGoneDate = (st.goneList[0] && st.goneList[0].date) ? st.goneList[0].date : '';
+          return { pcs: come, come, gone, rate, amount: come * rate, date: entry.date || firstGoneDate || r.date || '', rateReadonly: true };
         }
         const d = r[dept] || {};
         const pcs = parseFloat(d.peice) || 0;
         const hasTableRate = DEPT_CONFIG[dept].hasTableRate;
         const rate = parseFloat(hasTableRate ? (d.rate || entry.rate) : entry.rate) || 0;
-        return { pcs, rate, amount: pcs * rate, date: entry.date || d.date || r.date || '', rateReadonly: hasTableRate };
+        return { pcs, come: pcs, gone: pcs, rate, amount: pcs * rate, date: entry.date || d.date || r.date || '', rateReadonly: hasTableRate };
       }
 
       function openDeptListModal(dept) {
@@ -1007,10 +1292,11 @@
       let currentHisab = { type: null, name: '' };
 
       function openHisabOverlay(type, name) {
-        currentHisab = { type, name };
+        currentHisab = { type, name, isSavedView: false };
         const overlay = document.getElementById('hisabOverlay');
         const label = DEPT_CONFIG[type]?.label || type;
         document.getElementById('hisabTitle').textContent = label + ' Hisab: ' + name;
+        document.getElementById('hisabSaveBtn').classList.remove('hidden');
         overlay.classList.remove('hidden');
         overlay.classList.add('flex');
         renderHisabContent();
@@ -1028,6 +1314,8 @@
         if (!Array.isArray(meta.extraPayments)) meta.extraPayments = [];
         const label = DEPT_CONFIG[type]?.label || type;
         const matchingRows = getUnpaidDeptRows(type, name);
+        const isStageDept = ['fabrication', 'tanki', 'washing', 'packing'].includes(type);
+        const isTankiHisab = type === 'tanki';
 
         let totalPeice = 0;
         let totalAmount = 0;
@@ -1035,57 +1323,60 @@
 
         const rowsHtml = matchingRows.map(r => {
           if (!meta.entries[r.id]) {
-            meta.entries[r.id] = { rate: '', date: '', payment: '' };
+            meta.entries[r.id] = { rate: '', date: '', payment: '', ignored: false };
           }
           const entry = meta.entries[r.id];
+          const isIgnored = !!entry.ignored;
           const vals = getDeptRowValues(type, r, name, entry);
           if (!entry.date && vals.date) entry.date = vals.date;
           const payment = parseFloat(entry.payment) || 0;
 
-          totalPeice += vals.pcs;
-          totalAmount += vals.amount;
-          totalPayment += payment;
+          if (!isIgnored) {
+            totalPeice += vals.pcs;
+            totalAmount += vals.amount;
+            totalPayment += payment;
+          }
 
-          return `<tr class="border-b border-slate-200">
-            <td class="px-2.5 py-2 font-bold text-slate-900 border-r border-slate-200">${escapeHtml(r.lotNo)}</td>
-            <td class="px-2.5 py-2 text-right font-semibold border-r border-slate-200">${vals.pcs}</td>
+          const displayRate = vals.rateReadonly ? (r[type]?.rate || '') : (entry.rate || '');
+          return `<tr class="border-b border-slate-200 ${isIgnored ? 'bg-slate-100 opacity-50 no-print' : ''}" ${isIgnored ? 'data-html2canvas-ignore="true"' : ''}>
             <td class="px-2 py-2 border-r border-slate-200">
-              ${vals.rateReadonly
-                ? `<div class="text-right font-medium text-slate-800">${Number.isInteger(vals.rate) ? vals.rate : vals.rate.toFixed(2)}</div>`
-                : `<input type="number" step="0.01" data-hisab-field="rate" data-lot-id="${r.id}" value="${escapeHtml(entry.rate)}" placeholder="0" class="w-20 text-right border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />`
-              }
+              <input type="text" data-hisab-lot-field="lotNo" data-lot-id="${r.id}" value="${escapeHtml(r.lotNo)}" placeholder="Lot" class="w-16 font-bold text-slate-900 border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
             </td>
-            <td class="px-2.5 py-2 text-right font-bold text-slate-900 border-r border-slate-200">₹${vals.amount.toFixed(0)}</td>
-            <td class="px-2 py-2 border-r border-slate-200">
-              <input type="date" data-hisab-field="date" data-lot-id="${r.id}" value="${escapeHtml(entry.date)}" class="border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
+            ${isStageDept ? `
+              <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
+                <input type="number" inputmode="numeric" data-hisab-lot-field="come" data-lot-id="${r.id}" value="${escapeHtml(vals.come ? String(vals.come) : '')}" placeholder="0" class="w-16 text-right font-semibold border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
+              </td>
+              <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
+                <input type="number" inputmode="numeric" data-hisab-lot-field="gone" data-lot-id="${r.id}" value="${escapeHtml(vals.gone ? String(vals.gone) : '')}" placeholder="0" class="w-16 text-right font-semibold border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
+              </td>
+              ${isTankiHisab ? `
+              <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
+                <input type="text" data-hisab-lot-field="washingName" data-lot-id="${r.id}" value="${escapeHtml(r.washing?.name || '')}" placeholder="Washing" class="w-24 border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
+              </td>` : ''}
+            ` : `
+              <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
+                <input type="number" inputmode="numeric" data-hisab-lot-field="peice" data-lot-id="${r.id}" value="${escapeHtml(vals.pcs ? String(vals.pcs) : '')}" placeholder="0" class="w-16 text-right font-semibold border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
+              </td>
+            `}
+            <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
+              <input type="number" step="0.01" inputmode="decimal" data-hisab-field="rate" data-lot-id="${r.id}" value="${escapeHtml(displayRate)}" placeholder="0" class="w-16 text-right border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
             </td>
-            <td class="px-2 py-2">
-              <input type="number" step="0.01" data-hisab-field="payment" data-lot-id="${r.id}" value="${escapeHtml(entry.payment)}" placeholder="0" class="w-24 text-right border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
+            <td data-hisab-amount-cell="${r.id}" class="px-2 py-2 text-right font-bold text-slate-900 border-r border-slate-200 whitespace-nowrap">₹${vals.amount.toFixed(0)}</td>
+            <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
+              <input type="date" data-hisab-field="date" data-lot-id="${r.id}" value="${escapeHtml(entry.date)}" class="w-28 border border-slate-300 rounded px-1 py-1 text-xs focus:outline-none focus:border-indigo-500" />
+            </td>
+            <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
+              <input type="number" step="0.01" data-hisab-field="payment" data-lot-id="${r.id}" value="${escapeHtml(entry.payment)}" placeholder="0" class="w-20 text-right border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
+            </td>
+            <td class="px-2 py-2 text-center no-print" data-html2canvas-ignore="true">
+              <button type="button" data-toggle-ignore="${r.id}" class="px-2 py-1 rounded text-[11px] font-bold transition ${isIgnored ? 'bg-amber-500 text-slate-950' : 'bg-slate-200 hover:bg-slate-300 text-slate-700'}">
+                ${isIgnored ? 'Ignored' : 'Ignore This Time'}
+              </button>
             </td>
           </tr>`;
         }).join('');
 
-        const extraRowsHtml = meta.extraPayments.map((ep, idx) => {
-          const payVal = parseFloat(ep.payment) || 0;
-          totalPayment += payVal;
-          return `<tr class="border-b border-slate-200 bg-emerald-50/40">
-            <td class="px-2.5 py-2 text-xs font-semibold text-emerald-800 border-r border-slate-200">
-              <div class="flex items-center justify-between gap-1">
-                <span>Payment #${idx + 1}</span>
-                <button type="button" data-remove-extra-pay="${idx}" class="no-print text-rose-500 hover:text-rose-700 font-bold text-xs px-1" title="Remove row">✕</button>
-              </div>
-            </td>
-            <td class="px-2.5 py-2 text-right text-slate-400 border-r border-slate-200">—</td>
-            <td class="px-2.5 py-2 text-right text-slate-400 border-r border-slate-200">—</td>
-            <td class="px-2.5 py-2 text-right text-slate-400 border-r border-slate-200">—</td>
-            <td class="px-2 py-2 border-r border-slate-200">
-              <input type="date" data-extra-pay-field="date" data-extra-idx="${idx}" value="${escapeHtml(ep.date || '')}" class="border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
-            </td>
-            <td class="px-2 py-2">
-              <input type="number" step="0.01" data-extra-pay-field="payment" data-extra-idx="${idx}" value="${escapeHtml(ep.payment || '')}" placeholder="0" class="w-24 text-right border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
-            </td>
-          </tr>`;
-        }).join('');
+
 
         const lastBal = parseFloat(meta.lastBalance) || 0;
         const grandKaam = totalAmount + lastBal;
@@ -1108,7 +1399,7 @@
           <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-4">
             <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
               <div class="text-[11px] text-slate-500 font-semibold">Total Peice</div>
-              <div class="text-lg font-extrabold text-slate-900">${totalPeice}</div>
+              <div id="hisabTotalPeice" class="text-lg font-extrabold text-slate-900">${totalPeice}</div>
             </div>
             <div class="p-2.5 rounded-xl bg-indigo-50 border border-indigo-200">
               <div class="text-[11px] text-indigo-700 font-semibold">Total Amount (Kaam)</div>
@@ -1134,21 +1425,26 @@
               <thead class="bg-slate-800 text-white">
                 <tr>
                   <th class="px-2.5 py-2 text-left border-r border-slate-700">Lot no</th>
-                  <th class="px-2.5 py-2 text-right border-r border-slate-700">Peice</th>
+                  ${isStageDept ? `
+                    <th class="px-2.5 py-2 text-right border-r border-slate-700">Come</th>
+                    <th class="px-2.5 py-2 text-right border-r border-slate-700">Gone</th>
+                    ${isTankiHisab ? '<th class="px-2.5 py-2 text-left border-r border-slate-700">Washing</th>' : ''}
+                  ` : `<th class="px-2.5 py-2 text-right border-r border-slate-700">Peice</th>`}
                   <th class="px-2.5 py-2 text-right border-r border-slate-700">Rate</th>
                   <th class="px-2.5 py-2 text-right border-r border-slate-700">Amount (Kaam)</th>
                   <th class="px-2.5 py-2 text-left border-r border-slate-700">Date</th>
-                  <th class="px-2.5 py-2 text-right">Payment</th>
+                  <th class="px-2.5 py-2 text-right border-r border-slate-700">Payment</th>
+                  <th class="px-2.5 py-2 text-center no-print" data-html2canvas-ignore="true">Action</th>
                 </tr>
               </thead>
               <tbody>
-                ${(rowsHtml || extraRowsHtml) ? (rowsHtml + extraRowsHtml) : '<tr><td colspan="6" class="text-center py-6 text-slate-400">No unpaid entries</td></tr>'}
+                ${rowsHtml || `<tr><td colspan="${isTankiHisab ? 9 : (isStageDept ? 8 : 7)}" class="text-center py-6 text-slate-400">No unpaid entries</td></tr>`}
               </tbody>
             </table>
           </div>
           <div class="mt-3 flex justify-end no-print">
-            <button id="addExtraPaymentRowBtn" type="button" class="px-3.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs sm:text-sm shadow transition">
-              + Add Date &amp; Payment Row
+            <button id="addHisabLotRowBtn" type="button" class="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm shadow transition">
+              + Add Row
             </button>
           </div>
         `;
@@ -1159,66 +1455,400 @@
           recalcHisabTotalsOnly();
         });
 
+        document.getElementById('addHisabLotRowBtn').addEventListener('click', () => {
+          const newLot = createRow(getNextLotNo());
+          newLot.date = todayISO();
+          if (type === 'master') {
+            newLot.masterName = name;
+          } else if (['fabrication', 'tanki', 'washing', 'packing'].includes(type)) {
+            newLot[type].name = name;
+            newLot[type].goneEntries = [{ date: todayISO(), peice: '', ...(type === 'packing' ? { ripit: '' } : {}) }];
+          } else {
+            newLot[type].name = name;
+            newLot[type].date = todayISO();
+          }
+          newLot.updatedBy = state.activeUser;
+          newLot.updatedAt = Date.now();
+          state.rows.push(newLot);
+          saveLocalState();
+          renderTable();
+          renderHisabContent();
+          showToast('New row added to Hisab & Main Table');
+        });
+
+        area.querySelectorAll('[data-hisab-lot-field]').forEach(inp => {
+          inp.addEventListener('input', (e) => {
+            const lotId = e.target.getAttribute('data-lot-id');
+            const field = e.target.getAttribute('data-hisab-lot-field');
+            const row = getRow(lotId);
+            if (!row) return;
+            if (field === 'lotNo') {
+              row.lotNo = e.target.value;
+            } else if (field === 'come') {
+              normalizeRowStages(row);
+              if (type === 'fabrication') {
+                row.peice = e.target.value;
+              } else if (type === 'tanki') {
+                row.fabrication.goneEntries[0].peice = e.target.value;
+              } else if (type === 'washing') {
+                row.tanki.goneEntries[0].peice = e.target.value;
+              } else if (type === 'packing') {
+                row.washing.goneEntries[0].peice = e.target.value;
+              }
+            } else if (field === 'gone') {
+              normalizeRowStages(row);
+              row[type].goneEntries[0].peice = e.target.value;
+            } else if (field === 'washingName') {
+              row.washing.name = e.target.value;
+            } else if (field === 'peice') {
+              if (type === 'master') {
+                row.peice = e.target.value;
+              } else {
+                row[type].peice = e.target.value;
+              }
+            }
+            row.updatedBy = state.activeUser;
+            row.updatedAt = Date.now();
+            saveLocalState();
+            renderTable();
+            recalcHisabTotalsOnly();
+          });
+        });
+
         area.querySelectorAll('[data-hisab-field]').forEach(inp => {
           inp.addEventListener('input', (e) => {
             const lotId = e.target.getAttribute('data-lot-id');
             const field = e.target.getAttribute('data-hisab-field');
             if (!meta.entries[lotId]) meta.entries[lotId] = { rate: '', date: '', payment: '' };
             meta.entries[lotId][field] = e.target.value;
+
+            const row = getRow(lotId);
+            if (row) {
+              if (field === 'rate' && DEPT_CONFIG[type]?.hasTableRate) {
+                row[type].rate = e.target.value;
+              } else if (field === 'date') {
+                if (type === 'master') row.date = e.target.value;
+                else if (['fabrication', 'tanki', 'washing', 'packing'].includes(type)) {
+                  normalizeRowStages(row);
+                  row[type].goneEntries[0].date = e.target.value;
+                } else {
+                  row[type].date = e.target.value;
+                }
+              }
+              row.updatedBy = state.activeUser;
+              row.updatedAt = Date.now();
+              renderTable();
+            }
+
             saveLocalState();
-            if (field === 'rate') {
-              renderHisabContent();
-            } else {
-              recalcHisabTotalsOnly();
-            }
+            recalcHisabTotalsOnly();
           });
         });
 
-        document.getElementById('addExtraPaymentRowBtn').addEventListener('click', () => {
-          meta.extraPayments.push({ date: todayISO(), payment: '' });
-          saveLocalState();
-          renderHisabContent();
-        });
 
-        area.querySelectorAll('[data-extra-pay-field]').forEach(inp => {
-          inp.addEventListener('input', (e) => {
-            const idx = parseInt(e.target.getAttribute('data-extra-idx'), 10);
-            const field = e.target.getAttribute('data-extra-pay-field');
-            if (meta.extraPayments[idx]) {
-              meta.extraPayments[idx][field] = e.target.value;
-              saveLocalState();
-              recalcHisabTotalsOnly();
-            }
-          });
-        });
 
-        area.querySelectorAll('[data-remove-extra-pay]').forEach(btn => {
+        area.querySelectorAll('[data-toggle-ignore]').forEach(btn => {
           btn.addEventListener('click', () => {
-            const idx = parseInt(btn.getAttribute('data-remove-extra-pay'), 10);
-            meta.extraPayments.splice(idx, 1);
+            const lotId = btn.getAttribute('data-toggle-ignore');
+            if (!meta.entries[lotId]) meta.entries[lotId] = { rate: '', date: '', payment: '', ignored: false };
+            meta.entries[lotId].ignored = !meta.entries[lotId].ignored;
             saveLocalState();
             renderHisabContent();
           });
         });
 
         function recalcHisabTotalsOnly() {
+          let tPcs = 0;
           let tAmt = 0;
           let tPay = 0;
           matchingRows.forEach(r => {
             const en = meta.entries[r.id] || {};
             const vals = getDeptRowValues(type, r, name, en);
-            tAmt += vals.amount;
-            tPay += parseFloat(en.payment) || 0;
+            const amtCell = area.querySelector(`[data-hisab-amount-cell="${r.id}"]`);
+            if (amtCell) amtCell.textContent = '₹' + vals.amount.toFixed(0);
+            if (!en.ignored) {
+              tPcs += vals.pcs;
+              tAmt += vals.amount;
+              tPay += parseFloat(en.payment) || 0;
+            }
           });
-          meta.extraPayments.forEach(ep => {
-            tPay += parseFloat(ep.payment) || 0;
-          });
+
           const lb = parseFloat(meta.lastBalance) || 0;
           const bal = (tAmt + lb) - tPay;
+          const pcsEl = document.getElementById('hisabTotalPeice');
+          if (pcsEl) pcsEl.textContent = tPcs;
           document.getElementById('hisabTotalAmount').textContent = '₹' + tAmt.toFixed(0);
           document.getElementById('hisabTotalPayment').textContent = '₹' + tPay.toFixed(0);
           document.getElementById('hisabFinalBalance').textContent = '₹' + bal.toFixed(0);
         }
+      }
+
+      function saveCurrentHisab() {
+        const { type, name, isSavedView } = currentHisab;
+        if (!type || !name || isSavedView) return;
+        const meta = state.hisabMeta[type]?.[name] || { lastBalance: '', entries: {} };
+        const matchingRows = getUnpaidDeptRows(type, name);
+        const included = matchingRows.filter(r => !(meta.entries[r.id]?.ignored));
+
+        if (!included.length) {
+          showToast('Save karne ke liye kam se kam 1 non-ignored lot chahiye');
+          return;
+        }
+
+        let totalPeice = 0;
+        let totalAmount = 0;
+        let totalPayment = 0;
+        const snapshotRows = included.map(r => {
+          const en = meta.entries[r.id] || {};
+          const vals = getDeptRowValues(type, r, name, en);
+          const payment = parseFloat(en.payment) || 0;
+          totalPeice += vals.pcs;
+          totalAmount += vals.amount;
+          totalPayment += payment;
+          return {
+            lotNo: r.lotNo,
+            peice: vals.pcs,
+            come: vals.come,
+            gone: vals.gone,
+            washingName: r.washing?.name || '',
+            rate: vals.rate,
+            amount: vals.amount,
+            date: en.date || vals.date || '',
+            payment
+          };
+        });
+
+        const lastBalance = parseFloat(meta.lastBalance) || 0;
+        const finalBalance = (totalAmount + lastBalance) - totalPayment;
+        const nextNum = (state.savedHisabs.length || 0) + 1;
+        const hisabTitle = 'Hisab ' + nextNum;
+
+        const snapshot = {
+          id: 'hisab_' + Date.now().toString(36),
+          title: hisabTitle,
+          dept: type,
+          deptLabel: DEPT_CONFIG[type]?.label || type,
+          name,
+          savedDate: todayISO(),
+          savedBy: state.activeUser,
+          totalPeice,
+          totalAmount,
+          lastBalance,
+          totalPayment,
+          finalBalance,
+          rows: snapshotRows
+        };
+
+        // Mark included lots Paid & light green in Main Table
+        included.forEach(r => {
+          if (type === 'master') {
+            r.masterPaid = true;
+            r.masterPaidLight = true;
+          } else {
+            r[type].paid = true;
+            r[type].paidLight = true;
+          }
+          r.updatedBy = state.activeUser;
+          r.updatedAt = Date.now();
+        });
+
+        // Reset ignored flags for remaining rows so next time starts clean
+        matchingRows.forEach(r => {
+          if (meta.entries[r.id]) meta.entries[r.id].ignored = false;
+        });
+
+        state.savedHisabs.push(snapshot);
+        saveLocalState();
+        renderTable();
+        document.getElementById('hisabOverlay').classList.add('hidden');
+        document.getElementById('hisabOverlay').classList.remove('flex');
+        showToast(hisabTitle + ' saved! Lots marked Paid (Light Green).');
+      }
+
+      function openSavedHisabListModal() {
+        const list = [...state.savedHisabs].reverse();
+        openModal(`
+          <div class="p-4 sm:p-5">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-3">
+              <div>
+                <h3 class="text-base font-bold text-slate-900">Saved Hisab (${list.length})</h3>
+                <p class="text-xs text-slate-500">Hisab 1, Hisab 2, Hisab 3... dekhne ke liye tap karein</p>
+              </div>
+              <button type="button" data-close-modal class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold">✕</button>
+            </div>
+            ${list.length ? `
+              <div class="space-y-2 max-h-[65vh] overflow-y-auto">
+                ${list.map(h => `
+                  <button type="button" data-open-saved-hisab="${escapeHtml(h.id)}" class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 text-left transition">
+                    <div>
+                      <div class="font-extrabold text-indigo-700 text-sm">${escapeHtml(h.title)} — ${escapeHtml(h.name)}</div>
+                      <div class="text-xs text-slate-500">${escapeHtml(h.deptLabel)} • ${escapeHtml(h.savedDate)} • ${h.rows.length} Lots • By ${escapeHtml(h.savedBy)}</div>
+                    </div>
+                    <div class="text-right">
+                      <div class="text-xs font-bold text-slate-900">Bal: ₹${Number(h.finalBalance || 0).toFixed(0)}</div>
+                      <div class="text-[11px] text-emerald-700 font-semibold">${h.totalPeice} pcs</div>
+                    </div>
+                  </button>
+                `).join('')}
+              </div>
+            ` : `<p class="text-sm text-slate-500 py-6 text-center">Abhi koi Saved Hisab nahi hai.</p>`}
+          </div>
+        `);
+
+        document.querySelectorAll('[data-open-saved-hisab]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-open-saved-hisab');
+            closeModal();
+            openSavedHisabDetail(id);
+          });
+        });
+      }
+
+      function openSavedHisabDetail(id) {
+        const h = state.savedHisabs.find(x => x.id === id);
+        if (!h) return;
+        currentHisab = { type: h.dept, name: h.name, isSavedView: true };
+        const overlay = document.getElementById('hisabOverlay');
+        document.getElementById('hisabTitle').textContent = h.title + ': ' + h.name;
+        document.getElementById('hisabSaveBtn').classList.add('hidden');
+        overlay.classList.remove('hidden');
+        overlay.classList.add('flex');
+
+        const area = document.getElementById('hisabPrintArea');
+        area.innerHTML = `
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b-2 border-slate-900 pb-3 mb-4">
+            <div>
+              <div class="text-xs uppercase tracking-wider font-bold text-indigo-600">${escapeHtml(h.title)} • ${escapeHtml(h.deptLabel)} (SAVED)</div>
+              <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900">${escapeHtml(h.name)}</h2>
+            </div>
+            <div class="text-right text-xs text-slate-500">
+              <div>Saved Date: <strong>${escapeHtml(h.savedDate)}</strong></div>
+              <div>By: <strong>${escapeHtml(h.savedBy)}</strong></div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-4">
+            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+              <div class="text-[11px] text-slate-500 font-semibold">Total Peice</div>
+              <div class="text-lg font-extrabold text-slate-900">${h.totalPeice}</div>
+            </div>
+            <div class="p-2.5 rounded-xl bg-indigo-50 border border-indigo-200">
+              <div class="text-[11px] text-indigo-700 font-semibold">Total Amount (Kaam)</div>
+              <div class="text-lg font-extrabold text-indigo-900">₹${Number(h.totalAmount || 0).toFixed(0)}</div>
+            </div>
+            <div class="p-2.5 rounded-xl bg-amber-50 border border-amber-200">
+              <div class="text-[11px] text-amber-800 font-semibold">Last Balance (+)</div>
+              <div class="text-lg font-extrabold text-amber-900">₹${Number(h.lastBalance || 0).toFixed(0)}</div>
+            </div>
+            <div class="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200">
+              <div class="text-[11px] text-emerald-700 font-semibold">Total Payment</div>
+              <div id="savedHisabTotalPay" class="text-lg font-extrabold text-emerald-900">₹${Number(h.totalPayment || 0).toFixed(0)}</div>
+            </div>
+            <div class="col-span-2 sm:col-span-1 p-2.5 rounded-xl bg-slate-900 text-white">
+              <div class="text-[11px] text-slate-300 font-semibold">Final Balance</div>
+              <div id="savedHisabFinalBal" class="text-lg font-extrabold text-amber-300">₹${Number(h.finalBalance || 0).toFixed(0)}</div>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto border border-slate-200 rounded-xl">
+            <table class="w-full border-collapse text-xs sm:text-sm">
+              ${(() => {
+                const isStage = ['fabrication', 'tanki', 'washing', 'packing'].includes(h.dept);
+                const isTanki = h.dept === 'tanki';
+                return `<thead class="bg-slate-800 text-white">
+                  <tr>
+                    <th class="px-2.5 py-2 text-left border-r border-slate-700">Lot no</th>
+                    ${isStage ? `
+                      <th class="px-2.5 py-2 text-right border-r border-slate-700">Come</th>
+                      <th class="px-2.5 py-2 text-right border-r border-slate-700">Gone</th>
+                      ${isTanki ? '<th class="px-2.5 py-2 text-left border-r border-slate-700">Washing</th>' : ''}
+                    ` : '<th class="px-2.5 py-2 text-right border-r border-slate-700">Peice</th>'}
+                    <th class="px-2.5 py-2 text-right border-r border-slate-700">Rate</th>
+                    <th class="px-2.5 py-2 text-right border-r border-slate-700">Amount (Kaam)</th>
+                    <th class="px-2.5 py-2 text-left border-r border-slate-700">Date</th>
+                    <th class="px-2.5 py-2 text-right">Payment</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${h.rows.map((r, rIdx) => `
+                    <tr class="border-b border-slate-200">
+                      <td class="px-2 py-2 font-bold text-slate-900 border-r border-slate-200 whitespace-nowrap">${escapeHtml(r.lotNo)}</td>
+                      ${isStage ? `
+                        <td class="px-2 py-2 text-right font-semibold border-r border-slate-200 whitespace-nowrap">${r.come ?? r.peice}</td>
+                        <td class="px-2 py-2 text-right font-semibold border-r border-slate-200 whitespace-nowrap">${r.gone ?? r.peice}</td>
+                        ${isTanki ? `<td class="px-2 py-2 border-r border-slate-200 whitespace-nowrap">${escapeHtml(r.washingName || '-')}</td>` : ''}
+                      ` : `<td class="px-2 py-2 text-right font-semibold border-r border-slate-200 whitespace-nowrap">${r.peice}</td>`}
+                      <td class="px-2 py-2 text-right border-r border-slate-200 whitespace-nowrap">${Number(r.rate || 0).toFixed(2)}</td>
+                      <td class="px-2 py-2 text-right font-bold text-slate-900 border-r border-slate-200 whitespace-nowrap">₹${Number(r.amount || 0).toFixed(0)}</td>
+                      <td class="px-2 py-2 border-r border-slate-200 whitespace-nowrap">${escapeHtml(r.date || '-')}</td>
+                      <td class="px-1.5 py-2 text-right whitespace-nowrap">
+                        <input type="number" step="0.01" data-saved-pay-idx="${rIdx}" value="${escapeHtml(r.payment ? String(r.payment) : '')}" placeholder="0" class="w-20 text-right border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>`;
+              })()}
+            </table>
+          </div>
+        `;
+
+        area.querySelectorAll('[data-saved-pay-idx]').forEach(inp => {
+          inp.addEventListener('input', (e) => {
+            const idx = parseInt(e.target.getAttribute('data-saved-pay-idx'), 10);
+            if (!h.rows[idx]) return;
+            h.rows[idx].payment = parseFloat(e.target.value) || 0;
+            h.totalPayment = h.rows.reduce((sum, item) => sum + (parseFloat(item.payment) || 0), 0);
+            h.finalBalance = (Number(h.totalAmount || 0) + Number(h.lastBalance || 0)) - h.totalPayment;
+            document.getElementById('savedHisabTotalPay').textContent = '₹' + h.totalPayment.toFixed(0);
+            document.getElementById('savedHisabFinalBal').textContent = '₹' + h.finalBalance.toFixed(0);
+            saveLocalState();
+          });
+        });
+      }
+
+      function openPendingLotsModal() {
+        const depts = [
+          { key: 'fabrication', label: 'Fabrication', color: 'bg-cyan-50 border-cyan-200 text-cyan-900' },
+          { key: 'tanki', label: 'Tanki', color: 'bg-teal-50 border-teal-200 text-teal-900' },
+          { key: 'washing', label: 'Washing', color: 'bg-blue-50 border-blue-200 text-blue-900' },
+          { key: 'packing', label: 'Packing', color: 'bg-orange-50 border-orange-200 text-orange-900' }
+        ];
+
+        const sectionsHtml = depts.map(d => {
+          const pendingRows = state.rows.filter(r => (r[d.key]?.status || 'Pending') === 'Pending');
+          return `
+            <div class="p-3 rounded-xl border ${d.color}">
+              <div class="flex items-center justify-between mb-2">
+                <span class="font-bold text-sm">${d.label}</span>
+                <span class="px-2.5 py-0.5 rounded-full bg-white/80 text-xs font-extrabold">${pendingRows.length} Pending</span>
+              </div>
+              ${pendingRows.length ? `
+                <div class="flex flex-wrap gap-1.5">
+                  ${pendingRows.map(r => `
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-slate-200 text-xs font-bold text-slate-800">
+                      Lot ${escapeHtml(r.lotNo)}${r[d.key]?.name ? ` <span class="font-normal text-slate-500">(${escapeHtml(r[d.key].name)})</span>` : ''}
+                    </span>
+                  `).join('')}
+                </div>
+              ` : '<div class="text-xs opacity-70">Sabhi lots Clear hain!</div>'}
+            </div>
+          `;
+        }).join('');
+
+        openModal(`
+          <div class="p-4 sm:p-5">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-3">
+              <div>
+                <h3 class="text-base font-bold text-slate-900">Pending Lots Status</h3>
+                <p class="text-xs text-slate-500">Har department me kitne lots Pending hain</p>
+              </div>
+              <button type="button" data-close-modal class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold">✕</button>
+            </div>
+            <div class="space-y-2.5 max-h-[68vh] overflow-y-auto">
+              ${sectionsHtml}
+            </div>
+          </div>
+        `);
       }
 
       async function shareHisabAsJpeg() {
@@ -1296,6 +1926,7 @@
           exportedAt: new Date().toISOString(),
           exportedBy: state.activeUser,
           rows: state.rows,
+          savedHisabs: state.savedHisabs,
           hisabMeta: state.hisabMeta
         }, null, 2);
       }
@@ -1305,11 +1936,8 @@
           showToast('Invalid backup file');
           return false;
         }
-        state.rows = parsed.rows.map(r => {
-          if (!r.laser && r.damage) { r.laser = r.damage; delete r.damage; }
-          if (!r.laser) r.laser = { date: '', peice: '', name: '', paid: false };
-          return r;
-        });
+        state.rows = parsed.rows.map(normalizeRowStages);
+        state.savedHisabs = Array.isArray(parsed.savedHisabs) ? parsed.savedHisabs : [];
         state.hisabMeta = Object.assign({ master: {}, embroidery: {}, fabrication: {}, washing: {}, tanki: {}, packing: {}, laser: {}, print: {} }, parsed.hisabMeta || {});
         saveLocalState();
         renderTable();
@@ -1516,13 +2144,29 @@
           closeModal();
           return;
         }
+        const statusToggle = e.target.closest('[data-toggle-stage-status]');
+        if (statusToggle) {
+          e.stopPropagation();
+          const rId = statusToggle.getAttribute('data-toggle-stage-status');
+          const dept = statusToggle.getAttribute('data-stage-dept');
+          const row = getRow(rId);
+          if (row && row[dept]) {
+            row[dept].status = row[dept].status === 'Clear' ? 'Pending' : 'Clear';
+            row.updatedBy = state.activeUser;
+            row.updatedAt = Date.now();
+            saveLocalState();
+            renderTable();
+            showToast('Lot ' + row.lotNo + ' ' + dept + ': ' + row[dept].status);
+          }
+          return;
+        }
         const cell = e.target.closest('.cell-trigger');
         if (cell) {
           const rowId = cell.getAttribute('data-row-id');
           const cellType = cell.getAttribute('data-cell');
           if (cellType === 'peice') openPeiceModal(rowId);
           else if (cellType === 'master') openMasterCellModal(rowId);
-          else if (cellType === 'packing') openPackingModal(rowId);
+          else if (['fabrication', 'tanki', 'washing', 'packing'].includes(cellType)) openStageModal(rowId, cellType);
           else openJobModal(rowId, cellType);
         }
       });
@@ -1564,6 +2208,9 @@
         document.getElementById('hisabOverlay').classList.add('hidden');
         document.getElementById('hisabOverlay').classList.remove('flex');
       });
+      document.getElementById('hisabSaveBtn').addEventListener('click', saveCurrentHisab);
+      document.getElementById('pendingLotsBtn').addEventListener('click', openPendingLotsModal);
+      document.getElementById('savedHisabBtn').addEventListener('click', openSavedHisabListModal);
       document.getElementById('hisabPrintBtn').addEventListener('click', () => window.print());
       document.getElementById('hisabShareBtn').addEventListener('click', shareHisabAsJpeg);
 
