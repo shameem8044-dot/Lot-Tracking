@@ -9,7 +9,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>Lot Production &amp; Hisab Tracker — Shameem &amp; Saleem</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -197,7 +198,7 @@
       <div class="flex items-center gap-1.5 sm:gap-2">
         <button id="hisabSaveBtn" type="button" class="px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold text-xs sm:text-sm">💾 Save Hisab</button>
         <button id="hisabPrintBtn" type="button" class="px-3 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-600 text-slate-950 font-bold text-xs sm:text-sm">🖨️ Print</button>
-        <button id="hisabShareBtn" type="button" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs sm:text-sm">📲 JPEG / WhatsApp</button>
+        <button id="hisabShareBtn" type="button" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs sm:text-sm">📄 PDF / WhatsApp</button>
       </div>
     </div>
     <div class="p-3 sm:p-5 max-w-4xl w-full mx-auto">
@@ -1370,7 +1371,6 @@
           const entry = meta.entries[r.id];
           const isIgnored = !!entry.ignored;
           const vals = getDeptRowValues(type, r, name, entry);
-          if (!entry.date && vals.date) entry.date = vals.date;
           const payment = parseFloat(entry.payment) || 0;
 
           if (!isIgnored) {
@@ -1408,7 +1408,11 @@
             </td>
             <td data-hisab-amount-cell="${r.id}" class="px-2 py-2 text-right font-bold text-slate-900 border-r border-slate-200 whitespace-nowrap">₹${vals.amount.toFixed(0)}</td>
             <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
-              <input type="date" data-hisab-field="date" data-lot-id="${r.id}" value="${escapeHtml(entry.date)}" class="w-28 border border-slate-300 rounded px-1 py-1 text-xs focus:outline-none focus:border-indigo-500" />
+              <div class="relative w-24 h-7 border border-slate-300 rounded bg-white flex items-center justify-between px-1.5 text-xs">
+                <span data-hisab-date-label="${r.id}" class="font-medium text-slate-800">${escapeHtml(formatDateDMY(entry.date))}</span>
+                <span class="text-[10px] text-slate-400 no-print">📅</span>
+                <input type="date" data-hisab-field="date" data-lot-id="${r.id}" value="${escapeHtml(entry.date || '')}" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+              </div>
             </td>
             <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
               <input type="number" step="0.01" data-hisab-field="payment" data-lot-id="${r.id}" value="${escapeHtml(entry.payment)}" placeholder="0" class="w-20 text-right border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
@@ -1460,7 +1464,11 @@
             </td>
             <td data-draft-amount-cell="${dIdx}" class="px-2 py-2 text-right font-bold text-slate-900 border-r border-slate-200 whitespace-nowrap">₹${dAmt.toFixed(0)}</td>
             <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
-              <input type="date" data-draft-field="date" data-draft-idx="${dIdx}" value="${escapeHtml(dr.date || '')}" class="w-28 border border-slate-300 bg-white rounded px-1 py-1 text-xs focus:outline-none focus:border-indigo-500" />
+              <div class="relative w-24 h-7 border border-slate-300 rounded bg-white flex items-center justify-between px-1.5 text-xs">
+                <span data-draft-date-label="${dIdx}" class="font-medium text-slate-800">${escapeHtml(formatDateDMY(dr.date || ''))}</span>
+                <span class="text-[10px] text-slate-400 no-print">📅</span>
+                <input type="date" data-draft-field="date" data-draft-idx="${dIdx}" value="${escapeHtml(dr.date || '')}" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+              </div>
             </td>
             <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
               <input type="number" step="0.01" data-draft-field="payment" data-draft-idx="${dIdx}" value="${escapeHtml(dr.payment || '')}" placeholder="0" class="w-20 text-right border border-slate-300 bg-white rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
@@ -1573,6 +1581,10 @@
             const field = e.target.getAttribute('data-draft-field');
             if (meta.draftRows[dIdx]) {
               meta.draftRows[dIdx][field] = e.target.value;
+              if (field === 'date') {
+                const lbl = area.querySelector(`[data-draft-date-label="${dIdx}"]`);
+                if (lbl) lbl.textContent = formatDateDMY(e.target.value);
+              }
               saveLocalState();
               recalcHisabTotalsOnly();
             }
@@ -1721,6 +1733,10 @@
             const field = e.target.getAttribute('data-hisab-field');
             if (!meta.entries[lotId]) meta.entries[lotId] = { rate: '', date: '', payment: '' };
             meta.entries[lotId][field] = e.target.value;
+            if (field === 'date') {
+              const lbl = area.querySelector(`[data-hisab-date-label="${lotId}"]`);
+              if (lbl) lbl.textContent = formatDateDMY(e.target.value);
+            }
 
             const row = getRow(lotId);
             if (row) {
@@ -1832,7 +1848,7 @@
             washingName: r.washing?.name || '',
             rate: vals.rate,
             amount: vals.amount,
-            date: en.date || vals.date || '',
+            date: en.date || '',
             payment
           };
         });
@@ -1926,7 +1942,7 @@
       function openSavedHisabDetail(id) {
         const h = state.savedHisabs.find(x => x.id === id);
         if (!h) return;
-        currentHisab = { type: h.dept, name: h.name, isSavedView: true };
+        currentHisab = { type: h.dept, name: h.name, isSavedView: true, savedId: h.id };
         const overlay = document.getElementById('hisabOverlay');
         document.getElementById('hisabTitle').textContent = h.title + ': ' + h.name;
         document.getElementById('hisabSaveBtn').classList.add('hidden');
@@ -2071,39 +2087,124 @@
         `);
       }
 
-      async function shareHisabAsJpeg() {
-        const area = document.getElementById('hisabPrintArea');
-        if (!window.html2canvas) {
-          showToast('Image library loading, try again');
+      async function shareHisabAsPdf() {
+        if (!window.jspdf || !window.jspdf.jsPDF) {
+          showToast('PDF library loading, try again');
           return;
         }
-        showToast('Generating High-Quality JPEG...');
+        showToast('Generating Full Hisab PDF...');
         try {
-          const canvas = await window.html2canvas(area, { scale: 2.5, backgroundColor: '#ffffff', useCORS: true });
-          const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
-          const fileName = (currentHisab.type + '_' + currentHisab.name + '_hisab.jpg').replace(/\s+/g, '_');
-          const file = new File([blob], fileName, { type: 'image/jpeg' });
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+          const { type, name, isSavedView, savedId } = currentHisab;
+          const label = DEPT_CONFIG[type]?.label || type;
+          const isStage = ['fabrication', 'tanki', 'washing', 'packing'].includes(type);
+          const isTanki = type === 'tanki';
+
+          let totalPeice = 0, totalAmount = 0, lastBalance = 0, totalPayment = 0, finalBalance = 0;
+          let head = [];
+          let body = [];
+          let titleText = `${label} Hisab — ${name}`;
+          let dateText = formatDateDMY(todayISO());
+
+          if (isSavedView && savedId) {
+            const h = state.savedHisabs.find(x => x.id === savedId);
+            if (!h) return;
+            titleText = `${h.title} (${h.deptLabel}) — ${h.name}`;
+            dateText = formatDateDMY(h.savedDate);
+            totalPeice = h.totalPeice || 0;
+            totalAmount = Number(h.totalAmount || 0);
+            lastBalance = Number(h.lastBalance || 0);
+            totalPayment = Number(h.totalPayment || 0);
+            finalBalance = Number(h.finalBalance || 0);
+
+            if (isStage) {
+              head = [isTanki
+                ? ['Lot no', 'Come', 'Gone', 'Fabrication', 'Washing', 'Rate', 'Amount', 'Date', 'Payment']
+                : ['Lot no', 'Come', 'Gone', 'Rate', 'Amount', 'Date', 'Payment']];
+              body = h.rows.map(r => isTanki
+                ? [r.lotNo, r.come ?? r.peice, r.gone ?? r.peice, r.fabricationName || '-', r.washingName || '-', Number(r.rate || 0).toFixed(2), 'Rs ' + Number(r.amount || 0).toFixed(0), formatDateDMY(r.date || ''), 'Rs ' + Number(r.payment || 0).toFixed(0)]
+                : [r.lotNo, r.come ?? r.peice, r.gone ?? r.peice, Number(r.rate || 0).toFixed(2), 'Rs ' + Number(r.amount || 0).toFixed(0), formatDateDMY(r.date || ''), 'Rs ' + Number(r.payment || 0).toFixed(0)]
+              );
+            } else {
+              head = [['Lot no', 'Peice', 'Rate', 'Amount', 'Date', 'Payment']];
+              body = h.rows.map(r => [r.lotNo, r.peice, Number(r.rate || 0).toFixed(2), 'Rs ' + Number(r.amount || 0).toFixed(0), formatDateDMY(r.date || ''), 'Rs ' + Number(r.payment || 0).toFixed(0)]);
+            }
+          } else {
+            const meta = state.hisabMeta[type]?.[name] || { lastBalance: '', entries: {} };
+            const matchingRows = getUnpaidDeptRows(type, name).filter(r => !(meta.entries[r.id]?.ignored));
+            lastBalance = parseFloat(meta.lastBalance) || 0;
+
+            if (isStage) {
+              head = [isTanki
+                ? ['Lot no', 'Come', 'Gone', 'Fabrication', 'Washing', 'Rate', 'Amount', 'Date', 'Payment']
+                : ['Lot no', 'Come', 'Gone', 'Rate', 'Amount', 'Date', 'Payment']];
+            } else {
+              head = [['Lot no', 'Peice', 'Rate', 'Amount', 'Date', 'Payment']];
+            }
+
+            matchingRows.forEach(r => {
+              const en = meta.entries[r.id] || {};
+              const vals = getDeptRowValues(type, r, name, en);
+              const pay = parseFloat(en.payment) || 0;
+              totalPeice += vals.pcs;
+              totalAmount += vals.amount;
+              totalPayment += pay;
+              const dStr = formatDateDMY(en.date || '');
+              if (isStage) {
+                body.push(isTanki
+                  ? [r.lotNo, vals.come, vals.gone, r.fabrication?.name || '-', r.washing?.name || '-', Number(vals.rate || 0).toFixed(2), 'Rs ' + vals.amount.toFixed(0), dStr, pay ? 'Rs ' + pay.toFixed(0) : '']
+                  : [r.lotNo, vals.come, vals.gone, Number(vals.rate || 0).toFixed(2), 'Rs ' + vals.amount.toFixed(0), dStr, pay ? 'Rs ' + pay.toFixed(0) : '']
+                );
+              } else {
+                body.push([r.lotNo, vals.pcs, Number(vals.rate || 0).toFixed(2), 'Rs ' + vals.amount.toFixed(0), dStr, pay ? 'Rs ' + pay.toFixed(0) : '']);
+              }
+            });
+            finalBalance = (totalAmount + lastBalance) - totalPayment;
+          }
+
+          doc.setFontSize(15);
+          doc.setFont('helvetica', 'bold');
+          doc.text(titleText, 36, 40);
+          doc.setFontSize(9.5);
+          doc.setFont('helvetica', 'normal');
+          doc.text(`Date: ${dateText}   |   By: ${state.activeUser}`, 36, 56);
+
+          doc.setFontSize(10);
+          doc.setFont('helvetica', 'bold');
+          doc.text(
+            `Total Peice: ${totalPeice}   |   Kaam: Rs ${totalAmount.toFixed(0)}   |   Last Bal: Rs ${lastBalance.toFixed(0)}   |   Payment: Rs ${totalPayment.toFixed(0)}   |   Final Bal: Rs ${finalBalance.toFixed(0)}`,
+            36,
+            76
+          );
+
+          doc.autoTable({
+            startY: 90,
+            head,
+            body,
+            theme: 'grid',
+            styles: { fontSize: 8.5, cellPadding: 4, overflow: 'linebreak' },
+            headStyles: { fillColor: [15, 23, 42], textColor: 255, fontStyle: 'bold' },
+            margin: { left: 32, right: 32 }
+          });
+
+          const blob = doc.output('blob');
+          const fileName = (type + '_' + name + '_hisab.pdf').replace(/\s+/g, '_');
+          const file = new File([blob], fileName, { type: 'application/pdf' });
 
           if (navigator.canShare && navigator.canShare({ files: [file] })) {
             await navigator.share({
               files: [file],
-              title: currentHisab.name + ' Hisab',
-              text: currentHisab.name + ' Hisab Sheet'
+              title: name + ' Hisab PDF',
+              text: name + ' Hisab Sheet (PDF)'
             });
-            showToast('Shared successfully!');
+            showToast('PDF shared successfully!');
           } else {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = fileName;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            URL.revokeObjectURL(url);
-            showToast('JPEG downloaded! Share on WhatsApp.');
+            doc.save(fileName);
+            showToast('Full Hisab PDF downloaded! Share on WhatsApp.');
           }
         } catch (err) {
-          showToast('Could not share JPEG');
+          showToast('Could not generate PDF');
         }
       }
 
@@ -2453,7 +2554,7 @@
       document.getElementById('pendingLotsBtn').addEventListener('click', openPendingLotsModal);
       document.getElementById('savedHisabBtn').addEventListener('click', openSavedHisabListModal);
       document.getElementById('hisabPrintBtn').addEventListener('click', () => window.print());
-      document.getElementById('hisabShareBtn').addEventListener('click', shareHisabAsJpeg);
+      document.getElementById('hisabShareBtn').addEventListener('click', shareHisabAsPdf);
 
       const searchInput = document.getElementById('searchInput');
       const clearSearchBtn = document.getElementById('clearSearchBtn');
