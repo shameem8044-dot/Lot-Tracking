@@ -1,1516 +1,1591 @@
 ```html
 <!DOCTYPE html>
-<html lang="hi" class="h-full bg-slate-50">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lot Tracker - Production & Jobwork Management</title>
-  <!-- Tailwind CSS CDN -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Lot Production &amp; Hisab Tracker — Shameem &amp; Saleem</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-  <!-- Lucide Icons CDN -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Inter Font -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
-    body { font-family: 'Inter', sans-serif; }
-    .cell-hover:hover { background-color: #f1f5f9; cursor: pointer; }
-    .payment-done-cell {
-      background-color: #dcfce7 !important;
-      border-color: #86efac !important;
-      color: #14532d !important;
+    * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background: #f1f5f9; color: #0f172a; }
+    .lot-bold { font-weight: 800; letter-spacing: 0.02em; }
+    .cell-paid-bright {
+      background-color: #22c55e !important;
+      color: #052e16 !important;
+      border-color: #16a34a !important;
     }
-    .payment-done-cell:hover {
-      background-color: #bbf7d0 !important;
+    .cell-paid-bright .sub-text {
+      color: #064e3b !important;
+      font-weight: 600;
     }
-    /* Custom scrollbars */
-    ::-webkit-scrollbar { width: 8px; height: 8px; }
-    ::-webkit-scrollbar-track { background: #f1f5f9; }
-    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    .sticky-lot {
+      position: sticky;
+      left: 0;
+      z-index: 10;
+      background: #ffffff;
+      box-shadow: 2px 0 6px -2px rgba(15, 23, 42, 0.12);
+    }
+    thead .sticky-lot {
+      z-index: 20;
+      background: #0f172a;
+    }
+    .table-scroll::-webkit-scrollbar { height: 8px; width: 8px; }
+    .table-scroll::-webkit-scrollbar-track { background: #e2e8f0; }
+    .table-scroll::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+    @media print {
+      body * { visibility: hidden !important; }
+      #hisabPrintArea, #hisabPrintArea * { visibility: visible !important; }
+      #hisabPrintArea {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        background: #ffffff !important;
+        padding: 16px !important;
+        box-shadow: none !important;
+      }
+      .no-print { display: none !important; }
+    }
   </style>
 </head>
-<body class="h-full flex flex-col text-slate-800 bg-slate-100 antialiased">
+<body class="min-h-screen flex flex-col">
 
-  <!-- Header -->
-  <header class="bg-indigo-900 text-white shadow-md sticky top-0 z-30">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-lg bg-indigo-600 flex items-center justify-center shadow-inner">
-          <i data-lucide="layers" class="w-6 h-6 text-white"></i>
-        </div>
+  <!-- Top Bar -->
+  <header class="bg-slate-900 text-white shadow-md sticky top-0 z-30">
+    <div class="max-w-full mx-auto px-3 py-2.5 flex flex-wrap items-center justify-between gap-2">
+      <!-- Brand & Active User -->
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-lg bg-indigo-500 flex items-center justify-center font-extrabold text-lg shadow">L</div>
         <div>
-          <h1 class="text-xl font-bold tracking-tight flex items-center gap-2">
-            Lot Production & Jobwork Tracker
-            <span class="text-xs bg-indigo-800 text-indigo-200 px-2 py-0.5 rounded-full font-medium">Multi-User Sync</span>
-          </h1>
-          <p class="text-xs text-indigo-200">Garment Manufacturing • Real-time Production Register</p>
+          <h1 class="text-sm sm:text-base font-bold leading-tight">Lot Production Tracker</h1>
+          <div class="flex items-center gap-2 text-xs text-slate-300">
+            <button id="userSwitchBtn" type="button" class="inline-flex items-center gap-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 px-2 py-0.5 rounded-full text-xs font-semibold text-amber-300 transition">
+              <span id="activeUserDot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              <span>User: <strong id="activeUserName">Shameem</strong></span>
+              <span class="text-slate-400">▾</span>
+            </button>
+            <button id="syncSettingsBtn" type="button" class="inline-flex items-center gap-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 px-2 py-0.5 rounded-full text-xs transition">
+              <span id="syncStatusDot" class="w-2 h-2 rounded-full bg-sky-400"></span>
+              <span id="syncStatusText">Local Auto-Sync</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- Sync Status & User Role Bar -->
-      <div class="flex items-center gap-3 text-sm">
-        <!-- Live Sync Badge -->
-        <div id="syncStatusBadge" class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 text-xs font-medium">
-          <span class="relative flex h-2 w-2">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-          </span>
-          <span id="syncStatusText">Auto Sync Active</span>
-        </div>
-
-        <!-- Active User Selector -->
-        <div class="flex items-center gap-1.5 bg-indigo-800/80 px-2.5 py-1 rounded-lg border border-indigo-700">
-          <i data-lucide="user" class="w-4 h-4 text-indigo-300"></i>
-          <span class="text-xs text-indigo-200 hidden sm:inline">User:</span>
-          <select id="currentUserSelect" class="bg-transparent text-white text-xs font-semibold focus:outline-none cursor-pointer">
-            <option value="Admin (Office)" class="text-slate-900">Admin (Office)</option>
-            <option value="Cutting Master" class="text-slate-900">Cutting Master</option>
-            <option value="Embroidery Sup." class="text-slate-900">Embroidery Supervisor</option>
-            <option value="Fabrication Sup." class="text-slate-900">Fabrication Supervisor</option>
-            <option value="Washing Manager" class="text-slate-900">Washing Manager</option>
-            <option value="Packing Incharge" class="text-slate-900">Packing Incharge</option>
-          </select>
-        </div>
-
-        <!-- Cloud Sync Config Button -->
-        <button id="openCloudSyncBtn" title="Cloud / Multi-Device Sync Settings" class="p-1.5 bg-indigo-800 hover:bg-indigo-700 rounded-lg text-indigo-200 hover:text-white transition">
-          <i data-lucide="cloud" class="w-4 h-4"></i>
+      <!-- Top Utility Buttons: Backup, Add Row -->
+      <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+        <button id="backupRestoreBtn" type="button" class="px-3 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-600 text-slate-950 font-bold text-xs sm:text-sm shadow transition">
+          💾 Backup
         </button>
-
-        <!-- Help / Quick Info Button -->
-        <button id="openHelpBtn" title="App Guidance" class="p-1.5 bg-indigo-800 hover:bg-indigo-700 rounded-lg text-indigo-200 hover:text-white transition">
-          <i data-lucide="help-circle" class="w-4 h-4"></i>
+        <button id="addRowBtn" type="button" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs sm:text-sm shadow transition">
+          + Add Row
         </button>
+      </div>
+    </div>
+
+    <!-- Department Hisab Bar (All 8 Departments - Unpaid Only) -->
+    <div class="bg-slate-950/60 border-t border-slate-800 px-3 py-1.5 flex items-center gap-1.5 overflow-x-auto table-scroll">
+      <span class="text-[11px] font-semibold text-slate-400 shrink-0 mr-1">Hisab:</span>
+      <button type="button" id="topMasterBtn" data-hisab-dept="master" class="px-2.5 py-1 rounded-md bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs shrink-0 transition">Master</button>
+      <button type="button" id="topEmbroideryBtn" data-hisab-dept="embroidery" class="px-2.5 py-1 rounded-md bg-violet-500 hover:bg-violet-600 text-white font-bold text-xs shrink-0 transition">Embroidery</button>
+      <button type="button" data-hisab-dept="fabrication" class="px-2.5 py-1 rounded-md bg-cyan-500 hover:bg-cyan-600 text-slate-950 font-bold text-xs shrink-0 transition">Fabrication</button>
+      <button type="button" data-hisab-dept="washing" class="px-2.5 py-1 rounded-md bg-blue-500 hover:bg-blue-600 text-white font-bold text-xs shrink-0 transition">Washing</button>
+      <button type="button" data-hisab-dept="tanki" class="px-2.5 py-1 rounded-md bg-teal-500 hover:bg-teal-600 text-slate-950 font-bold text-xs shrink-0 transition">Tanki</button>
+      <button type="button" data-hisab-dept="packing" class="px-2.5 py-1 rounded-md bg-orange-500 hover:bg-orange-600 text-slate-950 font-bold text-xs shrink-0 transition">Packing</button>
+      <button type="button" data-hisab-dept="laser" class="px-2.5 py-1 rounded-md bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs shrink-0 transition">Laser</button>
+      <button type="button" data-hisab-dept="print" class="px-2.5 py-1 rounded-md bg-fuchsia-500 hover:bg-fuchsia-600 text-white font-bold text-xs shrink-0 transition">Print</button>
+    </div>
+
+    <!-- Search & Quick Filter Bar -->
+    <div class="bg-slate-800/90 border-t border-slate-700 px-3 py-1.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+      <div class="flex items-center gap-2 flex-1 min-w-[200px] max-w-md">
+        <input id="searchInput" type="text" placeholder="Search Lot no, Master, Fabric, Karigar..." class="w-full bg-slate-900 border border-slate-700 rounded-md px-2.5 py-1 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-indigo-400" />
+        <button id="clearSearchBtn" type="button" class="hidden px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-200">Clear</button>
+      </div>
+      <div class="flex items-center gap-3 text-slate-300">
+        <span>Total Lots: <strong id="totalLotsCount" class="text-white">0</strong></span>
+        <span>Total Peice: <strong id="totalPiecesCount" class="text-emerald-400">0</strong></span>
+        <span>Total Jama: <strong id="totalJamaCount" class="text-sky-400">0</strong></span>
       </div>
     </div>
   </header>
 
-  <!-- KPI / Stats Summary Bar -->
-  <section class="bg-white border-b border-slate-200 shadow-sm py-2 px-4 sm:px-6">
-    <div class="max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 sm:gap-4 text-center">
-      <div class="bg-slate-50 border border-slate-200 p-2 rounded-lg">
-        <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Total Lots</p>
-        <p id="kpiTotalLots" class="text-lg font-bold text-slate-800">0</p>
-      </div>
-      <div class="bg-blue-50 border border-blue-200 p-2 rounded-lg">
-        <p class="text-[11px] font-semibold text-blue-600 uppercase tracking-wider">Cutting Pieces</p>
-        <p id="kpiCuttingPcs" class="text-lg font-bold text-blue-800">0</p>
-      </div>
-      <div class="bg-purple-50 border border-purple-200 p-2 rounded-lg">
-        <p class="text-[11px] font-semibold text-purple-600 uppercase tracking-wider">Total Packing (Jama)</p>
-        <p id="kpiJamaPcs" class="text-lg font-bold text-purple-800">0</p>
-      </div>
-      <div class="bg-rose-50 border border-rose-200 p-2 rounded-lg">
-        <p class="text-[11px] font-semibold text-rose-600 uppercase tracking-wider">Total Damage</p>
-        <p id="kpiDamagePcs" class="text-lg font-bold text-rose-800">0</p>
-      </div>
-      <div class="bg-amber-50 border border-amber-200 p-2 rounded-lg">
-        <p class="text-[11px] font-semibold text-amber-600 uppercase tracking-wider">In Process (Pending)</p>
-        <p id="kpiPendingPcs" class="text-lg font-bold text-amber-800">0</p>
-      </div>
-      <div class="bg-emerald-50 border border-emerald-200 p-2 rounded-lg">
-        <p class="text-[11px] font-semibold text-emerald-600 uppercase tracking-wider">Payments Done</p>
-        <p id="kpiPaymentsDone" class="text-lg font-bold text-emerald-800">0</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- Action Toolbar -->
-  <div class="max-w-7xl mx-auto w-full px-4 sm:px-6 pt-4 pb-2 flex flex-wrap items-center justify-between gap-3">
-    <!-- Left: Add Row & Controls -->
-    <div class="flex items-center flex-wrap gap-2">
-      <button id="addRowBtn" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-lg shadow transition active:scale-95 text-sm">
-        <i data-lucide="plus-circle" class="w-4 h-4"></i>
-        Add Row (+1 Lot No)
-      </button>
-
-      <button id="exportCsvBtn" class="flex items-center gap-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-medium px-3 py-2 rounded-lg text-sm transition">
-        <i data-lucide="download" class="w-4 h-4 text-slate-500"></i>
-        Export
-      </button>
-
-      <button id="printTableBtn" class="flex items-center gap-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-medium px-3 py-2 rounded-lg text-sm transition">
-        <i data-lucide="printer" class="w-4 h-4 text-slate-500"></i>
-        Print
-      </button>
-    </div>
-
-    <!-- Right: Search & Filters -->
-    <div class="flex items-center gap-2 flex-grow max-w-md justify-end">
-      <div class="relative w-full">
-        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
-        <input type="text" id="searchInput" placeholder="Search Lot No, Master, Fabric..." class="w-full pl-9 pr-3 py-1.5 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm">
-      </div>
-      <button id="clearSearchBtn" class="text-xs text-slate-500 hover:text-slate-800 px-2 py-1.5 hidden bg-slate-200 rounded">Clear</button>
-    </div>
-  </div>
-
   <!-- Main Table Container -->
-  <main class="max-w-7xl mx-auto w-full px-4 sm:px-6 pb-12 flex-grow flex flex-col">
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex-grow flex flex-col">
-      <!-- Responsive Scroll Container -->
-      <div class="overflow-x-auto flex-grow">
-        <table class="w-full text-left text-xs border-collapse min-w-[1200px]" id="lotTable">
-          <thead>
-            <tr class="bg-slate-800 text-white font-semibold uppercase tracking-wider text-[11px] divide-x divide-slate-700">
-              <th class="py-3 px-3 w-12 text-center">#</th>
-              <th class="py-3 px-3 w-28 text-center bg-indigo-950 font-bold text-amber-300">Lot no</th>
-              <th class="py-3 px-3 w-24 text-center cursor-pointer hover:bg-slate-700" title="Click to view/edit cutting piece">Peice</th>
-              <th class="py-3 px-3 w-20 text-center">Size</th>
-              <th class="py-3 px-3 w-28 text-center">Fabric</th>
-              <th class="py-3 px-3 w-28 text-center">Master</th>
-              <th class="py-3 px-3 w-32 text-center cursor-pointer hover:bg-slate-700" title="Click to open Embroidery box">Embroidery</th>
-              <th class="py-3 px-3 w-32 text-center cursor-pointer hover:bg-slate-700" title="Click to open Fabrication box">Fabrication</th>
-              <th class="py-3 px-3 w-32 text-center cursor-pointer hover:bg-slate-700" title="Click to open Tanki box">Tanki</th>
-              <th class="py-3 px-3 w-32 text-center cursor-pointer hover:bg-slate-700" title="Click to open Washing box">Washing</th>
-              <th class="py-3 px-3 w-36 text-center cursor-pointer hover:bg-slate-700" title="Click to open 4-line Packing box">Packing</th>
-              <th class="py-3 px-3 w-24 text-center bg-purple-900 font-bold text-purple-200" title="Auto Total from Packing">Jama</th>
-              <th class="py-3 px-3 w-28 text-center cursor-pointer hover:bg-slate-700" title="Click to open Damage box">DAMAGE</th>
-              <th class="py-3 px-3 w-28 text-center cursor-pointer hover:bg-slate-700" title="Click to open Print box">Print</th>
-              <th class="py-3 px-2 w-14 text-center">Action</th>
+  <main class="flex-1 p-2 sm:p-4 overflow-hidden flex flex-col">
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex-1 flex flex-col overflow-hidden">
+      <div class="table-scroll overflow-x-auto overflow-y-auto flex-1">
+        <table class="w-full border-collapse text-left text-xs sm:text-sm min-w-[1250px]">
+          <thead class="bg-slate-900 text-white sticky top-0 z-20">
+            <tr>
+              <th class="sticky-lot px-3 py-2.5 border-b border-r border-slate-700 w-24 text-center">Lot no</th>
+              <th class="px-3 py-2.5 border-b border-r border-slate-700 w-24 text-center">peice</th>
+              <th class="px-3 py-2.5 border-b border-r border-slate-700 w-24 text-center">size</th>
+              <th class="px-3 py-2.5 border-b border-r border-slate-700 w-28 text-center">fabric</th>
+              <th class="px-3 py-2.5 border-b border-r border-slate-700 w-28 text-center">Master</th>
+              <th class="px-3 py-2.5 border-b border-r border-slate-700 w-32 text-center">Embroidery</th>
+              <th class="px-3 py-2.5 border-b border-r border-slate-700 w-32 text-center">Fabrication</th>
+              <th class="px-3 py-2.5 border-b border-r border-slate-700 w-28 text-center">Tanki</th>
+              <th class="px-3 py-2.5 border-b border-r border-slate-700 w-32 text-center">washing</th>
+              <th class="px-3 py-2.5 border-b border-r border-slate-700 w-32 text-center">packing</th>
+              <th class="px-3 py-2.5 border-b border-r border-slate-700 w-24 text-center">Jama</th>
+              <th class="px-3 py-2.5 border-b border-r border-slate-700 w-28 text-center">Laser</th>
+              <th class="px-3 py-2.5 border-b border-slate-700 w-28 text-center">Print</th>
             </tr>
           </thead>
           <tbody id="lotTableBody" class="divide-y divide-slate-200">
-            <!-- Dynamic rows will be rendered here -->
+            <!-- Rendered by JS -->
           </tbody>
         </table>
-      </div>
-
-      <!-- Empty State -->
-      <div id="emptyState" class="hidden py-16 text-center">
-        <i data-lucide="clipboard-list" class="w-12 h-12 text-slate-300 mx-auto mb-3"></i>
-        <h3 class="text-base font-semibold text-slate-700">Koi Lot Data Nahi Hai</h3>
-        <p class="text-xs text-slate-500 mt-1">Upar 'Add Row' button par click karke naya lot shuru karein.</p>
-        <button id="addFirstRowBtn" class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700">
-          <i data-lucide="plus" class="w-4 h-4"></i> Pehla Lot Enter Karein
-        </button>
-      </div>
-
-      <!-- Table Footer Note -->
-      <div class="px-4 py-3 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-2">
-        <div class="flex items-center gap-2">
-          <span class="inline-block w-3 h-3 rounded bg-emerald-100 border border-emerald-400"></span>
-          <span>Green Cell = Payment Done (Read-only)</span>
-          <span class="mx-2">•</span>
-          <span class="inline-block w-3 h-3 rounded bg-white border border-slate-300"></span>
-          <span>White Cell = Click to Enter / View Details</span>
-        </div>
-        <div id="lastSyncTime" class="text-slate-400 text-[11px]">Last synced: Just now</div>
       </div>
     </div>
   </main>
 
-  <!-- ======================================================== -->
-  <!-- MODAL: PEICE (CUTTING & MASTER DETAILS)                   -->
-  <!-- ======================================================== -->
-  <div id="modalPeice" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 transform transition-all">
-      <div class="bg-indigo-700 text-white px-6 py-4 flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <i data-lucide="scissors" class="w-5 h-5 text-indigo-200"></i>
-          <div>
-            <h3 class="text-base font-bold">Cutting & Piece Entry</h3>
-            <p class="text-xs text-indigo-200">Lot No: <span id="modalPeiceLotNo" class="font-bold text-white text-sm"></span></p>
-          </div>
-        </div>
-        <button class="modal-close-btn p-1 rounded-lg hover:bg-indigo-600 text-indigo-100">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-4 py-2 rounded-full text-xs sm:text-sm font-medium shadow-lg opacity-0 pointer-events-none transition-opacity duration-200 z-50"></div>
 
-      <form id="formPeice" class="p-6 space-y-4">
-        <input type="hidden" id="peiceRowId">
-        
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Date</label>
-          <input type="date" id="inputPeiceDate" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Peice (Pieces Count)</label>
-            <input type="number" id="inputPeiceCount" min="0" placeholder="e.g. 500" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none font-bold text-indigo-900">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Size</label>
-            <input type="text" id="inputPeiceSize" placeholder="e.g. 28-36, 30, L, XL" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Fabric</label>
-          <input type="text" id="inputPeiceFabric" placeholder="e.g. Denim 12oz, Cotton Twill, Knit" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Master Name</label>
-          <input type="text" id="inputPeiceMaster" placeholder="e.g. Master Aslam, Ramesh Master" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium">
-        </div>
-
-        <div class="pt-3 border-t border-slate-200 flex items-center justify-end gap-2">
-          <button type="button" class="modal-close-btn px-4 py-2 border border-slate-300 text-slate-700 rounded-lg text-xs font-medium hover:bg-slate-100 transition">Cancel</button>
-          <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow transition">Save & Update Row</button>
-        </div>
-      </form>
+  <!-- Generic Modal Backdrop -->
+  <div id="modalBackdrop" class="fixed inset-0 bg-slate-950/60 backdrop-blur-xs hidden items-center justify-center p-3 z-40">
+    <div id="modalContent" class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto border border-slate-200">
+      <!-- Dynamic Modal Body -->
     </div>
   </div>
 
-  <!-- ======================================================== -->
-  <!-- GENERIC WORKFLOW MODAL                                    -->
-  <!-- Used for: Embroidery, Fabrication, Tanki, Washing, Damage, Print -->
-  <!-- ======================================================== -->
-  <div id="modalWorkflow" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 transform transition-all">
-      <div id="workflowModalHeader" class="bg-slate-800 text-white px-6 py-4 flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <div id="workflowModalIcon" class="w-8 h-8 rounded-lg bg-slate-700 flex items-center justify-center">
-            <i data-lucide="tag" class="w-4 h-4 text-white"></i>
-          </div>
-          <div>
-            <h3 id="workflowModalTitle" class="text-base font-bold">Department Entry</h3>
-            <p class="text-xs text-slate-300">Lot No: <span id="workflowModalLotNo" class="font-bold text-white text-sm"></span></p>
-          </div>
-        </div>
-        <button class="modal-close-btn p-1 rounded-lg hover:bg-slate-700 text-slate-300">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
+  <!-- Hisab (Master / Embroidery) Fullscreen Overlay -->
+  <div id="hisabOverlay" class="fixed inset-0 bg-slate-100 hidden flex-col z-40 overflow-y-auto">
+    <div class="bg-slate-900 text-white px-3 py-2.5 flex items-center justify-between sticky top-0 z-10 no-print">
+      <div class="flex items-center gap-2">
+        <button id="hisabBackBtn" type="button" class="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs sm:text-sm font-semibold">← Back</button>
+        <h2 id="hisabTitle" class="text-sm sm:text-base font-bold">Hisab</h2>
       </div>
-
-      <!-- Payment Status Alert Banner in Modal -->
-      <div id="workflowPaymentBanner" class="hidden px-6 py-2 bg-emerald-100 border-b border-emerald-300 text-emerald-900 text-xs font-semibold flex items-center justify-between">
-        <span class="flex items-center gap-1.5">
-          <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i>
-          Payment Done (Entry is Read-Only)
-        </span>
-        <button type="button" id="workflowUnlockBtn" class="text-[11px] text-emerald-700 underline hover:text-emerald-900">Unlock</button>
+      <div class="flex items-center gap-2">
+        <button id="hisabPrintBtn" type="button" class="px-3 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-600 text-slate-950 font-bold text-xs sm:text-sm">🖨️ Print</button>
+        <button id="hisabShareBtn" type="button" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs sm:text-sm">📲 JPEG / WhatsApp</button>
       </div>
-
-      <form id="formWorkflow" class="p-6 space-y-3.5">
-        <input type="hidden" id="workflowRowId">
-        <input type="hidden" id="workflowDeptKey">
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Date</label>
-          <input type="date" id="inputWorkflowDate" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Peice (Qty)</label>
-            <input type="number" id="inputWorkflowPeice" min="0" placeholder="e.g. 500" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none font-semibold text-slate-900">
-          </div>
-          <div id="fieldWorkflowRateContainer">
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Rate (₹ / pc)</label>
-            <input type="number" step="0.01" id="inputWorkflowRate" min="0" placeholder="e.g. 12.50" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none font-semibold text-slate-900">
-          </div>
-        </div>
-
-        <!-- Optional Washing Special Field -->
-        <div id="fieldWorkflowWashingContainer" class="hidden">
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Washing Type / Details</label>
-          <input type="text" id="inputWorkflowWashing" placeholder="e.g. Acid Wash, Enzyme, Stone, Bleach" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Name (Karigar / Contractor / Vendor)</label>
-          <input type="text" id="inputWorkflowName" placeholder="e.g. Salim Bhai / Royal Jobwork" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium">
-          <p class="text-[11px] text-slate-400 mt-1">Yeh naam main table ke cell me dikhaya jayega.</p>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="pt-4 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
-          <!-- Payment Done Button -->
-          <button type="button" id="workflowPaymentDoneBtn" class="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow transition active:scale-95">
-            <i data-lucide="check" class="w-4 h-4"></i>
-            Payment Done
-          </button>
-
-          <div class="flex items-center gap-2">
-            <button type="button" class="modal-close-btn px-3 py-2 border border-slate-300 text-slate-700 rounded-lg text-xs font-medium hover:bg-slate-100 transition">Cancel</button>
-            <button type="submit" id="workflowSaveBtn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow transition">Save Details</button>
-          </div>
-        </div>
-      </form>
     </div>
-  </div>
-
-  <!-- ======================================================== -->
-  <!-- MODAL: PACKING (4 LINES MULTI-ENTRY)                      -->
-  <!-- ======================================================== -->
-  <div id="modalPacking" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200 transform transition-all">
-      <div class="bg-amber-700 text-white px-6 py-4 flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <i data-lucide="package-check" class="w-5 h-5 text-amber-200"></i>
-          <div>
-            <h3 class="text-base font-bold">Packing Entry (Multiple Batches - 4 Lines)</h3>
-            <p class="text-xs text-amber-200">Lot No: <span id="modalPackingLotNo" class="font-bold text-white text-sm"></span></p>
-          </div>
-        </div>
-        <button class="modal-close-btn p-1 rounded-lg hover:bg-amber-600 text-amber-100">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-
-      <!-- Payment Done Banner -->
-      <div id="packingPaymentBanner" class="hidden px-6 py-2 bg-emerald-100 border-b border-emerald-300 text-emerald-900 text-xs font-semibold flex items-center justify-between">
-        <span class="flex items-center gap-1.5">
-          <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i>
-          Packing Payment Done (Read-Only)
-        </span>
-        <button type="button" id="packingUnlockBtn" class="text-[11px] text-emerald-700 underline hover:text-emerald-900">Unlock</button>
-      </div>
-
-      <form id="formPacking" class="p-6 space-y-4">
-        <input type="hidden" id="packingRowId">
-
-        <p class="text-xs text-slate-500">
-          Packing kai parts me hoti hai. Yahan 4 lines di gayi hain. In sabka Total Peice apne aap <span class="font-bold text-purple-700">Jama</span> wale cell me show hoga.
-        </p>
-
-        <!-- 4 lines table/inputs -->
-        <div class="space-y-3" id="packingLinesContainer">
-          <!-- Generated via JS for 4 lines -->
-        </div>
-
-        <!-- Total pieces summary in modal -->
-        <div class="p-3 bg-purple-50 border border-purple-200 rounded-lg flex items-center justify-between text-xs">
-          <span class="font-semibold text-purple-900">Total Packing Pieces (Jama Qty):</span>
-          <span id="modalPackingTotalPieces" class="text-base font-extrabold text-purple-800">0 pcs</span>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="pt-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
-          <button type="button" id="packingPaymentDoneBtn" class="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow transition active:scale-95">
-            <i data-lucide="check" class="w-4 h-4"></i>
-            Payment Done
-          </button>
-
-          <div class="flex items-center gap-2">
-            <button type="button" class="modal-close-btn px-3 py-2 border border-slate-300 text-slate-700 rounded-lg text-xs font-medium hover:bg-slate-100 transition">Cancel</button>
-            <button type="submit" id="packingSaveBtn" class="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold shadow transition">Save Packing</button>
-          </div>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- ======================================================== -->
-  <!-- MODAL: CLOUD SYNC & MULTI-USER CONFIG                     -->
-  <!-- ======================================================== -->
-  <div id="modalCloudSync" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200">
-      <div class="bg-indigo-900 text-white px-6 py-4 flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <i data-lucide="cloud" class="w-5 h-5 text-indigo-300"></i>
-          <div>
-            <h3 class="text-base font-bold">Multi-User Sync Settings</h3>
-            <p class="text-xs text-indigo-200">Tabs & Devices Synchronization</p>
-          </div>
-        </div>
-        <button class="modal-close-btn p-1 rounded-lg hover:bg-indigo-800 text-indigo-200">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-
-      <div class="p-6 space-y-4 text-xs">
-        <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-900 flex items-start gap-2">
-          <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 mt-0.5 shrink-0"></i>
-          <div>
-            <p class="font-bold">Real-time Cross-Tab Sync is Active</p>
-            <p class="text-[11px] text-emerald-700 mt-0.5">Aap is app ko jitne bhi tabs ya windows me kholenge, un sabhi me data bina page refresh kiye turant apne aap sync ho jayega.</p>
-          </div>
-        </div>
-
-        <div>
-          <label class="block font-semibold text-slate-700 mb-1">Factory / Organization Room ID</label>
-          <input type="text" id="syncRoomId" value="addis-jeans-main" class="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-          <p class="text-[11px] text-slate-400 mt-1">Sabhi users/devices ka same Room ID hona chahiye.</p>
-        </div>
-
-        <!-- Manual Backup & Restore -->
-        <div class="border-t border-slate-200 pt-3 space-y-2">
-          <p class="font-bold text-slate-700">Backup & Share Data:</p>
-          <div class="flex gap-2">
-            <button id="downloadBackupBtn" class="flex-1 py-2 px-3 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-slate-700 font-semibold flex items-center justify-center gap-1.5 transition">
-              <i data-lucide="download" class="w-3.5 h-3.5"></i> Download JSON
-            </button>
-            <label class="flex-1 py-2 px-3 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-slate-700 font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition text-center">
-              <i data-lucide="upload" class="w-3.5 h-3.5"></i> Restore JSON
-              <input type="file" id="restoreFileInput" accept=".json" class="hidden">
-            </label>
-          </div>
-        </div>
-
-        <div class="pt-3 border-t border-slate-200 flex justify-end">
-          <button type="button" class="modal-close-btn px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700">Done</button>
-        </div>
+    <div class="p-3 sm:p-5 max-w-4xl w-full mx-auto">
+      <div id="hisabPrintArea" class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6">
+        <!-- Dynamic Hisab Content -->
       </div>
     </div>
   </div>
 
-  <!-- ======================================================== -->
-  <!-- MODAL: HELP / GUIDE                                       -->
-  <!-- ======================================================== -->
-  <div id="modalHelp" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200">
-      <div class="bg-slate-800 text-white px-6 py-4 flex items-center justify-between">
-        <h3 class="text-base font-bold flex items-center gap-2">
-          <i data-lucide="book-open" class="w-5 h-5 text-indigo-300"></i>
-          App Guide & Rules
-        </h3>
-        <button class="modal-close-btn p-1 rounded-lg hover:bg-slate-700 text-slate-300">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-      <div class="p-6 space-y-3 text-xs text-slate-600 max-h-[75vh] overflow-y-auto">
-        <div class="p-2.5 bg-indigo-50 border border-indigo-200 rounded-lg text-indigo-900">
-          <strong>1. Lot No & Add Row:</strong> Pehla lot no aap manually enter karenge. Niche "Add Row" dabane par pichli row ke lot no me apne aap +1 ho jayega.
-        </div>
-        <div class="p-2.5 bg-blue-50 border border-blue-200 rounded-lg text-blue-900">
-          <strong>2. Peice Cell:</strong> Click karne par Date, Peice, Size, Fabric aur Master Name ka popup khulta hai. Save karne par ye charo values row me update ho jati hain.
-        </div>
-        <div class="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-amber-900">
-          <strong>3. Jobwork Cells (Embroidery, Fabrication, Tanki, Washing, Damage, Print):</strong> Cell par click karne par popup khulta hai. Name enter karne par cell me Name aur uske niche Peice dikhega.
-        </div>
-        <div class="p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-900">
-          <strong>4. Payment Done Button:</strong> Har popup me "Payment Done" button hai. Click karne par us cell ka background Green ho jayega aur entries read-only ho jayengi.
-        </div>
-        <div class="p-2.5 bg-purple-50 border border-purple-200 rounded-lg text-purple-900">
-          <strong>5. Packing & Jama:</strong> Packing box me 4 lines hain (kyunki packing parts me hoti hai). Sabhi lines ke pieces ka total apne aap <strong>Jama</strong> cell me show hoga.
-        </div>
-        <div class="p-2.5 bg-slate-100 border border-slate-300 rounded-lg text-slate-800">
-          <strong>6. Multi-User Real-time Sync:</strong> Data automatically local storage aur active network broadcast me sync hota hai. Multiple log sath me kaam kar sakte hain.
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Toast Notification Container -->
-  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
-
-  <!-- JavaScript Application Logic -->
   <script>
-    // State Model
-    const STORAGE_KEY = 'addis_lot_tracker_data_v1';
-    const SYNC_CHANNEL_NAME = 'addis_lot_tracker_broadcast';
-    let broadcastChannel = null;
+    (function () {
+      'use strict';
 
-    // Default Initial State
-    let state = {
-      currentUser: 'Admin (Office)',
-      roomId: 'addis-jeans-main',
-      rows: []
-    };
+      const STORAGE_KEY = 'lot_tracker_v2_data';
+      const SYNC_CONFIG_KEY = 'lot_tracker_v2_sync_cfg';
+      const USER_KEY = 'lot_tracker_v2_user';
 
-    // Helper: Generate Unique ID
-    function uid() {
-      return 'row_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
-    }
+      const bc = ('BroadcastChannel' in window) ? new BroadcastChannel('lot_tracker_sync_channel') : null;
 
-    // Default Empty Row Factory
-    function createNewLotRow(lotNumber = '') {
-      return {
-        id: uid(),
-        lotNo: lotNumber,
-        peiceData: {
-          date: new Date().toISOString().split('T')[0],
+      let state = {
+        activeUser: 'Shameem',
+        rows: [],
+        hisabMeta: {
+          master: {},
+          embroidery: {},
+          fabrication: {},
+          washing: {},
+          tanki: {},
+          packing: {},
+          laser: {},
+          print: {}
+        },
+        syncConfig: {
+          firebaseUrl: '',
+          roomCode: 'shameem-saleem-factory',
+          autoSync: true,
+          lastSyncedAt: null
+        }
+      };
+
+      let currentSearch = '';
+      let syncTimer = null;
+      let pollTimer = null;
+
+      function todayISO() {
+        const d = new Date();
+        const off = d.getTimezoneOffset();
+        const local = new Date(d.getTime() - off * 60000);
+        return local.toISOString().slice(0, 10);
+      }
+
+      function showToast(msg) {
+        const el = document.getElementById('toast');
+        el.textContent = msg;
+        el.classList.remove('opacity-0');
+        el.classList.add('opacity-100');
+        clearTimeout(el._t);
+        el._t = setTimeout(() => {
+          el.classList.remove('opacity-100');
+          el.classList.add('opacity-0');
+        }, 2500);
+      }
+
+      function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function uid() {
+        return 'lot_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
+      }
+
+      function createEmptyPackingLines() {
+        return [
+          { date: '', peice: '', rate: '', ripit: '', name: '' },
+          { date: '', peice: '', rate: '', ripit: '', name: '' },
+          { date: '', peice: '', rate: '', ripit: '', name: '' },
+          { date: '', peice: '', rate: '', ripit: '', name: '' }
+        ];
+      }
+
+      function createRow(lotNo) {
+        return {
+          id: uid(),
+          lotNo: lotNo !== undefined ? String(lotNo) : '',
+          date: todayISO(),
           peice: '',
           size: '',
           fabric: '',
-          master: ''
-        },
-        embroidery: { date: '', peice: '', rate: '', name: '', paymentDone: false },
-        fabrication: { date: '', peice: '', rate: '', name: '', paymentDone: false },
-        tanki: { date: '', peice: '', rate: '', name: '', paymentDone: false },
-        washing: { date: '', peice: '', washing: '', rate: '', name: '', paymentDone: false },
-        packing: {
-          lines: [
-            { date: '', peice: '', rate: '', ripit: '', name: '' },
-            { date: '', peice: '', rate: '', ripit: '', name: '' },
-            { date: '', peice: '', rate: '', ripit: '', name: '' },
-            { date: '', peice: '', rate: '', ripit: '', name: '' }
-          ],
-          paymentDone: false
-        },
-        damage: { date: '', peice: '', name: '', paymentDone: false },
-        print: { date: '', peice: '', name: '', paymentDone: false },
-        createdAt: new Date().toISOString(),
-        lastEditedBy: state.currentUser || 'Admin'
-      };
-    }
-
-    // Initialize BroadcastChannel for cross-tab multi-user sync
-    function initSync() {
-      try {
-        if ('BroadcastChannel' in window) {
-          broadcastChannel = new BroadcastChannel(SYNC_CHANNEL_NAME);
-          broadcastChannel.onmessage = (event) => {
-            if (event.data && event.data.type === 'SYNC_STATE') {
-              state.rows = event.data.rows || [];
-              renderTable();
-              updateKpis();
-              showToast('Data auto-synced with another user', 'info');
-              updateSyncTimestamp();
-            }
-          };
-        }
-      } catch (err) {
-        console.warn('BroadcastChannel not supported or restricted:', err);
+          masterName: '',
+          masterPaid: false,
+          embroidery: { date: '', peice: '', rate: '', name: '', paid: false },
+          fabrication: { date: '', peice: '', rate: '', name: '', paid: false },
+          tanki: { date: '', peice: '', rate: '', name: '', paid: false },
+          washing: { date: '', peice: '', washingType: '', rate: '', name: '', paid: false },
+          packing: { lines: createEmptyPackingLines(), paid: false },
+          laser: { date: '', peice: '', name: '', paid: false },
+          print: { date: '', peice: '', name: '', paid: false },
+          updatedBy: state.activeUser,
+          updatedAt: Date.now()
+        };
       }
 
-      // Also listen to window storage events
-      window.addEventListener('storage', (e) => {
-        if (e.key === STORAGE_KEY && e.newValue) {
-          try {
-            const parsed = JSON.parse(e.newValue);
+      function seedInitialData() {
+        const r1 = createRow('101');
+        r1.date = todayISO();
+        r1.peice = '120';
+        r1.size = '28-34';
+        r1.fabric = '3/1 Denim';
+        r1.masterName = 'Master Akram';
+        r1.embroidery = { date: todayISO(), peice: '120', rate: '12', name: 'Raju Emb', paid: false };
+        r1.fabrication = { date: todayISO(), peice: '120', rate: '45', name: 'Imran Fab', paid: false };
+
+        const r2 = createRow('102');
+        r2.date = todayISO();
+        r2.peice = '80';
+        r2.size = '30-36';
+        r2.fabric = 'Knitted';
+        r2.masterName = 'Master Akram';
+        r2.masterPaid = false;
+
+        state.rows = [r1, r2];
+      }
+
+      function loadLocalState() {
+        try {
+          const savedUser = localStorage.getItem(USER_KEY);
+          if (savedUser === 'Shameem' || savedUser === 'Saleem') {
+            state.activeUser = savedUser;
+          }
+          const savedSync = localStorage.getItem(SYNC_CONFIG_KEY);
+          if (savedSync) {
+            state.syncConfig = Object.assign(state.syncConfig, JSON.parse(savedSync));
+          }
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
             if (parsed && Array.isArray(parsed.rows)) {
-              state.rows = parsed.rows;
-              renderTable();
-              updateKpis();
-              updateSyncTimestamp();
+              state.rows = parsed.rows.map(r => {
+                if (!r.laser && r.damage) { r.laser = r.damage; delete r.damage; }
+                if (!r.laser) r.laser = { date: '', peice: '', name: '', paid: false };
+                return r;
+              });
+              state.hisabMeta = Object.assign({ master: {}, embroidery: {}, fabrication: {}, washing: {}, tanki: {}, packing: {}, laser: {}, print: {} }, parsed.hisabMeta || {});
+              return;
+            }
+          }
+        } catch (e) {
+          // Ignore storage errors in restricted environments
+        }
+        seedInitialData();
+      }
+
+      function saveLocalState(skipBroadcast) {
+        try {
+          localStorage.setItem(USER_KEY, state.activeUser);
+          localStorage.setItem(SYNC_CONFIG_KEY, JSON.stringify(state.syncConfig));
+          localStorage.setItem(STORAGE_KEY, JSON.stringify({
+            rows: state.rows,
+            hisabMeta: state.hisabMeta,
+            updatedAt: Date.now()
+          }));
+        } catch (e) {
+          // Ignore storage quota errors
+        }
+        if (!skipBroadcast && bc) {
+          bc.postMessage({ type: 'SYNC_UPDATE', rows: state.rows, hisabMeta: state.hisabMeta });
+        }
+        scheduleCloudPush();
+      }
+
+      function updateSyncBadge(status, text) {
+        const dot = document.getElementById('syncStatusDot');
+        const label = document.getElementById('syncStatusText');
+        if (!dot || !label) return;
+        dot.className = 'w-2 h-2 rounded-full ' + (
+          status === 'synced' ? 'bg-emerald-400' :
+          status === 'syncing' ? 'bg-amber-400 animate-pulse' :
+          status === 'error' ? 'bg-rose-400' : 'bg-sky-400'
+        );
+        label.textContent = text;
+      }
+
+      function getFirebaseEndpoint() {
+        const base = (state.syncConfig.firebaseUrl || '').trim().replace(/\/+$/, '');
+        const room = (state.syncConfig.roomCode || 'default-room').trim().replace(/[^a-zA-Z0-9_-]/g, '');
+        if (!base) return null;
+        return base + '/lot_tracker/' + room + '.json';
+      }
+
+      function scheduleCloudPush() {
+        const url = getFirebaseEndpoint();
+        if (!url || !state.syncConfig.autoSync) {
+          updateSyncBadge('local', 'Local Auto-Sync');
+          return;
+        }
+        updateSyncBadge('syncing', 'Syncing...');
+        clearTimeout(syncTimer);
+        syncTimer = setTimeout(async () => {
+          try {
+            const res = await fetch(url, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                rows: state.rows,
+                hisabMeta: state.hisabMeta,
+                updatedBy: state.activeUser,
+                updatedAt: Date.now()
+              })
+            });
+            if (res.ok) {
+              state.syncConfig.lastSyncedAt = Date.now();
+              updateSyncBadge('synced', 'Cloud Synced');
+            } else {
+              updateSyncBadge('error', 'Sync Error');
             }
           } catch (err) {
-            console.error('Storage sync error:', err);
+            updateSyncBadge('error', 'Offline (Saved)');
           }
-        }
-      });
-    }
-
-    // Load Data from localStorage
-    function loadState() {
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (parsed.rows && parsed.rows.length > 0) {
-            state.rows = parsed.rows;
-          } else {
-            seedInitialDemoRows();
-          }
-        } else {
-          seedInitialDemoRows();
-        }
-      } catch (err) {
-        console.warn('localStorage read error:', err);
-        seedInitialDemoRows();
-      }
-    }
-
-    // Seed realistic sample data if empty
-    function seedInitialDemoRows() {
-      const row1 = createNewLotRow('101');
-      row1.peiceData = {
-        date: '2026-11-10',
-        peice: '600',
-        size: '28-36',
-        fabric: 'Denim Indigo 11.5oz',
-        master: 'Aslam Master'
-      };
-      row1.embroidery = { date: '2026-11-10', peice: '600', rate: '8.50', name: 'Salim Embroidery', paymentDone: true };
-      row1.fabrication = { date: '2026-11-11', peice: '600', rate: '35', name: 'Munna Karigar', paymentDone: false };
-      row1.tanki = { date: '2026-11-11', peice: '600', rate: '4', name: 'Nasir Tanki', paymentDone: false };
-      row1.washing = { date: '', peice: '', washing: 'Enzyme Stone Wash', rate: '22', name: 'Deluxe Washers', paymentDone: false };
-      row1.packing.lines[0] = { date: '2026-11-11', peice: '350', rate: '6', ripit: 'Batch 1 OK', name: 'Guddu Packing' };
-      row1.packing.lines[1] = { date: '2026-11-11', peice: '240', rate: '6', ripit: 'Batch 2 OK', name: 'Guddu Packing' };
-      row1.damage = { date: '2026-11-11', peice: '10', name: 'Munna' };
-      row1.print = { date: '2026-11-10', peice: '600', name: 'Star Printing', paymentDone: true };
-
-      const row2 = createNewLotRow('102');
-      row2.peiceData = {
-        date: '2026-11-11',
-        peice: '450',
-        size: '30-34',
-        fabric: 'Cotton Twill Black',
-        master: 'Ramesh Master'
-      };
-      row2.embroidery = { date: '2026-11-11', peice: '450', rate: '12', name: 'Modern Arts', paymentDone: false };
-
-      state.rows = [row1, row2];
-      saveState(false);
-    }
-
-    // Save Data to localStorage and broadcast to other tabs
-    function saveState(broadcast = true) {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({
-          rows: state.rows,
-          lastUpdated: new Date().toISOString(),
-          lastUser: state.currentUser
-        }));
-      } catch (err) {
-        console.error('Error saving to localStorage:', err);
+        }, 600);
       }
 
-      if (broadcast && broadcastChannel) {
+      async function pullFromCloud(silent) {
+        const url = getFirebaseEndpoint();
+        if (!url) return;
         try {
-          broadcastChannel.postMessage({
-            type: 'SYNC_STATE',
-            rows: state.rows,
-            user: state.currentUser
-          });
+          const res = await fetch(url);
+          if (!res.ok) return;
+          const data = await res.json();
+          if (data && Array.isArray(data.rows)) {
+            state.rows = data.rows;
+            state.hisabMeta = data.hisabMeta || { master: {}, embroidery: {} };
+            saveLocalState(true);
+            renderTable();
+            updateSyncBadge('synced', 'Cloud Synced');
+            if (!silent) showToast('Cloud data synced!');
+          }
         } catch (err) {
-          console.warn('Broadcast failed:', err);
+          if (!silent) showToast('Offline: using local data');
         }
       }
 
-      updateKpis();
-      updateSyncTimestamp();
-    }
-
-    function updateSyncTimestamp() {
-      const el = document.getElementById('lastSyncTime');
-      if (el) {
-        const now = new Date();
-        el.textContent = 'Last synced: ' + now.toLocaleTimeString();
+      function startSyncPolling() {
+        clearInterval(pollTimer);
+        if (getFirebaseEndpoint() && state.syncConfig.autoSync) {
+          pullFromCloud(true);
+          pollTimer = setInterval(() => pullFromCloud(true), 12000);
+        }
       }
-    }
 
-    // Calculate Total Pieces for Packing Lines (Jama)
-    function getPackingTotal(packing) {
-      if (!packing || !packing.lines) return 0;
-      return packing.lines.reduce((sum, line) => {
-        const val = parseInt(line.peice, 10);
-        return sum + (isNaN(val) ? 0 : val);
-      }, 0);
-    }
-
-    // Get Primary Name for Packing cell
-    function getPackingDisplayName(packing) {
-      if (!packing || !packing.lines) return '';
-      for (const line of packing.lines) {
-        if (line.name && line.name.trim()) return line.name.trim();
+      if (bc) {
+        bc.onmessage = (ev) => {
+          if (ev.data && ev.data.type === 'SYNC_UPDATE') {
+            state.rows = ev.data.rows;
+            state.hisabMeta = ev.data.hisabMeta || state.hisabMeta;
+            renderTable();
+            updateSyncBadge('synced', 'Tab Synced');
+          }
+        };
       }
-      return '';
-    }
 
-    // Auto Increment Lot Number from Previous Row
-    function getNextLotNumber() {
-      if (!state.rows || state.rows.length === 0) return '101';
-      const lastRow = state.rows[state.rows.length - 1];
-      const prevLot = (lastRow.lotNo || '').trim();
-      if (!prevLot) return '101';
-
-      // Match trailing integer digits
-      const match = prevLot.match(/^(.*?)(\d+)$/);
-      if (match) {
-        const prefix = match[1];
-        const numStr = match[2];
-        const nextNum = parseInt(numStr, 10) + 1;
-        // preserve zero padding if needed
-        const padded = nextNum.toString().padStart(numStr.length, '0');
-        return prefix + padded;
+      function getPackingTotalPeice(row) {
+        if (!row.packing || !Array.isArray(row.packing.lines)) return 0;
+        return row.packing.lines.reduce((sum, l) => sum + (parseFloat(l.peice) || 0), 0);
       }
-      // If purely alphabetic or custom, append 1
-      return prevLot + '-1';
-    }
 
-    // Render Table Rows
-    function renderTable() {
-      const tbody = document.getElementById('lotTableBody');
-      const emptyState = document.getElementById('emptyState');
-      const searchVal = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+      function getPackingPrimaryName(row) {
+        if (!row.packing || !Array.isArray(row.packing.lines)) return '';
+        const names = row.packing.lines.map(l => (l.name || '').trim()).filter(Boolean);
+        return names.length ? names[names.length - 1] : '';
+      }
 
-      if (!tbody) return;
-      tbody.innerHTML = '';
+      function renderTable() {
+        const tbody = document.getElementById('lotTableBody');
+        const q = currentSearch.trim().toLowerCase();
 
-      let filteredRows = state.rows;
-      if (searchVal) {
-        filteredRows = state.rows.filter(row => {
-          const lotStr = (row.lotNo || '').toLowerCase();
-          const masterStr = (row.peiceData.master || '').toLowerCase();
-          const fabricStr = (row.peiceData.fabric || '').toLowerCase();
-          const embStr = (row.embroidery.name || '').toLowerCase();
-          return lotStr.includes(searchVal) || masterStr.includes(searchVal) || fabricStr.includes(searchVal) || embStr.includes(searchVal);
+        const filtered = state.rows.filter(r => {
+          if (!q) return true;
+          return [
+            r.lotNo, r.size, r.fabric, r.masterName,
+            r.embroidery?.name, r.fabrication?.name, r.tanki?.name,
+            r.washing?.name, getPackingPrimaryName(r), r.laser?.name, r.print?.name
+          ].some(v => (v || '').toLowerCase().includes(q));
+        });
+
+        let totalPcs = 0;
+        let totalJama = 0;
+        state.rows.forEach(r => {
+          totalPcs += parseFloat(r.peice) || 0;
+          totalJama += getPackingTotalPeice(r);
+        });
+        document.getElementById('totalLotsCount').textContent = state.rows.length;
+        document.getElementById('totalPiecesCount').textContent = totalPcs;
+        document.getElementById('totalJamaCount').textContent = totalJama;
+
+        if (!filtered.length) {
+          tbody.innerHTML = '<tr><td colspan="13" class="text-center py-8 text-slate-400">No lots found. Click <strong>+ Add Row</strong> to start.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = filtered.map((row, idx) => {
+          const isFirst = idx === 0 && !q;
+          const jamaTotal = getPackingTotalPeice(row);
+          const packName = getPackingPrimaryName(row);
+
+          function renderJobCell(cellType, data, extraSub) {
+            const hasName = (data?.name || '').trim() !== '';
+            const hasPcs = (data?.peice || '').trim() !== '' || extraSub;
+            const paidClass = data?.paid ? 'cell-paid-bright' : 'hover:bg-indigo-50/70';
+            return `<td data-row-id="${row.id}" data-cell="${cellType}" class="cell-trigger cursor-pointer px-2 py-2 border-r border-slate-200 text-center align-middle transition ${paidClass}">
+              ${hasName ? `<div class="font-semibold text-xs sm:text-sm leading-tight">${escapeHtml(data.name)}</div>` : `<div class="text-slate-300 text-xs">+ Entry</div>`}
+              ${hasPcs ? `<div class="sub-text text-[11px] text-slate-600 mt-0.5">${escapeHtml(extraSub !== undefined ? extraSub : (data.peice ? data.peice + ' pcs' : ''))}</div>` : ''}
+            </td>`;
+          }
+
+          return `<tr class="hover:bg-slate-50/80 transition">
+            <!-- Lot no (Bold, manual entry supported) -->
+            <td class="sticky-lot px-2 py-2 border-r border-slate-200 text-center">
+              <input type="text" data-lot-input="${row.id}" value="${escapeHtml(row.lotNo)}" placeholder="${isFirst ? 'Lot #' : ''}" class="lot-bold w-full text-center bg-transparent border border-transparent hover:border-slate-300 focus:border-indigo-500 focus:bg-white rounded px-1 py-1 text-slate-900 text-sm focus:outline-none" />
+            </td>
+
+            <!-- peice (Click opens entry modal) -->
+            <td data-row-id="${row.id}" data-cell="peice" class="cell-trigger cursor-pointer px-2 py-2 border-r border-slate-200 text-center hover:bg-indigo-50/70 transition">
+              ${row.peice ? `<div class="font-bold text-slate-900">${escapeHtml(row.peice)}</div><div class="text-[10px] text-slate-400">${escapeHtml(row.date || '')}</div>` : `<span class="text-indigo-500 text-xs font-medium">+ Peice</span>`}
+            </td>
+
+            <!-- size (Manual or from peice modal) -->
+            <td class="px-1.5 py-2 border-r border-slate-200 text-center">
+              <input type="text" data-inline-field="size" data-row-id="${row.id}" value="${escapeHtml(row.size)}" placeholder="-" class="w-full text-center bg-transparent border border-transparent hover:border-slate-300 focus:border-indigo-500 focus:bg-white rounded px-1 py-1 text-xs sm:text-sm focus:outline-none" />
+            </td>
+
+            <!-- fabric (Manual or from peice modal) -->
+            <td class="px-1.5 py-2 border-r border-slate-200 text-center">
+              <input type="text" data-inline-field="fabric" data-row-id="${row.id}" value="${escapeHtml(row.fabric)}" placeholder="-" class="w-full text-center bg-transparent border border-transparent hover:border-slate-300 focus:border-indigo-500 focus:bg-white rounded px-1 py-1 text-xs sm:text-sm focus:outline-none" />
+            </td>
+
+            <!-- Master (Name from peice modal; click opens Paid toggle; bright green when paid) -->
+            <td data-row-id="${row.id}" data-cell="master" class="cell-trigger cursor-pointer px-2 py-2 border-r border-slate-200 text-center transition ${row.masterPaid ? 'cell-paid-bright' : 'hover:bg-amber-50'}">
+              ${row.masterName ? `<div class="font-semibold text-xs sm:text-sm">${escapeHtml(row.masterName)}</div><div class="sub-text text-[10px] text-slate-500">${row.masterPaid ? 'PAID' : 'Unpaid'}</div>` : `<span class="text-slate-300 text-xs">-</span>`}
+            </td>
+
+            <!-- Embroidery -->
+            ${renderJobCell('embroidery', row.embroidery)}
+
+            <!-- Fabrication -->
+            ${renderJobCell('fabrication', row.fabrication)}
+
+            <!-- Tanki -->
+            ${renderJobCell('tanki', row.tanki)}
+
+            <!-- washing -->
+            ${renderJobCell('washing', row.washing)}
+
+            <!-- packing (4 lines) -->
+            ${renderJobCell('packing', { name: packName, peice: jamaTotal ? String(jamaTotal) : '', paid: row.packing?.paid }, jamaTotal ? jamaTotal + ' pcs' : '')}
+
+            <!-- Jama (Auto total from packing) -->
+            <td class="px-2 py-2 border-r border-slate-200 text-center bg-sky-50/50">
+              <div class="font-extrabold text-sky-700 text-sm">${jamaTotal || 0}</div>
+              <div class="text-[10px] text-slate-400">Jama</div>
+            </td>
+
+            <!-- Laser -->
+            ${renderJobCell('laser', row.laser)}
+
+            <!-- Print -->
+            ${renderJobCell('print', row.print)}
+          </tr>`;
+        }).join('');
+      }
+
+      function addNewRow() {
+        let nextLot = '101';
+        if (state.rows.length > 0) {
+          const lastLot = (state.rows[state.rows.length - 1].lotNo || '').trim();
+          const match = lastLot.match(/^(.*?)(\d+)$/);
+          if (match) {
+            const prefix = match[1];
+            const num = parseInt(match[2], 10) + 1;
+            nextLot = prefix + String(num).padStart(match[2].length, '0');
+          } else if (lastLot === '') {
+            nextLot = String(state.rows.length + 1);
+          } else {
+            nextLot = lastLot + '-2';
+          }
+        }
+        state.rows.push(createRow(nextLot));
+        saveLocalState();
+        renderTable();
+        showToast('Row added: Lot ' + nextLot);
+      }
+
+      function openModal(html) {
+        const backdrop = document.getElementById('modalBackdrop');
+        const content = document.getElementById('modalContent');
+        content.innerHTML = html;
+        backdrop.classList.remove('hidden');
+        backdrop.classList.add('flex');
+      }
+
+      function closeModal() {
+        const backdrop = document.getElementById('modalBackdrop');
+        backdrop.classList.add('hidden');
+        backdrop.classList.remove('flex');
+      }
+
+      function getRow(id) {
+        return state.rows.find(r => r.id === id);
+      }
+
+      function openPeiceModal(rowId) {
+        const row = getRow(rowId);
+        if (!row) return;
+        openModal(`
+          <div class="p-4 sm:p-5">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
+              <div>
+                <h3 class="text-base font-bold text-slate-900">Lot <span class="text-indigo-600">${escapeHtml(row.lotNo || 'New')}</span> — Peice Entry</h3>
+                <p class="text-xs text-slate-500">Save karne par respected row me data update hoga</p>
+              </div>
+              <button type="button" data-close-modal class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold">✕</button>
+            </div>
+            <form id="peiceForm" class="space-y-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">1. Date</label>
+                <input name="date" type="date" value="${escapeHtml(row.date || todayISO())}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">2. Peice</label>
+                <input name="peice" type="number" inputmode="numeric" value="${escapeHtml(row.peice)}" placeholder="e.g. 120" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">3. Size</label>
+                <input name="size" type="text" value="${escapeHtml(row.size)}" placeholder="e.g. 28-34" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">4. Fabric</label>
+                <input name="fabric" type="text" value="${escapeHtml(row.fabric)}" placeholder="e.g. 3/1 Denim" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">5. Master Name</label>
+                <input name="masterName" type="text" value="${escapeHtml(row.masterName)}" placeholder="Master ka naam" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">6. Fabrication</label>
+                <input name="fabricationName" type="text" value="${escapeHtml(row.fabrication?.name || '')}" placeholder="Fabrication ka naam" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+              </div>
+              <div class="pt-2 flex justify-end gap-2">
+                <button type="button" data-close-modal class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold">Cancel</button>
+                <button type="submit" class="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold shadow">Save &amp; Close</button>
+              </div>
+            </form>
+          </div>
+        `);
+
+        document.getElementById('peiceForm').addEventListener('submit', (e) => {
+          e.preventDefault();
+          const fd = new FormData(e.target);
+          row.date = fd.get('date') || '';
+          row.peice = fd.get('peice') || '';
+          row.size = fd.get('size') || '';
+          row.fabric = fd.get('fabric') || '';
+          row.masterName = (fd.get('masterName') || '').trim();
+          const fabName = (fd.get('fabricationName') || '').trim();
+          if (fabName || row.fabrication.name) {
+            row.fabrication.name = fabName;
+            if (!row.fabrication.peice && row.peice) row.fabrication.peice = row.peice;
+          }
+          row.updatedBy = state.activeUser;
+          row.updatedAt = Date.now();
+          saveLocalState();
+          renderTable();
+          closeModal();
+          showToast('Lot ' + row.lotNo + ' updated');
         });
       }
 
-      if (filteredRows.length === 0) {
-        emptyState.classList.remove('hidden');
-      } else {
-        emptyState.classList.add('hidden');
+      function openMasterCellModal(rowId) {
+        const row = getRow(rowId);
+        if (!row) return;
+        openModal(`
+          <div class="p-4 sm:p-5">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
+              <h3 class="text-base font-bold text-slate-900">Master — Lot ${escapeHtml(row.lotNo)}</h3>
+              <button type="button" data-close-modal class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold">✕</button>
+            </div>
+            <div class="space-y-4">
+              <div class="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                <div class="text-xs text-slate-500">Master Name (from Peice entry)</div>
+                <div class="text-base font-bold text-slate-900 mt-0.5">${escapeHtml(row.masterName || 'Not Entered')}</div>
+                <div class="text-xs text-slate-600 mt-1">Peice: <strong>${escapeHtml(row.peice || '0')}</strong></div>
+              </div>
+              <div class="flex items-center justify-between p-3 rounded-xl border ${row.masterPaid ? 'bg-green-100 border-green-400' : 'bg-amber-50 border-amber-200'}">
+                <div>
+                  <div class="text-sm font-bold text-slate-900">Master Payment Status</div>
+                  <div class="text-xs text-slate-600">Paid ON karne par cell bright green hoga aur Top Master list me nahi judega</div>
+                </div>
+                <button id="toggleMasterPaidBtn" type="button" class="px-4 py-2 rounded-lg font-bold text-sm shadow transition ${row.masterPaid ? 'bg-green-600 text-white' : 'bg-slate-900 text-white hover:bg-slate-800'}">
+                  ${row.masterPaid ? '✓ PAID (ON)' : 'Mark Paid'}
+                </button>
+              </div>
+            </div>
+          </div>
+        `);
+
+        document.getElementById('toggleMasterPaidBtn').addEventListener('click', () => {
+          row.masterPaid = !row.masterPaid;
+          row.updatedBy = state.activeUser;
+          row.updatedAt = Date.now();
+          saveLocalState();
+          renderTable();
+          closeModal();
+          showToast(row.masterPaid ? 'Master marked PAID' : 'Master marked Unpaid');
+        });
       }
 
-      filteredRows.forEach((row, index) => {
-        const tr = document.createElement('tr');
-        tr.className = 'hover:bg-slate-50 transition border-b border-slate-200 divide-x divide-slate-200';
-        tr.dataset.id = row.id;
+      function openJobModal(rowId, cellType) {
+        const row = getRow(rowId);
+        if (!row) return;
+        const data = row[cellType];
+        const titles = {
+          embroidery: 'Embroidery',
+          fabrication: 'Fabrication',
+          tanki: 'Tanki',
+          washing: 'Washing',
+          laser: 'Laser',
+          print: 'Print'
+        };
+        const hasRate = ['embroidery', 'fabrication', 'tanki', 'washing'].includes(cellType);
+        const isWashing = cellType === 'washing';
+        const isEmbroidery = cellType === 'embroidery';
+        const btnLabel = isEmbroidery ? 'Paid' : 'Payment Done';
+        const ro = data.paid ? 'readonly disabled' : '';
+        const roClass = data.paid ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-white';
 
-        const pData = row.peiceData || {};
-        const emb = row.embroidery || {};
-        const fab = row.fabrication || {};
-        const tan = row.tanki || {};
-        const wash = row.washing || {};
-        const pack = row.packing || { lines: [] };
-        const dam = row.damage || {};
-        const prn = row.print || {};
-
-        const jamaPcs = getPackingTotal(pack);
-        const packingName = getPackingDisplayName(pack);
-
-        // Column Cells:
-        tr.innerHTML = `
-          <!-- # Index -->
-          <td class="py-2.5 px-3 text-center text-slate-400 font-mono text-[11px]">${index + 1}</td>
-
-          <!-- Lot No (Bold, Click/Edit) -->
-          <td class="py-2 px-3 text-center bg-slate-50">
-            <input type="text" class="lot-no-input w-full text-center font-extrabold text-indigo-900 text-sm bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-600 focus:bg-white focus:outline-none rounded px-1 py-0.5 uppercase tracking-wide transition" value="${escapeHtml(row.lotNo || '')}" placeholder="Lot #" data-id="${row.id}">
-          </td>
-
-          <!-- Peice (Click opens Peice Modal) -->
-          <td class="py-2 px-3 text-center cell-hover" data-action="open-peice" data-id="${row.id}" title="Click to edit cutting pieces & master">
-            <div class="font-bold text-slate-800 text-sm">${pData.peice ? escapeHtml(pData.peice) + ' <span class="text-[10px] font-normal text-slate-500">pcs</span>' : '<span class="text-slate-400 italic font-normal">+ Add</span>'}</div>
-            ${pData.date ? `<div class="text-[10px] text-slate-400 mt-0.5">${escapeHtml(pData.date)}</div>` : ''}
-          </td>
-
-          <!-- Size -->
-          <td class="py-2 px-3 text-center cell-hover" data-action="open-peice" data-id="${row.id}">
-            <span class="inline-block px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-medium text-[11px]">${escapeHtml(pData.size || '-')}</span>
-          </td>
-
-          <!-- Fabric -->
-          <td class="py-2 px-3 text-center cell-hover truncate max-w-[120px]" data-action="open-peice" data-id="${row.id}" title="${escapeHtml(pData.fabric || '')}">
-            <span class="text-slate-700 text-xs">${escapeHtml(pData.fabric || '-')}</span>
-          </td>
-
-          <!-- Master -->
-          <td class="py-2 px-3 text-center cell-hover font-medium text-slate-800" data-action="open-peice" data-id="${row.id}">
-            ${pData.master ? `<span class="text-indigo-800 font-semibold">${escapeHtml(pData.master)}</span>` : '<span class="text-slate-400 text-xs">-</span>'}
-          </td>
-
-          <!-- Embroidery -->
-          <td class="py-2 px-2 text-center cell-hover ${emb.paymentDone ? 'payment-done-cell' : ''}" data-action="open-dept" data-dept="embroidery" data-id="${row.id}" title="Click Embroidery details">
-            ${renderDeptCell(emb)}
-          </td>
-
-          <!-- Fabrication -->
-          <td class="py-2 px-2 text-center cell-hover ${fab.paymentDone ? 'payment-done-cell' : ''}" data-action="open-dept" data-dept="fabrication" data-id="${row.id}" title="Click Fabrication details">
-            ${renderDeptCell(fab)}
-          </td>
-
-          <!-- Tanki -->
-          <td class="py-2 px-2 text-center cell-hover ${tan.paymentDone ? 'payment-done-cell' : ''}" data-action="open-dept" data-dept="tanki" data-id="${row.id}" title="Click Tanki details">
-            ${renderDeptCell(tan)}
-          </td>
-
-          <!-- Washing -->
-          <td class="py-2 px-2 text-center cell-hover ${wash.paymentDone ? 'payment-done-cell' : ''}" data-action="open-dept" data-dept="washing" data-id="${row.id}" title="Click Washing details">
-            ${renderDeptCell(wash)}
-          </td>
-
-          <!-- Packing -->
-          <td class="py-2 px-2 text-center cell-hover ${pack.paymentDone ? 'payment-done-cell' : ''}" data-action="open-packing" data-id="${row.id}" title="Click Packing details (4 Lines)">
-            <div>
-              <div class="font-bold text-xs truncate max-w-[130px] mx-auto text-slate-800">${escapeHtml(packingName || '+ Enter')}</div>
-              <div class="text-[11px] text-amber-700 font-semibold mt-0.5">${jamaPcs > 0 ? jamaPcs + ' pcs' : '<span class="text-slate-400 font-normal">0 pcs</span>'}</div>
+        openModal(`
+          <div class="p-4 sm:p-5">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
+              <div>
+                <h3 class="text-base font-bold text-slate-900">${titles[cellType]} — Lot ${escapeHtml(row.lotNo)}</h3>
+                ${data.paid ? '<span class="inline-block mt-1 px-2 py-0.5 bg-green-500 text-white text-[11px] font-bold rounded-full">✓ PAID / READ ONLY</span>' : ''}
+              </div>
+              <button type="button" data-close-modal class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold">✕</button>
             </div>
-            ${pack.paymentDone ? '<span class="inline-flex items-center gap-0.5 text-[9px] bg-emerald-200 text-emerald-800 px-1 py-0.2 rounded font-bold mt-0.5">Paid ✓</span>' : ''}
-          </td>
+            <form id="jobForm" class="space-y-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Date</label>
+                <input name="date" type="date" ${ro} value="${escapeHtml(data.date || todayISO())}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm ${roClass}" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Peice</label>
+                <input name="peice" type="number" inputmode="numeric" ${ro} value="${escapeHtml(data.peice || row.peice || '')}" placeholder="Peice count" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm ${roClass}" />
+              </div>
+              ${isWashing ? `
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Washing</label>
+                <input name="washingType" type="text" ${ro} value="${escapeHtml(data.washingType || '')}" placeholder="e.g. Double Dye / Enzyme / Over Dye" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm ${roClass}" />
+              </div>` : ''}
+              ${hasRate ? `
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Rate (₹)</label>
+                <input name="rate" type="number" step="0.01" inputmode="decimal" ${ro} value="${escapeHtml(data.rate || '')}" placeholder="Rate per peice" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm ${roClass}" />
+              </div>` : ''}
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Name</label>
+                <input name="name" type="text" ${ro} value="${escapeHtml(data.name || '')}" placeholder="Karigar / Party Name" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm ${roClass}" />
+              </div>
+              <div class="pt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200">
+                <button id="jobPaidBtn" type="button" ${data.paid ? 'disabled' : ''} class="px-4 py-2 rounded-lg font-bold text-xs sm:text-sm shadow transition ${data.paid ? 'bg-green-600 text-white opacity-80 cursor-not-allowed' : 'bg-emerald-500 hover:bg-emerald-600 text-slate-950'}">
+                  ${data.paid ? '✓ ' + btnLabel : btnLabel}
+                </button>
+                <div class="flex gap-2">
+                  <button type="button" data-close-modal class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold">Close</button>
+                  ${!data.paid ? '<button type="submit" class="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold shadow">Save</button>' : ''}
+                </div>
+              </div>
+            </form>
+          </div>
+        `);
 
-          <!-- Jama (Auto Total from Packing) -->
-          <td class="py-2 px-3 text-center bg-purple-50/50">
-            <div class="text-sm font-extrabold text-purple-900">${jamaPcs}</div>
-            <div class="text-[10px] text-purple-600 font-medium">Total Pcs</div>
-          </td>
+        const form = document.getElementById('jobForm');
+        form.addEventListener('submit', (e) => {
+          e.preventDefault();
+          if (data.paid) return;
+          const fd = new FormData(form);
+          data.date = fd.get('date') || '';
+          data.peice = fd.get('peice') || '';
+          if (isWashing) data.washingType = (fd.get('washingType') || '').trim();
+          if (hasRate) data.rate = fd.get('rate') || '';
+          data.name = (fd.get('name') || '').trim();
+          row.updatedBy = state.activeUser;
+          row.updatedAt = Date.now();
+          saveLocalState();
+          renderTable();
+          closeModal();
+          showToast(titles[cellType] + ' saved');
+        });
 
-          <!-- DAMAGE -->
-          <td class="py-2 px-2 text-center cell-hover ${dam.paymentDone ? 'payment-done-cell' : ''}" data-action="open-dept" data-dept="damage" data-id="${row.id}" title="Click Damage details">
-            ${renderDeptCell(dam)}
-          </td>
+        document.getElementById('jobPaidBtn').addEventListener('click', () => {
+          if (data.paid) return;
+          const fd = new FormData(form);
+          data.date = fd.get('date') || data.date;
+          data.peice = fd.get('peice') || data.peice;
+          if (isWashing) data.washingType = (fd.get('washingType') || data.washingType || '').trim();
+          if (hasRate) data.rate = fd.get('rate') || data.rate;
+          data.name = (fd.get('name') || data.name || '').trim();
+          data.paid = true;
+          row.updatedBy = state.activeUser;
+          row.updatedAt = Date.now();
+          saveLocalState();
+          renderTable();
+          closeModal();
+          showToast(titles[cellType] + ' marked ' + btnLabel);
+        });
+      }
 
-          <!-- Print -->
-          <td class="py-2 px-2 text-center cell-hover ${prn.paymentDone ? 'payment-done-cell' : ''}" data-action="open-dept" data-dept="print" data-id="${row.id}" title="Click Print details">
-            ${renderDeptCell(prn)}
-          </td>
+      function openPackingModal(rowId) {
+        const row = getRow(rowId);
+        if (!row) return;
+        const paid = row.packing.paid;
+        const ro = paid ? 'readonly disabled' : '';
+        const roClass = paid ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-white';
 
-          <!-- Row Action Delete -->
-          <td class="py-2 px-2 text-center">
-            <button class="delete-row-btn p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition" data-id="${row.id}" title="Delete Lot">
-              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+        const linesHtml = row.packing.lines.map((line, i) => `
+          <div class="p-2.5 rounded-xl border border-slate-200 bg-slate-50/70 space-y-2">
+            <div class="text-[11px] font-bold text-slate-500 uppercase">Line ${i + 1}</div>
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+              <div>
+                <label class="block text-[10px] font-semibold text-slate-600">Date</label>
+                <input name="date_${i}" type="date" ${ro} value="${escapeHtml(line.date)}" class="w-full border border-slate-300 rounded px-2 py-1 text-xs ${roClass}" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-semibold text-slate-600">Peice</label>
+                <input name="peice_${i}" type="number" inputmode="numeric" ${ro} value="${escapeHtml(line.peice)}" placeholder="0" class="w-full border border-slate-300 rounded px-2 py-1 text-xs ${roClass}" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-semibold text-slate-600">Rate</label>
+                <input name="rate_${i}" type="number" step="0.01" inputmode="decimal" ${ro} value="${escapeHtml(line.rate)}" placeholder="0" class="w-full border border-slate-300 rounded px-2 py-1 text-xs ${roClass}" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-semibold text-slate-600">Ripit</label>
+                <input name="ripit_${i}" type="text" ${ro} value="${escapeHtml(line.ripit)}" placeholder="Ripit" class="w-full border border-slate-300 rounded px-2 py-1 text-xs ${roClass}" />
+              </div>
+              <div class="col-span-2 sm:col-span-1">
+                <label class="block text-[10px] font-semibold text-slate-600">Name</label>
+                <input name="name_${i}" type="text" ${ro} value="${escapeHtml(line.name)}" placeholder="Name" class="w-full border border-slate-300 rounded px-2 py-1 text-xs ${roClass}" />
+              </div>
+            </div>
+          </div>
+        `).join('');
+
+        openModal(`
+          <div class="p-4 sm:p-5">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-3">
+              <div>
+                <h3 class="text-base font-bold text-slate-900">Packing (4 Lines) — Lot ${escapeHtml(row.lotNo)}</h3>
+                <p class="text-xs text-slate-500">Total Packing Peice auto Jama column me jayega</p>
+              </div>
+              <button type="button" data-close-modal class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold">✕</button>
+            </div>
+            <form id="packingForm" class="space-y-2.5">
+              ${linesHtml}
+              <div class="pt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200">
+                <button id="packingPaidBtn" type="button" ${paid ? 'disabled' : ''} class="px-4 py-2 rounded-lg font-bold text-xs sm:text-sm shadow transition ${paid ? 'bg-green-600 text-white opacity-80 cursor-not-allowed' : 'bg-emerald-500 hover:bg-emerald-600 text-slate-950'}">
+                  ${paid ? '✓ Payment Done' : 'Payment Done'}
+                </button>
+                <div class="flex gap-2">
+                  <button type="button" data-close-modal class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold">Close</button>
+                  ${!paid ? '<button type="submit" class="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold shadow">Save Packing</button>' : ''}
+                </div>
+              </div>
+            </form>
+          </div>
+        `);
+
+        function readLines(formEl) {
+          const fd = new FormData(formEl);
+          for (let i = 0; i < 4; i++) {
+            row.packing.lines[i] = {
+              date: fd.get('date_' + i) || '',
+              peice: fd.get('peice_' + i) || '',
+              rate: fd.get('rate_' + i) || '',
+              ripit: (fd.get('ripit_' + i) || '').trim(),
+              name: (fd.get('name_' + i) || '').trim()
+            };
+          }
+        }
+
+        const form = document.getElementById('packingForm');
+        form.addEventListener('submit', (e) => {
+          e.preventDefault();
+          if (row.packing.paid) return;
+          readLines(form);
+          row.updatedBy = state.activeUser;
+          row.updatedAt = Date.now();
+          saveLocalState();
+          renderTable();
+          closeModal();
+          showToast('Packing saved (Jama: ' + getPackingTotalPeice(row) + ')');
+        });
+
+        document.getElementById('packingPaidBtn').addEventListener('click', () => {
+          if (row.packing.paid) return;
+          readLines(form);
+          row.packing.paid = true;
+          row.updatedBy = state.activeUser;
+          row.updatedAt = Date.now();
+          saveLocalState();
+          renderTable();
+          closeModal();
+          showToast('Packing Payment Done');
+        });
+      }
+
+      const DEPT_CONFIG = {
+        master: { label: 'Master', hasTableRate: false },
+        embroidery: { label: 'Embroidery', hasTableRate: true },
+        fabrication: { label: 'Fabrication', hasTableRate: true },
+        washing: { label: 'Washing', hasTableRate: true },
+        tanki: { label: 'Tanki', hasTableRate: true },
+        packing: { label: 'Packing', hasTableRate: true },
+        laser: { label: 'Laser', hasTableRate: false },
+        print: { label: 'Print', hasTableRate: false }
+      };
+
+      function getUnpaidDeptNames(dept) {
+        const counts = {};
+        state.rows.forEach(r => {
+          if (dept === 'master') {
+            if (!r.masterPaid && (r.masterName || '').trim()) {
+              const n = r.masterName.trim();
+              counts[n] = (counts[n] || 0) + 1;
+            }
+          } else if (dept === 'packing') {
+            if (!r.packing?.paid && Array.isArray(r.packing?.lines)) {
+              const seenInRow = new Set();
+              r.packing.lines.forEach(l => {
+                const n = (l.name || '').trim();
+                if (n && !seenInRow.has(n)) {
+                  seenInRow.add(n);
+                  counts[n] = (counts[n] || 0) + 1;
+                }
+              });
+            }
+          } else {
+            const d = r[dept];
+            if (d && !d.paid && (d.name || '').trim()) {
+              const n = d.name.trim();
+              counts[n] = (counts[n] || 0) + 1;
+            }
+          }
+        });
+        return Object.keys(counts).sort().map(n => ({ name: n, count: counts[n] }));
+      }
+
+      function getUnpaidDeptRows(dept, name) {
+        if (dept === 'master') {
+          return state.rows.filter(r => !r.masterPaid && (r.masterName || '').trim() === name);
+        }
+        if (dept === 'packing') {
+          return state.rows.filter(r => !r.packing?.paid && Array.isArray(r.packing?.lines) && r.packing.lines.some(l => (l.name || '').trim() === name));
+        }
+        return state.rows.filter(r => r[dept] && !r[dept].paid && (r[dept].name || '').trim() === name);
+      }
+
+      function getDeptRowValues(dept, r, name, entry) {
+        if (dept === 'master') {
+          const pcs = parseFloat(r.peice) || 0;
+          const rate = parseFloat(entry.rate) || 0;
+          return { pcs, rate, amount: pcs * rate, date: entry.date || r.date || '', rateReadonly: false };
+        }
+        if (dept === 'packing') {
+          const matchingLines = (r.packing?.lines || []).filter(l => (l.name || '').trim() === name);
+          let pcs = 0;
+          let amt = 0;
+          let firstDate = '';
+          let lastRate = '';
+          matchingLines.forEach(l => {
+            const lp = parseFloat(l.peice) || 0;
+            const lr = parseFloat(l.rate) || 0;
+            pcs += lp;
+            amt += lp * lr;
+            if (!firstDate && l.date) firstDate = l.date;
+            if (l.rate) lastRate = l.rate;
+          });
+          const effRate = pcs > 0 ? (amt / pcs) : (parseFloat(lastRate) || 0);
+          return { pcs, rate: effRate, amount: amt, date: entry.date || firstDate || r.date || '', rateReadonly: true };
+        }
+        const d = r[dept] || {};
+        const pcs = parseFloat(d.peice) || 0;
+        const hasTableRate = DEPT_CONFIG[dept].hasTableRate;
+        const rate = parseFloat(hasTableRate ? (d.rate || entry.rate) : entry.rate) || 0;
+        return { pcs, rate, amount: pcs * rate, date: entry.date || d.date || r.date || '', rateReadonly: hasTableRate };
+      }
+
+      function openDeptListModal(dept) {
+        const cfg = DEPT_CONFIG[dept];
+        if (!cfg) return;
+        const items = getUnpaidDeptNames(dept);
+
+        openModal(`
+          <div class="p-4 sm:p-5">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-3">
+              <div>
+                <h3 class="text-base font-bold text-slate-900">Select ${cfg.label} (Unpaid Lots Only)</h3>
+                <p class="text-xs text-slate-500">Sirf unpaid status wali lots hi hisab me judengi</p>
+              </div>
+              <button type="button" data-close-modal class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold">✕</button>
+            </div>
+            ${items.length ? `
+              <div class="space-y-2">
+                ${items.map(it => `
+                  <button type="button" data-select-hisab-name="${escapeHtml(it.name)}" class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 text-left transition">
+                    <span class="font-bold text-slate-900">${escapeHtml(it.name)}</span>
+                    <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">${it.count} Unpaid Lots</span>
+                  </button>
+                `).join('')}
+              </div>
+            ` : `<p class="text-sm text-slate-500 py-6 text-center">Koi unpaid ${cfg.label} entry nahi mili.</p>`}
+          </div>
+        `);
+
+        document.querySelectorAll('[data-select-hisab-name]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const name = btn.getAttribute('data-select-hisab-name');
+            closeModal();
+            openHisabOverlay(dept, name);
+          });
+        });
+      }
+
+      let currentHisab = { type: null, name: '' };
+
+      function openHisabOverlay(type, name) {
+        currentHisab = { type, name };
+        const overlay = document.getElementById('hisabOverlay');
+        const label = DEPT_CONFIG[type]?.label || type;
+        document.getElementById('hisabTitle').textContent = label + ' Hisab: ' + name;
+        overlay.classList.remove('hidden');
+        overlay.classList.add('flex');
+        renderHisabContent();
+      }
+
+      function renderHisabContent() {
+        const { type, name } = currentHisab;
+        if (!type || !name) return;
+
+        if (!state.hisabMeta[type]) state.hisabMeta[type] = {};
+        if (!state.hisabMeta[type][name]) {
+          state.hisabMeta[type][name] = { lastBalance: '', entries: {}, extraPayments: [] };
+        }
+        const meta = state.hisabMeta[type][name];
+        if (!Array.isArray(meta.extraPayments)) meta.extraPayments = [];
+        const label = DEPT_CONFIG[type]?.label || type;
+        const matchingRows = getUnpaidDeptRows(type, name);
+
+        let totalPeice = 0;
+        let totalAmount = 0;
+        let totalPayment = 0;
+
+        const rowsHtml = matchingRows.map(r => {
+          if (!meta.entries[r.id]) {
+            meta.entries[r.id] = { rate: '', date: '', payment: '' };
+          }
+          const entry = meta.entries[r.id];
+          const vals = getDeptRowValues(type, r, name, entry);
+          if (!entry.date && vals.date) entry.date = vals.date;
+          const payment = parseFloat(entry.payment) || 0;
+
+          totalPeice += vals.pcs;
+          totalAmount += vals.amount;
+          totalPayment += payment;
+
+          return `<tr class="border-b border-slate-200">
+            <td class="px-2.5 py-2 font-bold text-slate-900 border-r border-slate-200">${escapeHtml(r.lotNo)}</td>
+            <td class="px-2.5 py-2 text-right font-semibold border-r border-slate-200">${vals.pcs}</td>
+            <td class="px-2 py-2 border-r border-slate-200">
+              ${vals.rateReadonly
+                ? `<div class="text-right font-medium text-slate-800">${Number.isInteger(vals.rate) ? vals.rate : vals.rate.toFixed(2)}</div>`
+                : `<input type="number" step="0.01" data-hisab-field="rate" data-lot-id="${r.id}" value="${escapeHtml(entry.rate)}" placeholder="0" class="w-20 text-right border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />`
+              }
+            </td>
+            <td class="px-2.5 py-2 text-right font-bold text-slate-900 border-r border-slate-200">₹${vals.amount.toFixed(0)}</td>
+            <td class="px-2 py-2 border-r border-slate-200">
+              <input type="date" data-hisab-field="date" data-lot-id="${r.id}" value="${escapeHtml(entry.date)}" class="border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
+            </td>
+            <td class="px-2 py-2">
+              <input type="number" step="0.01" data-hisab-field="payment" data-lot-id="${r.id}" value="${escapeHtml(entry.payment)}" placeholder="0" class="w-24 text-right border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
+            </td>
+          </tr>`;
+        }).join('');
+
+        const extraRowsHtml = meta.extraPayments.map((ep, idx) => {
+          const payVal = parseFloat(ep.payment) || 0;
+          totalPayment += payVal;
+          return `<tr class="border-b border-slate-200 bg-emerald-50/40">
+            <td class="px-2.5 py-2 text-xs font-semibold text-emerald-800 border-r border-slate-200">
+              <div class="flex items-center justify-between gap-1">
+                <span>Payment #${idx + 1}</span>
+                <button type="button" data-remove-extra-pay="${idx}" class="no-print text-rose-500 hover:text-rose-700 font-bold text-xs px-1" title="Remove row">✕</button>
+              </div>
+            </td>
+            <td class="px-2.5 py-2 text-right text-slate-400 border-r border-slate-200">—</td>
+            <td class="px-2.5 py-2 text-right text-slate-400 border-r border-slate-200">—</td>
+            <td class="px-2.5 py-2 text-right text-slate-400 border-r border-slate-200">—</td>
+            <td class="px-2 py-2 border-r border-slate-200">
+              <input type="date" data-extra-pay-field="date" data-extra-idx="${idx}" value="${escapeHtml(ep.date || '')}" class="border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
+            </td>
+            <td class="px-2 py-2">
+              <input type="number" step="0.01" data-extra-pay-field="payment" data-extra-idx="${idx}" value="${escapeHtml(ep.payment || '')}" placeholder="0" class="w-24 text-right border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
+            </td>
+          </tr>`;
+        }).join('');
+
+        const lastBal = parseFloat(meta.lastBalance) || 0;
+        const grandKaam = totalAmount + lastBal;
+        const balance = grandKaam - totalPayment;
+
+        const area = document.getElementById('hisabPrintArea');
+        area.innerHTML = `
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b-2 border-slate-900 pb-3 mb-4">
+            <div>
+              <div class="text-xs uppercase tracking-wider font-bold text-slate-500">${escapeHtml(label)} Hisab Sheet (Unpaid Only)</div>
+              <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900">${escapeHtml(name)}</h2>
+            </div>
+            <div class="text-right text-xs text-slate-500">
+              <div>Date: <strong>${todayISO()}</strong></div>
+              <div>By: <strong>${escapeHtml(state.activeUser)}</strong></div>
+            </div>
+          </div>
+
+          <!-- Top Summary Cards -->
+          <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-4">
+            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+              <div class="text-[11px] text-slate-500 font-semibold">Total Peice</div>
+              <div class="text-lg font-extrabold text-slate-900">${totalPeice}</div>
+            </div>
+            <div class="p-2.5 rounded-xl bg-indigo-50 border border-indigo-200">
+              <div class="text-[11px] text-indigo-700 font-semibold">Total Amount (Kaam)</div>
+              <div id="hisabTotalAmount" class="text-lg font-extrabold text-indigo-900">₹${totalAmount.toFixed(0)}</div>
+            </div>
+            <div class="p-2.5 rounded-xl bg-amber-50 border border-amber-200">
+              <label class="block text-[11px] text-amber-800 font-semibold">Last Balance (+)</label>
+              <input id="hisabLastBalanceInput" type="number" step="0.01" value="${escapeHtml(meta.lastBalance)}" placeholder="0" class="w-full mt-0.5 bg-white border border-amber-300 rounded px-2 py-0.5 text-sm font-bold text-slate-900 focus:outline-none" />
+            </div>
+            <div class="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200">
+              <div class="text-[11px] text-emerald-700 font-semibold">Total Payment</div>
+              <div id="hisabTotalPayment" class="text-lg font-extrabold text-emerald-900">₹${totalPayment.toFixed(0)}</div>
+            </div>
+            <div class="col-span-2 sm:col-span-1 p-2.5 rounded-xl bg-slate-900 text-white">
+              <div class="text-[11px] text-slate-300 font-semibold">Final Balance</div>
+              <div id="hisabFinalBalance" class="text-lg font-extrabold text-amber-300">₹${balance.toFixed(0)}</div>
+            </div>
+          </div>
+
+          <!-- Hisab Table -->
+          <div class="overflow-x-auto border border-slate-200 rounded-xl">
+            <table class="w-full border-collapse text-xs sm:text-sm">
+              <thead class="bg-slate-800 text-white">
+                <tr>
+                  <th class="px-2.5 py-2 text-left border-r border-slate-700">Lot no</th>
+                  <th class="px-2.5 py-2 text-right border-r border-slate-700">Peice</th>
+                  <th class="px-2.5 py-2 text-right border-r border-slate-700">Rate</th>
+                  <th class="px-2.5 py-2 text-right border-r border-slate-700">Amount (Kaam)</th>
+                  <th class="px-2.5 py-2 text-left border-r border-slate-700">Date</th>
+                  <th class="px-2.5 py-2 text-right">Payment</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${(rowsHtml || extraRowsHtml) ? (rowsHtml + extraRowsHtml) : '<tr><td colspan="6" class="text-center py-6 text-slate-400">No unpaid entries</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+          <div class="mt-3 flex justify-end no-print">
+            <button id="addExtraPaymentRowBtn" type="button" class="px-3.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs sm:text-sm shadow transition">
+              + Add Date &amp; Payment Row
             </button>
-          </td>
+          </div>
         `;
 
-        tbody.appendChild(tr);
-      });
-
-      // Refresh Lucide Icons
-      if (window.lucide) {
-        window.lucide.createIcons();
-      }
-
-      attachTableListeners();
-    }
-
-    // Helper: Render individual Dept Cell content
-    function renderDeptCell(deptObj) {
-      if (!deptObj || (!deptObj.name && !deptObj.peice)) {
-        return `<div class="text-slate-300 text-xs italic font-normal">+ Entry</div>`;
-      }
-      return `
-        <div class="leading-tight">
-          <div class="font-bold text-xs truncate max-w-[120px] mx-auto text-slate-900">${escapeHtml(deptObj.name || '-')}</div>
-          <div class="text-[11px] text-slate-600 font-semibold mt-0.5">${deptObj.peice ? escapeHtml(deptObj.peice) + ' pcs' : '<span class="text-slate-400">-</span>'}</div>
-          ${deptObj.paymentDone ? '<span class="inline-flex items-center gap-0.5 text-[9px] bg-emerald-200 text-emerald-800 px-1 py-0.2 rounded font-bold mt-0.5">Paid ✓</span>' : ''}
-        </div>
-      `;
-    }
-
-    // Escape HTML to prevent XSS
-    function escapeHtml(str) {
-      if (str === null || str === undefined) return '';
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-    }
-
-    // Attach Table Interaction Event Listeners
-    function attachTableListeners() {
-      // Lot number manual inline edit
-      document.querySelectorAll('.lot-no-input').forEach(input => {
-        input.addEventListener('change', (e) => {
-          const rowId = e.target.dataset.id;
-          const row = state.rows.find(r => r.id === rowId);
-          if (row) {
-            row.lotNo = e.target.value.trim();
-            row.lastEditedBy = state.currentUser;
-            saveState();
-            showToast(`Lot No updated: ${row.lotNo}`);
-          }
+        document.getElementById('hisabLastBalanceInput').addEventListener('input', (e) => {
+          meta.lastBalance = e.target.value;
+          saveLocalState();
+          recalcHisabTotalsOnly();
         });
-      });
 
-      // Cell clicks
-      document.querySelectorAll('[data-action]').forEach(cell => {
-        cell.addEventListener('click', (e) => {
-          // If clicked input directly, ignore
-          if (e.target.tagName === 'INPUT' || e.target.closest('button')) return;
-
-          const action = cell.dataset.action;
-          const rowId = cell.dataset.id;
-          const deptKey = cell.dataset.dept;
-
-          if (action === 'open-peice') {
-            openPeiceModal(rowId);
-          } else if (action === 'open-dept') {
-            openWorkflowModal(rowId, deptKey);
-          } else if (action === 'open-packing') {
-            openPackingModal(rowId);
-          }
-        });
-      });
-
-      // Delete Row
-      document.querySelectorAll('.delete-row-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const rowId = btn.dataset.id;
-          const target = state.rows.find(r => r.id === rowId);
-          const lotLabel = target ? target.lotNo : '';
-          
-          showConfirm(`Kya aap Lot "${lotLabel}" ko delete karna chahte hain?`, () => {
-            state.rows = state.rows.filter(r => r.id !== rowId);
-            saveState();
-            renderTable();
-            showToast(`Lot ${lotLabel} delete ho gaya`, 'error');
+        area.querySelectorAll('[data-hisab-field]').forEach(inp => {
+          inp.addEventListener('input', (e) => {
+            const lotId = e.target.getAttribute('data-lot-id');
+            const field = e.target.getAttribute('data-hisab-field');
+            if (!meta.entries[lotId]) meta.entries[lotId] = { rate: '', date: '', payment: '' };
+            meta.entries[lotId][field] = e.target.value;
+            saveLocalState();
+            if (field === 'rate') {
+              renderHisabContent();
+            } else {
+              recalcHisabTotalsOnly();
+            }
           });
         });
-      });
-    }
 
-    // ========================================================
-    // MODAL 1: PEICE / CUTTING DETAILS
-    // ========================================================
-    function openPeiceModal(rowId) {
-      const row = state.rows.find(r => r.id === rowId);
-      if (!row) return;
+        document.getElementById('addExtraPaymentRowBtn').addEventListener('click', () => {
+          meta.extraPayments.push({ date: todayISO(), payment: '' });
+          saveLocalState();
+          renderHisabContent();
+        });
 
-      document.getElementById('peiceRowId').value = rowId;
-      document.getElementById('modalPeiceLotNo').textContent = row.lotNo || 'Pending';
+        area.querySelectorAll('[data-extra-pay-field]').forEach(inp => {
+          inp.addEventListener('input', (e) => {
+            const idx = parseInt(e.target.getAttribute('data-extra-idx'), 10);
+            const field = e.target.getAttribute('data-extra-pay-field');
+            if (meta.extraPayments[idx]) {
+              meta.extraPayments[idx][field] = e.target.value;
+              saveLocalState();
+              recalcHisabTotalsOnly();
+            }
+          });
+        });
 
-      const p = row.peiceData || {};
-      document.getElementById('inputPeiceDate').value = p.date || new Date().toISOString().split('T')[0];
-      document.getElementById('inputPeiceCount').value = p.peice || '';
-      document.getElementById('inputPeiceSize').value = p.size || '';
-      document.getElementById('inputPeiceFabric').value = p.fabric || '';
-      document.getElementById('inputPeiceMaster').value = p.master || '';
+        area.querySelectorAll('[data-remove-extra-pay]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const idx = parseInt(btn.getAttribute('data-remove-extra-pay'), 10);
+            meta.extraPayments.splice(idx, 1);
+            saveLocalState();
+            renderHisabContent();
+          });
+        });
 
-      document.getElementById('modalPeice').classList.remove('hidden');
-    }
-
-    document.getElementById('formPeice').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const rowId = document.getElementById('peiceRowId').value;
-      const row = state.rows.find(r => r.id === rowId);
-      if (!row) return;
-
-      row.peiceData = {
-        date: document.getElementById('inputPeiceDate').value,
-        peice: document.getElementById('inputPeiceCount').value.trim(),
-        size: document.getElementById('inputPeiceSize').value.trim(),
-        fabric: document.getElementById('inputPeiceFabric').value.trim(),
-        master: document.getElementById('inputPeiceMaster').value.trim()
-      };
-      row.lastEditedBy = state.currentUser;
-
-      saveState();
-      renderTable();
-      closeAllModals();
-      showToast(`Lot ${row.lotNo} Cutting & Master details saved!`, 'success');
-    });
-
-    // ========================================================
-    // MODAL 2: GENERIC WORKFLOW (Embroidery, Fabrication, Tanki, Washing, Damage, Print)
-    // ========================================================
-    const DEPT_CONFIGS = {
-      embroidery: { title: 'Embroidery Entry', icon: 'sparkles', hasRate: true, hasWashing: false, color: 'bg-indigo-800' },
-      fabrication: { title: 'Fabrication Entry', icon: 'scissors', hasRate: true, hasWashing: false, color: 'bg-blue-800' },
-      tanki: { title: 'Tanki Entry', icon: 'droplet', hasRate: true, hasWashing: false, color: 'bg-cyan-800' },
-      washing: { title: 'Washing Entry', icon: 'waves', hasRate: true, hasWashing: true, color: 'bg-teal-800' },
-      damage: { title: 'Damage Entry', icon: 'alert-triangle', hasRate: false, hasWashing: false, color: 'bg-rose-800' },
-      print: { title: 'Print Entry', icon: 'printer', hasRate: false, hasWashing: false, color: 'bg-violet-800' }
-    };
-
-    function openWorkflowModal(rowId, deptKey) {
-      const row = state.rows.find(r => r.id === rowId);
-      if (!row) return;
-
-      const config = DEPT_CONFIGS[deptKey] || { title: deptKey, hasRate: true, hasWashing: false, color: 'bg-slate-800' };
-      const deptData = row[deptKey] || {};
-
-      document.getElementById('workflowRowId').value = rowId;
-      document.getElementById('workflowDeptKey').value = deptKey;
-      document.getElementById('workflowModalLotNo').textContent = row.lotNo || '-';
-      document.getElementById('workflowModalTitle').textContent = config.title;
-
-      // Header styling
-      const header = document.getElementById('workflowModalHeader');
-      header.className = `${config.color} text-white px-6 py-4 flex items-center justify-between`;
-
-      // Fields configuration
-      const rateContainer = document.getElementById('fieldWorkflowRateContainer');
-      if (config.hasRate) {
-        rateContainer.classList.remove('hidden');
-      } else {
-        rateContainer.classList.add('hidden');
+        function recalcHisabTotalsOnly() {
+          let tAmt = 0;
+          let tPay = 0;
+          matchingRows.forEach(r => {
+            const en = meta.entries[r.id] || {};
+            const vals = getDeptRowValues(type, r, name, en);
+            tAmt += vals.amount;
+            tPay += parseFloat(en.payment) || 0;
+          });
+          meta.extraPayments.forEach(ep => {
+            tPay += parseFloat(ep.payment) || 0;
+          });
+          const lb = parseFloat(meta.lastBalance) || 0;
+          const bal = (tAmt + lb) - tPay;
+          document.getElementById('hisabTotalAmount').textContent = '₹' + tAmt.toFixed(0);
+          document.getElementById('hisabTotalPayment').textContent = '₹' + tPay.toFixed(0);
+          document.getElementById('hisabFinalBalance').textContent = '₹' + bal.toFixed(0);
+        }
       }
 
-      const washContainer = document.getElementById('fieldWorkflowWashingContainer');
-      if (config.hasWashing) {
-        washContainer.classList.remove('hidden');
-      } else {
-        washContainer.classList.add('hidden');
+      async function shareHisabAsJpeg() {
+        const area = document.getElementById('hisabPrintArea');
+        if (!window.html2canvas) {
+          showToast('Image library loading, try again');
+          return;
+        }
+        showToast('Generating High-Quality JPEG...');
+        try {
+          const canvas = await window.html2canvas(area, { scale: 2.5, backgroundColor: '#ffffff', useCORS: true });
+          const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
+          const fileName = (currentHisab.type + '_' + currentHisab.name + '_hisab.jpg').replace(/\s+/g, '_');
+          const file = new File([blob], fileName, { type: 'image/jpeg' });
+
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: currentHisab.name + ' Hisab',
+              text: currentHisab.name + ' Hisab Sheet'
+            });
+            showToast('Shared successfully!');
+          } else {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+            showToast('JPEG downloaded! Share on WhatsApp.');
+          }
+        } catch (err) {
+          showToast('Could not share JPEG');
+        }
       }
 
-      // Populate input values
-      document.getElementById('inputWorkflowDate').value = deptData.date || new Date().toISOString().split('T')[0];
-      document.getElementById('inputWorkflowPeice').value = deptData.peice || '';
-      document.getElementById('inputWorkflowRate').value = deptData.rate || '';
-      document.getElementById('inputWorkflowWashing').value = deptData.washing || '';
-      document.getElementById('inputWorkflowName').value = deptData.name || '';
-
-      // Payment Done state
-      const isPaid = !!deptData.paymentDone;
-      setWorkflowInputsReadOnly(isPaid);
-
-      document.getElementById('modalWorkflow').classList.remove('hidden');
-    }
-
-    function setWorkflowInputsReadOnly(isPaid) {
-      const banner = document.getElementById('workflowPaymentBanner');
-      const payBtn = document.getElementById('workflowPaymentDoneBtn');
-      const saveBtn = document.getElementById('workflowSaveBtn');
-      const inputs = [
-        document.getElementById('inputWorkflowDate'),
-        document.getElementById('inputWorkflowPeice'),
-        document.getElementById('inputWorkflowRate'),
-        document.getElementById('inputWorkflowWashing'),
-        document.getElementById('inputWorkflowName')
-      ];
-
-      if (isPaid) {
-        banner.classList.remove('hidden');
-        payBtn.classList.add('opacity-50', 'pointer-events-none');
-        saveBtn.classList.add('hidden');
-        inputs.forEach(inp => inp.setAttribute('readonly', 'true'));
-      } else {
-        banner.classList.add('hidden');
-        payBtn.classList.remove('opacity-50', 'pointer-events-none');
-        saveBtn.classList.remove('hidden');
-        inputs.forEach(inp => inp.removeAttribute('readonly'));
-      }
-    }
-
-    // Unlock workflow modal for editing if needed
-    document.getElementById('workflowUnlockBtn').addEventListener('click', () => {
-      setWorkflowInputsReadOnly(false);
-      showToast('Fields unlocked for editing', 'info');
-    });
-
-    // Save Generic Workflow Details
-    document.getElementById('formWorkflow').addEventListener('submit', (e) => {
-      e.preventDefault();
-      saveWorkflowModalData(false);
-    });
-
-    // Payment Done Button Handler
-    document.getElementById('workflowPaymentDoneBtn').addEventListener('click', () => {
-      saveWorkflowModalData(true);
-    });
-
-    function saveWorkflowModalData(markPaymentDone = false) {
-      const rowId = document.getElementById('workflowRowId').value;
-      const deptKey = document.getElementById('workflowDeptKey').value;
-      const row = state.rows.find(r => r.id === rowId);
-      if (!row) return;
-
-      if (!row[deptKey]) row[deptKey] = {};
-
-      row[deptKey].date = document.getElementById('inputWorkflowDate').value;
-      row[deptKey].peice = document.getElementById('inputWorkflowPeice').value.trim();
-      row[deptKey].rate = document.getElementById('inputWorkflowRate').value.trim();
-      row[deptKey].washing = document.getElementById('inputWorkflowWashing').value.trim();
-      row[deptKey].name = document.getElementById('inputWorkflowName').value.trim();
-
-      if (markPaymentDone) {
-        row[deptKey].paymentDone = true;
-      }
-
-      row.lastEditedBy = state.currentUser;
-      saveState();
-      renderTable();
-      closeAllModals();
-
-      if (markPaymentDone) {
-        showToast(`Payment Done marked! Cell is now Green & Read-only.`, 'success');
-      } else {
-        showToast(`${DEPT_CONFIGS[deptKey]?.title || deptKey} updated!`, 'success');
-      }
-    }
-
-    // ========================================================
-    // MODAL 3: PACKING (4 LINES MULTI-ENTRY)
-    // ========================================================
-    function openPackingModal(rowId) {
-      const row = state.rows.find(r => r.id === rowId);
-      if (!row) return;
-
-      document.getElementById('packingRowId').value = rowId;
-      document.getElementById('modalPackingLotNo').textContent = row.lotNo || '-';
-
-      const packing = row.packing || { lines: [], paymentDone: false };
-      // Ensure exactly 4 lines
-      const lines = packing.lines || [];
-      while (lines.length < 4) {
-        lines.push({ date: '', peice: '', rate: '', ripit: '', name: '' });
-      }
-
-      const container = document.getElementById('packingLinesContainer');
-      container.innerHTML = '';
-
-      lines.slice(0, 4).forEach((line, i) => {
-        const lineBox = document.createElement('div');
-        lineBox.className = 'p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2';
-        lineBox.innerHTML = `
-          <div class="flex items-center justify-between text-xs font-bold text-slate-700">
-            <span>Part ${i + 1} Entry</span>
-            <span class="text-[10px] text-slate-400 font-normal">Line #${i + 1}</span>
-          </div>
-          <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
-            <div>
-              <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Date</label>
-              <input type="date" class="packing-date w-full px-2 py-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-amber-500" value="${escapeHtml(line.date || '')}">
+      function openUserSwitchModal() {
+        openModal(`
+          <div class="p-4 sm:p-5">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
+              <h3 class="text-base font-bold text-slate-900">Select Active User</h3>
+              <button type="button" data-close-modal class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold">✕</button>
             </div>
-            <div>
-              <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Peice (Qty)</label>
-              <input type="number" min="0" class="packing-peice w-full px-2 py-1.5 text-xs border border-slate-300 rounded font-bold text-slate-800 focus:ring-1 focus:ring-amber-500" placeholder="Pcs" value="${escapeHtml(line.peice || '')}">
-            </div>
-            <div>
-              <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Rate (₹)</label>
-              <input type="number" step="0.01" class="packing-rate w-full px-2 py-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-amber-500" placeholder="Rate" value="${escapeHtml(line.rate || '')}">
-            </div>
-            <div>
-              <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Ripit (Note)</label>
-              <input type="text" class="packing-ripit w-full px-2 py-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-amber-500" placeholder="Ripit / Remarks" value="${escapeHtml(line.ripit || '')}">
-            </div>
-            <div class="col-span-2 sm:col-span-1">
-              <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Name</label>
-              <input type="text" class="packing-name w-full px-2 py-1.5 text-xs border border-slate-300 rounded font-medium focus:ring-1 focus:ring-amber-500" placeholder="Packer Name" value="${escapeHtml(line.name || '')}">
+            <div class="grid grid-cols-2 gap-3">
+              ${['Shameem', 'Saleem'].map(u => `
+                <button type="button" data-pick-user="${u}" class="p-4 rounded-xl border-2 text-center transition ${state.activeUser === u ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200 hover:border-slate-300'}">
+                  <div class="w-10 h-10 mx-auto rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-lg mb-2">${u[0]}</div>
+                  <div class="font-bold text-slate-900">${u}</div>
+                  <div class="text-[11px] text-slate-500">${state.activeUser === u ? 'Active Now' : 'Switch to ' + u}</div>
+                </button>
+              `).join('')}
             </div>
           </div>
-        `;
-        container.appendChild(lineBox);
-      });
+        `);
 
-      // Recalculate total pieces in modal
-      updateModalPackingTotal();
-
-      // Listen for piece changes to update total live in modal
-      container.querySelectorAll('.packing-peice').forEach(inp => {
-        inp.addEventListener('input', updateModalPackingTotal);
-      });
-
-      // Check payment status
-      setPackingInputsReadOnly(!!packing.paymentDone);
-
-      document.getElementById('modalPacking').classList.remove('hidden');
-    }
-
-    function updateModalPackingTotal() {
-      let total = 0;
-      document.querySelectorAll('.packing-peice').forEach(inp => {
-        const val = parseInt(inp.value, 10);
-        if (!isNaN(val)) total += val;
-      });
-      document.getElementById('modalPackingTotalPieces').textContent = total + ' pcs';
-    }
-
-    function setPackingInputsReadOnly(isPaid) {
-      const banner = document.getElementById('packingPaymentBanner');
-      const payBtn = document.getElementById('packingPaymentDoneBtn');
-      const saveBtn = document.getElementById('packingSaveBtn');
-      const inputs = document.querySelectorAll('#packingLinesContainer input');
-
-      if (isPaid) {
-        banner.classList.remove('hidden');
-        payBtn.classList.add('opacity-50', 'pointer-events-none');
-        saveBtn.classList.add('hidden');
-        inputs.forEach(inp => inp.setAttribute('readonly', 'true'));
-      } else {
-        banner.classList.add('hidden');
-        payBtn.classList.remove('opacity-50', 'pointer-events-none');
-        saveBtn.classList.remove('hidden');
-        inputs.forEach(inp => inp.removeAttribute('readonly'));
-      }
-    }
-
-    // Unlock Packing modal
-    document.getElementById('packingUnlockBtn').addEventListener('click', () => {
-      setPackingInputsReadOnly(false);
-      showToast('Packing unlocked for editing', 'info');
-    });
-
-    document.getElementById('formPacking').addEventListener('submit', (e) => {
-      e.preventDefault();
-      savePackingModalData(false);
-    });
-
-    document.getElementById('packingPaymentDoneBtn').addEventListener('click', () => {
-      savePackingModalData(true);
-    });
-
-    function savePackingModalData(markPaymentDone = false) {
-      const rowId = document.getElementById('packingRowId').value;
-      const row = state.rows.find(r => r.id === rowId);
-      if (!row) return;
-
-      const container = document.getElementById('packingLinesContainer');
-      const dates = container.querySelectorAll('.packing-date');
-      const pieces = container.querySelectorAll('.packing-peice');
-      const rates = container.querySelectorAll('.packing-rate');
-      const ripits = container.querySelectorAll('.packing-ripit');
-      const names = container.querySelectorAll('.packing-name');
-
-      const lines = [];
-      for (let i = 0; i < 4; i++) {
-        lines.push({
-          date: dates[i] ? dates[i].value : '',
-          peice: pieces[i] ? pieces[i].value.trim() : '',
-          rate: rates[i] ? rates[i].value.trim() : '',
-          ripit: ripits[i] ? ripits[i].value.trim() : '',
-          name: names[i] ? names[i].value.trim() : ''
+        document.querySelectorAll('[data-pick-user]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            state.activeUser = btn.getAttribute('data-pick-user');
+            document.getElementById('activeUserName').textContent = state.activeUser;
+            saveLocalState();
+            closeModal();
+            showToast('Switched to ' + state.activeUser);
+          });
         });
       }
 
-      if (!row.packing) row.packing = {};
-      row.packing.lines = lines;
+      let lastBackupFileHandle = null;
 
-      if (markPaymentDone) {
-        row.packing.paymentDone = true;
+      function getBackupPayloadString() {
+        return JSON.stringify({
+          app: 'LotProductionTracker',
+          version: 2,
+          exportedAt: new Date().toISOString(),
+          exportedBy: state.activeUser,
+          rows: state.rows,
+          hisabMeta: state.hisabMeta
+        }, null, 2);
       }
 
-      row.lastEditedBy = state.currentUser;
-      saveState();
-      renderTable();
-      closeAllModals();
-
-      const totalJama = getPackingTotal(row.packing);
-      if (markPaymentDone) {
-        showToast(`Packing Payment Done! Total ${totalJama} pcs synced to Jama.`, 'success');
-      } else {
-        showToast(`Packing saved: Total ${totalJama} pcs recorded in Jama!`, 'success');
-      }
-    }
-
-    // ========================================================
-    // ADD ROW LOGIC (Auto increment Lot No)
-    // ========================================================
-    function handleAddRow() {
-      const nextLot = getNextLotNumber();
-      const newRow = createNewLotRow(nextLot);
-      state.rows.push(newRow);
-      saveState();
-      renderTable();
-      showToast(`Nayi row jud gayi: Lot No. ${nextLot}`, 'success');
-
-      // Scroll to bottom
-      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-    }
-
-    document.getElementById('addRowBtn').addEventListener('click', handleAddRow);
-    document.getElementById('addFirstRowBtn').addEventListener('click', handleAddRow);
-
-    // ========================================================
-    // STATS & KPIS CALCULATION
-    // ========================================================
-    function updateKpis() {
-      const totalLots = state.rows.length;
-      let totalCutting = 0;
-      let totalJama = 0;
-      let totalDamage = 0;
-      let paymentsDoneCount = 0;
-
-      state.rows.forEach(r => {
-        // Cutting pieces
-        const cut = parseInt(r.peiceData?.peice, 10);
-        if (!isNaN(cut)) totalCutting += cut;
-
-        // Jama pieces from packing
-        const jm = getPackingTotal(r.packing);
-        totalJama += jm;
-
-        // Damage pieces
-        const dam = parseInt(r.damage?.peice, 10);
-        if (!isNaN(dam)) totalDamage += dam;
-
-        // Count paid cells
-        if (r.embroidery?.paymentDone) paymentsDoneCount++;
-        if (r.fabrication?.paymentDone) paymentsDoneCount++;
-        if (r.tanki?.paymentDone) paymentsDoneCount++;
-        if (r.washing?.paymentDone) paymentsDoneCount++;
-        if (r.packing?.paymentDone) paymentsDoneCount++;
-        if (r.damage?.paymentDone) paymentsDoneCount++;
-        if (r.print?.paymentDone) paymentsDoneCount++;
-      });
-
-      const pendingPcs = Math.max(0, totalCutting - totalJama - totalDamage);
-
-      document.getElementById('kpiTotalLots').textContent = totalLots;
-      document.getElementById('kpiCuttingPcs').textContent = totalCutting.toLocaleString();
-      document.getElementById('kpiJamaPcs').textContent = totalJama.toLocaleString();
-      document.getElementById('kpiDamagePcs').textContent = totalDamage.toLocaleString();
-      document.getElementById('kpiPendingPcs').textContent = pendingPcs.toLocaleString();
-      document.getElementById('kpiPaymentsDone').textContent = paymentsDoneCount;
-    }
-
-    // ========================================================
-    // MODAL CLOSE & UTILS
-    // ========================================================
-    function closeAllModals() {
-      document.querySelectorAll('#modalPeice, #modalWorkflow, #modalPacking, #modalCloudSync, #modalHelp').forEach(m => {
-        m.classList.add('hidden');
-      });
-    }
-
-    document.querySelectorAll('.modal-close-btn').forEach(btn => {
-      btn.addEventListener('click', closeAllModals);
-    });
-
-    // Close on escape key
-    window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeAllModals();
-    });
-
-    // Header buttons
-    document.getElementById('openCloudSyncBtn').addEventListener('click', () => {
-      document.getElementById('modalCloudSync').classList.remove('hidden');
-    });
-
-    document.getElementById('openHelpBtn').addEventListener('click', () => {
-      document.getElementById('modalHelp').classList.remove('hidden');
-    });
-
-    // User change
-    document.getElementById('currentUserSelect').addEventListener('change', (e) => {
-      state.currentUser = e.target.value;
-      showToast(`Switched active user to: ${state.currentUser}`, 'info');
-    });
-
-    // Search filter
-    const searchInput = document.getElementById('searchInput');
-    const clearSearchBtn = document.getElementById('clearSearchBtn');
-
-    searchInput.addEventListener('input', () => {
-      if (searchInput.value.trim()) {
-        clearSearchBtn.classList.remove('hidden');
-      } else {
-        clearSearchBtn.classList.add('hidden');
-      }
-      renderTable();
-    });
-
-    clearSearchBtn.addEventListener('click', () => {
-      searchInput.value = '';
-      clearSearchBtn.classList.add('hidden');
-      renderTable();
-    });
-
-    // ========================================================
-    // EXPORT & PRINT
-    // ========================================================
-    document.getElementById('printTableBtn').addEventListener('click', () => {
-      window.print();
-    });
-
-    document.getElementById('exportCsvBtn').addEventListener('click', () => {
-      if (state.rows.length === 0) {
-        showToast('Export karne ke liye koi data nahi hai', 'error');
-        return;
-      }
-
-      let csv = 'Lot No,Cutting Date,Peice,Size,Fabric,Master,Embroidery Name,Embroidery Pcs,Embroidery Paid,Fabrication Name,Fabrication Pcs,Fabrication Paid,Tanki Name,Tanki Pcs,Tanki Paid,Washing Name,Washing Pcs,Washing Paid,Packing Total (Jama),Packing Paid,Damage Name,Damage Pcs,Print Name,Print Pcs\n';
-
-      state.rows.forEach(r => {
-        const p = r.peiceData || {};
-        const emb = r.embroidery || {};
-        const fab = r.fabrication || {};
-        const tan = r.tanki || {};
-        const wash = r.washing || {};
-        const pack = r.packing || {};
-        const dam = r.damage || {};
-        const prn = r.print || {};
-        const jama = getPackingTotal(pack);
-
-        csv += `"${r.lotNo || ''}","${p.date || ''}","${p.peice || ''}","${p.size || ''}","${p.fabric || ''}","${p.master || ''}","${emb.name || ''}","${emb.peice || ''}","${emb.paymentDone ? 'Yes' : 'No'}","${fab.name || ''}","${fab.peice || ''}","${fab.paymentDone ? 'Yes' : 'No'}","${tan.name || ''}","${tan.peice || ''}","${tan.paymentDone ? 'Yes' : 'No'}","${wash.name || ''}","${wash.peice || ''}","${wash.paymentDone ? 'Yes' : 'No'}","${jama}","${pack.paymentDone ? 'Yes' : 'No'}","${dam.name || ''}","${dam.peice || ''}","${prn.name || ''}","${prn.peice || ''}"\n`;
-      });
-
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.setAttribute('href', url);
-      link.setAttribute('download', `lot_production_register_${new Date().toISOString().split('T')[0]}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      showToast('CSV Export download shuru ho gaya!', 'success');
-    });
-
-    // Backup & Restore
-    document.getElementById('downloadBackupBtn').addEventListener('click', () => {
-      const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(state, null, 2));
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute('href', dataStr);
-      downloadAnchor.setAttribute('download', `addis_lot_tracker_backup_${Date.now()}.json`);
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
-      showToast('Backup JSON downloaded successfully');
-    });
-
-    document.getElementById('restoreFileInput').addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        try {
-          const imported = JSON.parse(event.target.result);
-          if (imported && Array.isArray(imported.rows)) {
-            state.rows = imported.rows;
-            saveState();
-            renderTable();
-            closeAllModals();
-            showToast('Data backup successfully restored!', 'success');
-          } else {
-            showToast('Invalid backup file format', 'error');
-          }
-        } catch (err) {
-          showToast('JSON parse error: File sahi nahi hai', 'error');
+      function applyImportedData(parsed) {
+        if (!parsed || !Array.isArray(parsed.rows)) {
+          showToast('Invalid backup file');
+          return false;
         }
-      };
-      reader.readAsText(file);
-    });
-
-    // In-Page Toast Notifications
-    function showToast(message, type = 'info') {
-      const container = document.getElementById('toastContainer');
-      if (!container) return;
-
-      const toast = document.createElement('div');
-      let bg = 'bg-slate-800 text-white';
-      let icon = 'info';
-
-      if (type === 'success') {
-        bg = 'bg-emerald-700 text-white';
-        icon = 'check-circle';
-      } else if (type === 'error') {
-        bg = 'bg-rose-700 text-white';
-        icon = 'alert-circle';
+        state.rows = parsed.rows.map(r => {
+          if (!r.laser && r.damage) { r.laser = r.damage; delete r.damage; }
+          if (!r.laser) r.laser = { date: '', peice: '', name: '', paid: false };
+          return r;
+        });
+        state.hisabMeta = Object.assign({ master: {}, embroidery: {}, fabrication: {}, washing: {}, tanki: {}, packing: {}, laser: {}, print: {} }, parsed.hisabMeta || {});
+        saveLocalState();
+        renderTable();
+        return true;
       }
 
-      toast.className = `${bg} px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2.5 text-xs font-medium pointer-events-auto transition transform translate-y-2 opacity-0`;
-      toast.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4"></i> <span>${escapeHtml(message)}</span>`;
-      container.appendChild(toast);
+      async function saveBackupToUserLocation(useLastHandle) {
+        const payload = getBackupPayloadString();
+        const fileName = 'lot_tracker_backup_' + todayISO() + '.json';
 
-      if (window.lucide) window.lucide.createIcons();
+        if (window.showSaveFilePicker) {
+          try {
+            let handle = (useLastHandle && lastBackupFileHandle) ? lastBackupFileHandle : null;
+            if (!handle) {
+              handle = await window.showSaveFilePicker({
+                suggestedName: fileName,
+                types: [{ description: 'JSON Backup File', accept: { 'application/json': ['.json'] } }]
+              });
+              lastBackupFileHandle = handle;
+            }
+            const writable = await handle.createWritable();
+            await writable.write(payload);
+            await writable.close();
+            showToast('Backup saved to selected location!');
+            return;
+          } catch (err) {
+            if (err && err.name === 'AbortError') return;
+          }
+        }
 
-      // Animate in
-      requestAnimationFrame(() => {
-        toast.classList.remove('translate-y-2', 'opacity-0');
+        const blob = new Blob([payload], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        showToast('Backup downloaded to device storage!');
+      }
+
+      async function restoreBackupFromUserLocation() {
+        if (window.showOpenFilePicker) {
+          try {
+            const [handle] = await window.showOpenFilePicker({
+              multiple: false,
+              types: [{ description: 'JSON Backup File', accept: { 'application/json': ['.json'] } }]
+            });
+            const file = await handle.getFile();
+            const text = await file.text();
+            const parsed = JSON.parse(text);
+            if (applyImportedData(parsed)) {
+              closeModal();
+              showToast('Data restored from selected file!');
+            }
+            return;
+          } catch (err) {
+            if (err && err.name === 'AbortError') return;
+          }
+        }
+        const hiddenInput = document.createElement('input');
+        hiddenInput.type = 'file';
+        hiddenInput.accept = '.json,application/json';
+        hiddenInput.onchange = (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = () => {
+            try {
+              const parsed = JSON.parse(reader.result);
+              if (applyImportedData(parsed)) {
+                closeModal();
+                showToast('Data restored from selected file!');
+              }
+            } catch (err) {
+              showToast('Invalid backup file');
+            }
+          };
+          reader.readAsText(file);
+        };
+        hiddenInput.click();
+      }
+
+      function openBackupRestoreModal() {
+        openModal(`
+          <div class="p-4 sm:p-5">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
+              <div>
+                <h3 class="text-base font-bold text-slate-900">Local Memory Backup &amp; Restore</h3>
+                <p class="text-xs text-slate-500">Apni pasand ke folder / location me backup save ya restore karein</p>
+              </div>
+              <button type="button" data-close-modal class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold">✕</button>
+            </div>
+            <div class="space-y-3">
+              <div class="p-3.5 rounded-xl bg-sky-50 border border-sky-200 space-y-2">
+                <div class="text-sm font-bold text-slate-900">1. Backup to Selected Location</div>
+                <p class="text-xs text-slate-600">Phone ya PC memory me apna folder chun kar JSON backup file save karein.</p>
+                <div class="flex flex-wrap gap-2">
+                  <button id="modalBackupSaveBtn" type="button" class="px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs sm:text-sm font-bold shadow">
+                    📁 Choose Location &amp; Save Backup
+                  </button>
+                  ${lastBackupFileHandle ? `<button id="modalBackupQuickBtn" type="button" class="px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow">⚡ Save to Last File</button>` : ''}
+                </div>
+              </div>
+
+              <div class="p-3.5 rounded-xl bg-amber-50 border border-amber-200 space-y-2">
+                <div class="text-sm font-bold text-slate-900">2. Restore from Selected Location</div>
+                <p class="text-xs text-slate-600">Pehle se saved backup file ko phone memory se chun kar data wapas laayein.</p>
+                <button id="modalRestoreBtn" type="button" class="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs sm:text-sm font-bold shadow">
+                  📂 Choose File &amp; Restore Data
+                </button>
+              </div>
+            </div>
+          </div>
+        `);
+
+        document.getElementById('modalBackupSaveBtn').addEventListener('click', () => saveBackupToUserLocation(false));
+        const quickBtn = document.getElementById('modalBackupQuickBtn');
+        if (quickBtn) quickBtn.addEventListener('click', () => saveBackupToUserLocation(true));
+        document.getElementById('modalRestoreBtn').addEventListener('click', restoreBackupFromUserLocation);
+      }
+
+      function openSyncSettingsModal() {
+        openModal(`
+          <div class="p-4 sm:p-5">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-3">
+              <div>
+                <h3 class="text-base font-bold text-slate-900">Auto-Sync Settings (Shameem &amp; Saleem)</h3>
+                <p class="text-xs text-slate-500">Dono Android phones ko sync karne ke liye Firebase Realtime DB URL daalein</p>
+              </div>
+              <button type="button" data-close-modal class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold">✕</button>
+            </div>
+            <form id="syncForm" class="space-y-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Firebase Realtime Database URL</label>
+                <input name="firebaseUrl" type="url" value="${escapeHtml(state.syncConfig.firebaseUrl)}" placeholder="https://your-app-default-rtdb.firebaseio.com" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-indigo-500" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Factory Sync Code (Same on both phones)</label>
+                <input name="roomCode" type="text" value="${escapeHtml(state.syncConfig.roomCode)}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-indigo-500" />
+              </div>
+              <div class="flex flex-wrap gap-2 pt-2 border-t border-slate-200">
+                <button type="button" id="exportJsonBtn" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700">⬇ Export Backup</button>
+                <label class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 cursor-pointer">
+                  ⬆ Import Backup
+                  <input id="importJsonInput" type="file" accept=".json" class="hidden" />
+                </label>
+                <button type="submit" class="ml-auto px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow">Save &amp; Sync</button>
+              </div>
+            </form>
+          </div>
+        `);
+
+        document.getElementById('syncForm').addEventListener('submit', (e) => {
+          e.preventDefault();
+          const fd = new FormData(e.target);
+          state.syncConfig.firebaseUrl = (fd.get('firebaseUrl') || '').trim();
+          state.syncConfig.roomCode = (fd.get('roomCode') || 'shameem-saleem-factory').trim();
+          saveLocalState();
+          startSyncPolling();
+          closeModal();
+          showToast('Sync settings saved');
+        });
+
+        document.getElementById('exportJsonBtn').addEventListener('click', () => {
+          const blob = new Blob([JSON.stringify({ rows: state.rows, hisabMeta: state.hisabMeta }, null, 2)], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'lot_tracker_backup_' + todayISO() + '.json';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+          showToast('Backup exported');
+        });
+
+        document.getElementById('importJsonInput').addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = () => {
+            try {
+              const parsed = JSON.parse(reader.result);
+              if (parsed && Array.isArray(parsed.rows)) {
+                state.rows = parsed.rows;
+                state.hisabMeta = parsed.hisabMeta || state.hisabMeta;
+                saveLocalState();
+                renderTable();
+                closeModal();
+                showToast('Backup imported!');
+              }
+            } catch (err) {
+              showToast('Invalid backup file');
+            }
+          };
+          reader.readAsText(file);
+        });
+      }
+
+      document.addEventListener('click', (e) => {
+        if (e.target.closest('[data-close-modal]') || e.target.id === 'modalBackdrop') {
+          closeModal();
+          return;
+        }
+        const cell = e.target.closest('.cell-trigger');
+        if (cell) {
+          const rowId = cell.getAttribute('data-row-id');
+          const cellType = cell.getAttribute('data-cell');
+          if (cellType === 'peice') openPeiceModal(rowId);
+          else if (cellType === 'master') openMasterCellModal(rowId);
+          else if (cellType === 'packing') openPackingModal(rowId);
+          else openJobModal(rowId, cellType);
+        }
       });
 
-      // Remove after 3.5s
-      setTimeout(() => {
-        toast.classList.add('opacity-0', 'translate-y-2');
-        setTimeout(() => toast.remove(), 300);
-      }, 3500);
-    }
+      document.getElementById('lotTableBody').addEventListener('input', (e) => {
+        const lotId = e.target.getAttribute('data-lot-input');
+        if (lotId) {
+          const row = getRow(lotId);
+          if (row) {
+            row.lotNo = e.target.value;
+            row.updatedBy = state.activeUser;
+            row.updatedAt = Date.now();
+            saveLocalState();
+          }
+          return;
+        }
+        const inlineField = e.target.getAttribute('data-inline-field');
+        if (inlineField) {
+          const rowId = e.target.getAttribute('data-row-id');
+          const row = getRow(rowId);
+          if (row) {
+            row[inlineField] = e.target.value;
+            row.updatedBy = state.activeUser;
+            row.updatedAt = Date.now();
+            saveLocalState();
+          }
+        }
+      });
 
-    // In-Page Custom Confirm Dialog
-    function showConfirm(question, onConfirm) {
-      const existing = document.getElementById('customConfirmModal');
-      if (existing) existing.remove();
+      document.getElementById('addRowBtn').addEventListener('click', addNewRow);
+      document.querySelectorAll('[data-hisab-dept]').forEach(btn => {
+        btn.addEventListener('click', () => openDeptListModal(btn.getAttribute('data-hisab-dept')));
+      });
+      document.getElementById('userSwitchBtn').addEventListener('click', openUserSwitchModal);
+      document.getElementById('syncSettingsBtn').addEventListener('click', openSyncSettingsModal);
+      document.getElementById('backupRestoreBtn').addEventListener('click', openBackupRestoreModal);
 
-      const modal = document.createElement('div');
-      modal.id = 'customConfirmModal';
-      modal.className = 'fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4';
-      modal.innerHTML = `
-        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-5 text-center space-y-3">
-          <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto">
-            <i data-lucide="alert-triangle" class="w-6 h-6"></i>
-          </div>
-          <h4 class="text-sm font-bold text-slate-800">${escapeHtml(question)}</h4>
-          <p class="text-xs text-slate-500">Yeh action undo nahi kiya ja sakega.</p>
-          <div class="pt-2 flex gap-2">
-            <button id="cancelConfirmBtn" class="flex-1 py-2 text-xs border border-slate-300 rounded-lg text-slate-700 font-semibold hover:bg-slate-100">Cancel</button>
-            <button id="okConfirmBtn" class="flex-1 py-2 text-xs bg-rose-600 rounded-lg text-white font-semibold hover:bg-rose-700">Delete</button>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(modal);
-      if (window.lucide) window.lucide.createIcons();
+      document.getElementById('hisabBackBtn').addEventListener('click', () => {
+        document.getElementById('hisabOverlay').classList.add('hidden');
+        document.getElementById('hisabOverlay').classList.remove('flex');
+      });
+      document.getElementById('hisabPrintBtn').addEventListener('click', () => window.print());
+      document.getElementById('hisabShareBtn').addEventListener('click', shareHisabAsJpeg);
 
-      document.getElementById('cancelConfirmBtn').onclick = () => modal.remove();
-      document.getElementById('okConfirmBtn').onclick = () => {
-        modal.remove();
-        onConfirm();
-      };
-    }
+      const searchInput = document.getElementById('searchInput');
+      const clearSearchBtn = document.getElementById('clearSearchBtn');
+      searchInput.addEventListener('input', () => {
+        currentSearch = searchInput.value;
+        clearSearchBtn.classList.toggle('hidden', !currentSearch);
+        renderTable();
+      });
+      clearSearchBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        currentSearch = '';
+        clearSearchBtn.classList.add('hidden');
+        renderTable();
+      });
 
-    // App Initialization
-    window.addEventListener('DOMContentLoaded', () => {
-      loadState();
-      initSync();
+      loadLocalState();
+      document.getElementById('activeUserName').textContent = state.activeUser;
       renderTable();
-      updateKpis();
-    });
+      startSyncPolling();
+    })();
   </script>
 </body>
 </html>
