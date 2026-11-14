@@ -15,8 +15,23 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
+    #modalContent input, #modalContent select, #modalContent textarea {
+      background-color: #0b0d11;
+      color: #f8fafc;
+      border-color: #3f3f46;
+    }
+    #modalContent input:disabled, #modalContent input[readonly] {
+      background-color: #27272a !important;
+      color: #a1a1aa !important;
+    }
+    #modalContent label { color: #d4d4d8; }
+    #modalContent h3 { color: #fbbf24; }
+    #modalContent p.text-slate-500 { color: #a1a1aa; }
+    #modalContent .bg-slate-50, #modalContent .bg-slate-100 { background-color: #20242e; color: #f4f4f5; border-color: #3f3f46; }
+    #modalContent .text-slate-900, #modalContent .text-slate-700 { color: #f4f4f5; }
+    #modalContent .border-slate-200 { border-color: #2e3440; }
     * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; -webkit-tap-highlight-color: transparent; }
-    body { background: #f1f5f9; color: #0f172a; }
+    body { background: #0b0d11; color: #f8fafc; }
     .lot-bold { font-weight: 800; letter-spacing: 0.02em; }
     .cell-paid-bright {
       background-color: #22c55e !important;
@@ -51,16 +66,17 @@
       position: sticky;
       left: 0;
       z-index: 10;
-      background: #ffffff;
-      box-shadow: 2px 0 6px -2px rgba(15, 23, 42, 0.12);
+      background: #14171f;
+      box-shadow: 2px 0 8px -2px rgba(0, 0, 0, 0.65);
     }
     thead .sticky-lot {
       z-index: 20;
-      background: #0f172a;
+      background: #f59e0b;
+      color: #09090b;
     }
     .table-scroll::-webkit-scrollbar { height: 8px; width: 8px; }
-    .table-scroll::-webkit-scrollbar-track { background: #e2e8f0; }
-    .table-scroll::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+    .table-scroll::-webkit-scrollbar-track { background: #14171f; }
+    .table-scroll::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
     @media print {
       body * { visibility: hidden !important; }
       #hisabPrintArea, #hisabPrintArea * { visibility: visible !important; }
@@ -79,98 +95,97 @@
 </head>
 <body class="min-h-screen flex flex-col">
 
-  <!-- Top Bar -->
-  <header class="bg-slate-900 text-white shadow-md sticky top-0 z-30">
-    <div class="max-w-full mx-auto px-3 py-2.5 flex flex-wrap items-center justify-between gap-2">
-      <!-- Brand & Active User -->
-      <div class="flex items-center gap-2.5">
-        <div class="w-9 h-9 rounded-lg bg-indigo-500 flex items-center justify-center font-extrabold text-lg shadow">L</div>
-        <div>
-          <h1 class="text-sm sm:text-base font-bold leading-tight">Lot Production Tracker</h1>
-          <div class="flex items-center gap-2 text-xs text-slate-300">
-            <button id="userSwitchBtn" type="button" class="inline-flex items-center gap-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 px-2 py-0.5 rounded-full text-xs font-semibold text-amber-300 transition">
-              <span id="activeUserDot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
-              <span>User: <strong id="activeUserName">Shameem</strong></span>
-              <span class="text-slate-400">▾</span>
-            </button>
-            <button id="syncSettingsBtn" type="button" class="inline-flex items-center gap-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 px-2 py-0.5 rounded-full text-xs transition">
-              <span id="syncStatusDot" class="w-2 h-2 rounded-full bg-sky-400"></span>
-              <span id="syncStatusText">Local Auto-Sync</span>
-            </button>
-            <button id="appModeToggleBtn" type="button" class="inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 border border-emerald-500 px-2.5 py-0.5 rounded-full text-xs font-bold text-white transition">
-              ✏️ Edit Mode
-            </button>
-          </div>
-        </div>
+  <!-- Top Bar (Amber-Gold & Obsidian Dark Theme) -->
+  <header class="bg-[#12151c] text-white shadow-lg sticky top-0 z-30 border-b border-zinc-800">
+    <!-- Amber-Gold Brand Banner -->
+    <div class="bg-gradient-to-r from-amber-500 via-amber-400 to-orange-500 text-zinc-950 px-3 py-2 flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASMAAABUCAIAAABGEsa3AAABCGlDQ1BJQ0MgUHJvZmlsZQAAeJxjYGA8wQAELAYMDLl5JUVB7k4KEZFRCuwPGBiBEAwSk4sLGHADoKpv1yBqL+viUYcLcKakFicD6Q9ArFIEtBxopAiQLZIOYWuA2EkQtg2IXV5SUAJkB4DYRSFBzkB2CpCtkY7ETkJiJxcUgdT3ANk2uTmlyQh3M/Ck5oUGA2kOIJZhKGYIYnBncAL5H6IkfxEDg8VXBgbmCQixpJkMDNtbGRgkbiHEVBYwMPC3MDBsO48QQ4RJQWJRIliIBYiZ0tIYGD4tZ2DgjWRgEL7AwMAVDQsIHG5TALvNnSEfCNMZchhSgSKeDHkMyQx6QJYRgwGDIYMZAKbWPz9HbOBQAABIS0lEQVR42u1dd3hURdc/d+7dkt4LoSSEhITeq/TeewcRBeFFOqJI70VAkA4iUkXpJoAgPaEnpCcb0nsvm0022XbvPd8fk6wxFFER1C/niT5Lsjs7d2Z+p58zDCJCNVVTNf3NxAFAcHDwZ599RiFXDbxqqqY3SCzL8jw/atQoDgASEhJu375dvSjVVE1/E9WvX58DAJlMxrIsy7KCIFQvSjVV05uVaYIgmJqaclRjpBirRlo1VdMbJ0EQRFEk1QtRTdX0FqgaadVUTdVIq6Zq+q8Q9//BJGUYprI5+q8gphIZf/mKGAzDMKIoiqL4902GEPI6M/m7J/NWF/+3v0cArKBqpFVdsn+Xm8d4oAVBeOexTYZhWJalmEHEP4ocQojxuNJnMb6mA/4DF58lRBQE8fewxBICDPOHnoL7b8MMETt27Dh69GiZTHbjxo2LFy/SX/5jMSYIAmUNHMPU8/Dw9PLybtzY0cXFwtJSKpUSlq36MUQgBHhemZ19+vTpJ0+evJEHNE6G53kAsDA19axfv36DBh7e3naOjqZmZhKp9DmODwDAECJqNKmJiYcPH05LS3u1rvHPwduvzysIAGDn5ubm7u5sa1Pb0cnS1BQADbygKitLy83NyMlJjIvT5ucbn+I1WTmDiD4+PsOGDfuPxdPoRrZp0+bBgwccV85QJk6ceOrUqX/gkxJCqMSQcGzvXr1Hjh/ftW9fdycnBgAMesjOAZUKeB6qnEsGgOWwpIRxdAQPDwDw9PSMj483jvanl46uj4Od3eDBg4eNH9+ucydHE1MAAHUp5GRDaRmIPGDV0wosEZRFbLNmYGX18MGDiePHN2vVqkGTpu6eHibm5oSQMrU6Pjo66NGjJ0+elJSWVn7wf8LiO9WtO2zYsN4eHl4qlXm0Qp6VJSnTgE6HosBwEpDLdBaWmjp1ctzcIjnuamjIz76X9MXFlYX2yxZzzpw5/2WZhogrli3jOC7r1ClDQUGtWbNmTp/+ww8//NPsB7oZLMt++MGUBV8sbujpCWUa9ZXLKb6+6tAQPjVNLC6ueqorXvAAYGvr+uOPTh4ed27fzsvL+4syjU7G2clpwYIFH82ebW9mBqmpBYcPx1+9pol5JmRkiFrd86PT+egAzLp0rnfye6mpSZt2bRWpqSYAUKKG9DQoKgLeAO51YdRIkMkzCgtPHDy4bftXBfkF7xZshGVFQTC1tFy8dOkENzeLCxeKDx0ycJymYYOCmrVKPOz0piY8gARBXlxskZMt97vrfDLNxdx86IiRaYcO7fHzO7Zvn1GB+p3j+NNPP9El/i8JNADo2aOHyPOCwRDdvHl0q1aiIBj0+qZNmlA29o+aapMmTe75+yMiZmUlzPxfiLV1MEAYQCSAAiCaY6OlkmipJFrKRUu4aMIoACIAQgBiR48Wc3IQ8eyZM2ZmZkZb6K+YiGPHjMnIzELE0ocPo/v3DyIkBCCcToaBaAlXPhkJFy1hoxmIAggDCLEwT1u5wugwEMvKsr/8MqJx42ATk6cAQQBBAE8Bgi0tn/Xrp3nwABFjY2KaN2/+DreDfm/D5s2D795VzZ0TAhBub5+5dUtxcHB2QsI1X98T3357YNeuPTt2fLN796mjR32uXn0YpXjw08XEuXPDAaJM5Oqvtp0/f97SxuZlK0/3d86cOf9BpFE7XiKRBDx6hIi5x46FAoTLpMVBQYi4cf16ADDqk/8EmA0dOrRIqUTErEOHQmxswgCiABQcq5BwUQAR9BwDBAMEA9BTG+rikvD++7qAAETML1LNmzPH+Ox/ZdEAYN3atYiIvCFh9qxggAgABYCCY6M4NgogHCC0YjLlyCEkwts7bckSzMpCxNLSUlEQhLKy2N69gwEi6bMQRsESBUsUhKFPFASQsXcvIqYkJTk5Ob3Iz/eWYFavQYP0iIiMLl0eASQPGZKfnV0cGhZmZ6ewsY5zsE+qUSPFzi7F1jbVxSXJpUZsvXrPxo6NuPrztz4+yXfuxDdt+higePbs27dvm5iZUQ/Q/yOkURQtnD8fEXU5OVGubgpCwgDSli5FxMS4OFNT079yKN/sTg8ZPNig0yFi8qefhtBjLeGiCBNFD6WFeVy3rslTpuStWaP+5qD2hx+Ea9cwLo7KjWcpKatXrqxZo4bRMf0XMf/l5s2IqMvNje7aNZQihGOjGIhiIAIgsqZL/IABqTNnFm7dUnr4sO7sWfHuHQowEfFBYOC4MWMu/fQTIuafPRsCEC2VRLEkijB0hPIfwiikXBRAmKmJOi4OESmbePu8jxBCCLl640bhh1MeA6R26RIWEDBq2rTCn3+mzI7yuCjXOtHeXiEAERW/SW/cKODnnwdOmFD49Gm0S43HAIb9+9fv2PFCEP1nkUaPr7e3d7FSKSImz5gRBqCQSiIBFPU9DSUliDho0KB3/ryU/3l6eioLCxExbeXKEAAFx0WxhB7HKAYi5PKS+/cRUYuYqlRGpqQ8jIj42c/vu1OnFnz6afs2bSUVj/AXn4V+/P1JkxBRr1bH9OwZRnFCQcKSCIBnTZoY8vMRsVgQEvLyQhMS/IKDfW7e2HPo0JQPP2xQvz4d6uH9+4iYvnp1GCFGlD7/o2BJGEDBxYuCIBw6ePDtbwc9J227dNE8fhQKEMIwwqVLo6dM8WzUSPfoUSjDKFgSRZgIllU+DQwtLMxdty6MYRQyaThAtJVlaXIyJ5Fs2bevdMP6p4TE1KqVHhFu6+j4PAc3Iu0/5RGhfJ3juEMHD1pYWysvXSr65hspyyLPE0IMsXHFt27ZDBkyZfLky5cvv3P/MiJu2bzZ2sZGefNmwbp1Mo5FUfjVu4gAMilXty4gLl+4cPeePXqexxcJcGNg4E8vmiiKjo6O27ZuRYDcLVvKbt2SSyWiwfCrUxGAtbPj7OwMOm2v9zoFBQUJL+EdOp0OEVlLSxBFIOzLkE29B6yLCyEkLy/v7asY1A3Tqn17jFIIAHK5XFOnzhN/f4caNUReAEQapWZQKD5wwMzeQXnlMgsoCqKkXTuHFSvnbt7MGwz3/f3nT57MiqI2Pd0lv6B+o0aPc3Nf5hr5T2VjUb/ZmtWrO3Xpos3MzJwzhwNAQEAEwjAARd+fZBimb79+derUEUXxHRrioii2atly8JAhoiDkb9jA0r2pskOIolYLDKNSq3U8z3IcdVqwLMtxHM194Xn+L7IMlmUR8YPJkx2dnbXJScqdO6WEiDxflS/wPCAiQwqKigQAlmWNM+E4jmpigiAEhwQzDGPWuTMyDAADhADDlP8QwnAcwzDIC2WCaDl/vlXbtjqt9uSpUwDwTtyPDMMgisAwQBjxRbUsDIDy28OazZt1EZEEGASU1XUDF5fMjAyGYQjLMmz5EWIQGUJewTLIfwlmPM8PHjRoyRdfCIKQMXOmkJJCWAKiCAAoihxA6bVrmoQEcwuLsWPGvHOX15DBg1mOK4uM1D58yDIMCuIL30oFV+XsChpQflNJJIIgMAwzdPBgRFT5+goqFUMYeH5kihYAiURC2bZxJjzPG3Ovvj38nUGnM2vZ0mLKFC3PgyAyiIyIIKIoiHoDrxURmzR2PXGi7o4dJSUlEydNUigUb9/RT78uJCCAeDUgiPoyjVl2drM2bUqLiwn7K3dAhjjv3Gl9+rSsZUuRYViGUf14unjM6GNff42Ibdu35yMiBUKkzk7FdnZxUVGvYBnkPwMzQRA8PT2PHD7MsGzOxg1qX18Jx6KRSyECx2KJWnnhPLVJJBLJu4pf081o1rQpAJQFBKJeDywBwFfomX+TrksxY29v7+XtzTCM9mkQqUDUH50M1RGio6M//+ILQoj7t9/azJ+vd3DQImgB9JYWbJvWjosWNQ0MaBweYTlp0unTpzu0b3/+/Pl3Ek+jsw3w938k8LXGjNEh5uz8evn8+bU9PTXFJQwiCqIoIoqivoH3ZUtL57lzNKIIomgikZTGx5PklGmLF49r2Spj/36DKNb97LMfHj3Kz86mCsKLHXX/DS+IKIoWFhY/njpl5+hYcPFi3qrVUpbF3+4fIrIAxSe/d547r0nTpp3ee+/O3bvvJF+Eboa9vT0A8NlZ79ayRUQba2tzCwsAELKzARH+LKrp8f36669VKtWKlSvr7tgBX30FmZlACNjYgIlJKcCTkBDfJUsunjsXGx8PACwhwrsLWwuCMGfBAr8TJ5xj41J+vlrHyfnQ3n2YnoYmJgAgl0g4uayGje39AweGTZ5cs127wsAAncEADKP85uDuVavSp03LT0jwen9SRMf31g4c8GqW8a9HGvWCiKJ4/OjRlq1blwQFZUydKmEAnz8xokgIo48IV/n52fTuPWXy5Dt37779qRpV+XK/Nm94h+tGjT2pVEpdZMjzzCtk62uD7ciRI+fOnn2vY8cWbdtZ2dmq1eqCvLz46OhnUVFpmZmVVejXh1nlfOUXitYq2cz0DcakfFrJYcxvNE41KiRkwCefnNq7p/7+/UlHjpg/fmy6dKlHYGCpTBb9LCY/L9cnIODsuXNRcXGzZ83q7La1tlyuz0hXXbgY1bChDKDJqlVPOnacMGqkqlBJCHmF6sH922FGzbPdO3cOGzFCk5aWNm4cq1QCYQBfbPYwvFB0/LhNnz6DhwxxdnbOzs7++7QXuq9Gq6bK4TDo+V8FCPM2cGXkSsbJ0AcvUipRFOFNKKj0KyQSSYlafe369WvXr78QMyzLGgyG119Aagr+afWh8j8rqzCiKBKWDfD37zB69IplS4f36kWOHyuYMiXXxYW0bCmvVdPE0sqprOzcrFmiXi8Jemp4EpCbnKQPDJCJWGfSxMLBQ1ZFROwYOEjkDb97iv7dSKMwW7Fs2ey5c/WqotRxY8X4eEYuA4YBrfYF6y6KLEDplcvalBQbV9cxo0bt2rPnjSPN6Iirsq9yicTB0dHB0dHWzs7cysqxZg1gGObvjNhWPqlVzpyFmamjo5ODo6OVjY2XtzcrlwMAQ5i/+F1CBTk7OLTv2LFpq1beTZpY29khYmlxcVRo6MO7d+89eKDVal+97FUqGwCgprNzfW/vOnXrunl4uLq7W9vayk1MqDQWRVGj0ahVqvS0tNTExOzMzLycnPS0NHVJiUwmc3Ry8vTy6t6vX6sWLfRqta+v7/bt27VabbmHSRAIIXmZmXNnzd7VrNnIIYN7jhpdLzVVFhXlEBziWVrKCLzAGxhOykilBjNTXY0a/Jy5oVZWV2Njf/r004L0dKiIlLx6ff7FSOM4juf5BfPmr12/ntdqU9+fbHj4SACo9c03JRd/Krl4kavsEangaQzHCkUq5dmzNRYt+mDyB3v3739TdprxcBgdcY52di3btGnWunXLtm09vL0dHBwcra1lxrkUFwslJVBW9jfZrrQ2z/h09erWbdWmbdNWLVu2a1e7bl1He3s7U1O2grcLqiIBAfWGP/111BXJseywoUMnf/xx1z59LAmB0lKIiRFycgCAreE8utciWL48Nj5+3erVJ7///mVgMyp7Eo7r0b37wOHDO/fq5eXpaUL/rFJBVpaoVIJaLRQVocEALMuZmYGLC2nZEhwcQCYDABFAAyAFkNBPJSbolSpp27Zt27a9d++ev7+/0UQXRZHuXXxY2JdhYV9KpR6NG9f39PTs0MHB1EwmCiJvIFKZGjFLVRSTkhZ74kRWbKyR179m7Q/3r4bZzBkztn+9QzAYUj74QHPpEgLYzp9v9/5kQ2am6uLFF6pkiMgBqE6ecJozp0Wrlu+99969e/5/0S9ShQE3b9p0yIgRPQcObN6qlSXDgEYDiYmljx+XJsTnxMZqExJ0OTmiSsUYDCCIRK/nGEBeeLUO9CcwBgByqbRLly6DRozo2rdvQ3d3DgCKisTo6JKfr2gSEtNiYjQpKYb8fCwpIQKPvEB4A2EAXrEUL5oJXT3CMJMmTFi0YkUTLy8oKsrbuVNx5owuPEws09B9QABiaWk9cWL9r78+cfJkzZo1v9yy5XmwUZgRQmbOmDH700+969UDrVZ7+3bhoUOpAU90sXFiTg4vikaN2/h/BGAIQywsGStLztZWXsOFtbQQtVpeqSxLTRV4oe6FC1KAY0ePBgQEVPleCmxCCGEYXq+PDw6ODw5+1SIDMCxLmcvrnth/L8w+nDJl34EDoiCkfPRR6ZkzDID5uHEuW7eiKFp07pzLMMCLL7TZCWF04REqPz+bPr0//ugjf3//vx5gEATBzsZmwsSJk6ZNa9usGQAIjx7lLl2a4XdXr1AIqmKktfEALICkhrO0bl2JlTVrZcnHxeujFQzDvAJO+AcBDwBeHp7TZkwf+f77dZ2cQKstu3Ytc9Om4gcP+OQkUaNFALo0HMtKa9fmGnhzVlbEzEz78BHm5cIrJ1PlG6kHr3OnTpu3bu3Yvj3k5CR+9JHyyBECIAWQUY2Uxi0RobhYtX9/XG6u+48/btq0yc/f//Hjx5XZHIWZo6PDiePH+/TtB1lZCdOmFZ8/B0UqGgYRAVi5zMTWljE1YzgWDbxYWsoXKUWtjgUgIhKViqhUYmpaaWgYAjAVgSyPu3ct27S5ef361I8/Fnj+hZkcxn4M5d6X31p65e4W+jZE+KOs+V+X90hddpMnTaJV6IlTPwoDiACI6dGDL1VTQ18oLVPUrx8JUJ5GWCXpjmPDARInTkBEZWGhi4sL/KkotvEjjg72q1etylapEFGMiUmZOzesjmswQChAZEX+e1TbtlmrV/MPHmBJCVainE2bwgAUErZKGm4UQISlRWlSEiL+b8YM+L0cXOP2NW3S+PiJE3pERCy7eSN21KgQK6vgirKXMIBQM7OY/v0LDxzAyEjk+cqTSejTJwIgqkq+IsdGAMR27oyIOp3Oy8vLeBbpiw3r19OPJ33+2RMz02B7+4S+feM6dox4Pr2YJdESLgSg4PJlRDxx7FjlmVNOIZfL7/n5IWLhrVshDg5hAApaE+DmlrVpE4aHY1kZCkJFcQ4iz6NSieHhpadPJ388LdzdnWYDKzhWIZMqZLIwgNQFCxAxLzu7Zs2a8HYzFv6VeY90J3ie/+R//9u7fz+KYvLHH5cc/o4AcO3bu505zZqa7dq5c9DAge4eHma9exfFxkoIwecsgXK/yOUrmuRkaze3iRMmbN227Y/6RSgnZhhm3uw5i1etdLaz0zx48Gz9es3160QUOQCphOMNvGAiNxs7rva8edLmzQ0Aj0JCHh0+HBwQkBQff3Df/qbNm/FlpW9kOwVBcHJ0XLN69bSZM1mAgqNHM7dv5yMiOAApAOFYAy+INV1sp31c638zwdmpQK+/5O8feP780ydPzExMTn3/Pcdxol7/h7aD47gj3303cdKk4qdPk1auNHVwaHPvPtOiBWXh8Z07ax88YCtby6KIhLAMU3L9F5sBA9q3ay+Xy7VaLZUw1L/14YcfdurSRZORkTH5fUleHpHLRL2BcXNzv3FD7u5+4/79G+vXx8fEqFQq6qa3c3Co7+3t3ahR206d6o8ZAwDq679k7t5TduUyywscIcTW1mH+AgDYsXNnRkYGVYjewfH9t8g0YwHVksWLEVHQauPHj6fSTNGqlSYzExF37tgBAMePHhVFscDHJwxAQV4g0yIZUHBsKEDGxg2IGBkeLpFI/1CGK52Jt5fXrRs3EVFIT48ZPTrEWM0l5ej4z3r1KgsOQcTk7OwlS76o5+ZWeZAH/vcQMWPlir8i04zlm0OHDElJTUXE4tu3I1q1CqGFmyxRSCVRAKEASbNnYWEhIj4IDJw0caKdtbVxEDdXV71Oh4hx3bu/pkyTSqUAMGniRETUqdV5Pj9hdhYiPgkPX7VmjTIvDxGTxowJp7VtzykUCePHI2JeTo69nZ1RMaMRgof37gmCkL1nTyiAQsIpJFwYQPqnnyJiZlKSpanpSzeFYVq3bPnV9u35ZWWIWPrkSczgwQEAyfPm8qKYlZFhZ2f39gvh/mVVM0ZdZeP69YioV6liBg4MB4gAeNaxoyYrCxH37NpFd2v06NGIqC8sVNSp8zIFMoolkQDRDRrwpWV/tI6Gvq1/v365OTmImH3sWKiDQ7ixmotlFIQJBUhbtYpqN2tWrbI0N68sB+gtCI/uP/iLSDPCbMkXX5TrbwsWhDAM1Z2iWBLFspEA4Q4OeefPI2JGdva4MWMqryr1kjdq2PCPIo2mYnp5efn7+2s0mlKD4Zc7dwb06wcAMqk0LzcXRTFxxPCXIm3sOETMz811sLevHHS2trLKTE9HxOSpU8MZRiHhogiJZBhF/folT54gYnJu7uYvv2zdoiVXCTASiUQmkxl1QmdHx/Xr1pXwPCIW/3TRkJSEiCuXr3gnh/zfhDQ6MYlE8u3Bg4iozc6O7tolHCAc4FmvnrqCAkTcvm2b8Z02NjZZGRmImPLJJ2HP7XTlEqlQgLzTpxHx6uXLr6m+068YMXw4b9AjYsqSJSG0rJhChTAKloQSknv4MCJmZWb26NbNaF5WGf+vI41OZtvWrYioy8t71rdvKICCMOVQYUkkQEStWiVBQYh46/qNmi4uRu3AaGUBQANv7z+KtMrPUrdu3RrOzsZ/1qxZMz8vDxETR474faQ5OFRGmr29fW52NiImTZoYTotiGYgiTARAmEya+P77Gj8/ylMik5J27z8wbNiw2i4uldeEClsA8KxX79tvv81QKjNzc44ePWppafnCmui3hrR/eoYxrb9ycnL6+fLlqdOnqyMiEnr1Evz8EcBk1EgPHx+pre2GdesWLlpEDS2WZZVKpa+PDyJaDB1KbYOX6aMEoOjAAUTs2bt3ixYtqKnwStHKCoLQuXPn70+eZDlJ6sKFhZs2yTkWWELd9AzD6AXRads2h48+ys7I6N279+27d2ny+5/Ocni1bbZ82bJPFy3SFRYmDR2q++UXqYQTAUAQgGEAQbCwcD17zrxly+s//zxwyOCMzEyO46hHG99QRggAJCUlZWVnU3ENAH/FCiotLS1WqQCAtXdAIyoQCSESnV594kR0167h9dxT/ve/egrF7AnjL168GJOR8Tgi4svt2/v362dnba2vMDXjEhKmTZvmXbOml3u9KVOmFBcXv9umd+QfDjOe55s1a+Z3+3avPn0Kr11L6tMHIyMFAMuZMz3OnGVNzebPm7d85UqaQ21cx7PnzzMMY9m5s7RRQ1FEeJGwQkHgCFN2757q3j2JVDpvzpxXbwNhCADa29sfP3pUbmqavXNn4Y4dcgknimI5mFmWF0Sz/v2dFiww6HSTJk+OjIqSSCQGg+GNbzCFWa9ePdetXSsIQvq0abqHD6USCfI8U9HD1CCKjqtWWrRvlxgXN/GDD7RaLXU5vFkjn2qwNOXvr8QkaQxNo9FERkUhokmHDogIorEuVkTCcBwrJwybmKQ6eDB64MAQZydFq1bKRYtaZGZ+PmPGz1evxuXlXb55c9bs2Z7u7vRzJWVlJWq1VCp9980s3qGH43mqbEJQN+PgQYPu3Lnj1bBh9oEDacOHs9nZPGHsNm5027dPp9NNnDBh565d9NjR00zj/ffu348MC2NNTCzHjRdeXpyHhDA8X7B1KwKMGTu2QYMGrygPZQgjiuL6devc3N1LgoNzly6VsUQUfq2SZkQRWdZx6VIG4Pjx47du3+Y47nWy+/7E0omiaGpqunfPXiAk/+DBkosXJRJONCYrEyIKorR+ffv/zQTEZStW5OfnU+3g7/CovanG4HSbjp84wTCMZZ8+Em8vQRB+zVZDpM59hiUSCSfnWJlGi8HBeV99FdW3b6iT47Me3fmvvx5Yq9ae3bujEhL8AwM//fRTj7p1AUCv1/+uwvJfQBple1wF0aOMLyKjz4Bu3oply3wvXbKxsUlZ9GnOzJmcVstbWtY4fqLmkiXZWVl9+/U99cMPVQ4QXVCdTnfs+HEAsBk3jlhYgCC+uOZKEDhC1NeuFd+7Z2JquvizzyiTfqFLRhCERo0aTZnygSiKuatXM2Vlv4nwEiKIKGvSxLxdOxTFbw8f/vuaJVMBMuWDD+p7eemyc/LXrpUyTOVgBkOIAGA+eBBnZpaclOTj6/uv6JpOszR8fH2v//KL1Nraee8+wdRUMPAMx/1GKxFF5HkUBCAMw7JSCSdniVRdyt+5m/HZZ8He3pENvHO/+OI9iWTbtm2RiYk+P18ZPmQISwhtqvkfRBpFFz0WoijyFUT5HwGQsqyJVGoql9NEUVIBFZ7nHezsfzp/fu369brU1JjevYu/2s4CgIdHvevXHSdODA0O7ta9u5+f/wtjI3T8H8+cURUVmXh4mA0cyCMyL+tpQRjC83kbNoiiOH78+NatW79wPyj8pn30kUxuon4aVHr1Kkd+UyXNMAwCyFq0IBJJTlZWTGzsn2hk/5pEzdHp06YhQMHR7/icHKaitPxXXQvApGkzQHwaGKjRaP6xPdJf+HQfTJkSHBRk26OH+7Vr2LChzsCjINIWMb+BHCKIAvI8iiIQhnCsTMKZMMA8i8n/8suw5s0jW7ZQ7dw5pFPnCz4+AU+fDhwwgIL5P4I0o2uLoksURSsLi9atW38wdeqaLVuOnz/vFxoalpLyLDc3tqAgvrAwobAwrrAwtqAgOicnLDnZPzT09KVLT8JCh44YUXjtWmynToabNxFA2rOnx+1b8nbtvjt0qH3HjjExMdTLRBtaVBZE9CCmp6efP3cOAGymThUJ8zK/CAoCx5LSX34p8vWVyuXr16594RPRC1QHDRyIAMUXLwDPV62SZhgEYK2sALG4pESj0bzOEgH84WowyrlatmzZuGlT4Hn1hYssw1QdgxbiWFkBwyiLil4dRKI1LP8QmCEix3HZ2dl9+vY9cfy4RefOTaKiah08iC1aaEU0GHgQRIaQqpCjqBME5HkEYFgilXBywkBIaNb8+aFurmmrV7ds0eLylSvr1q59V/1j3nCOiDEJEACaNmnSd/DgvoMHN2/WzM7EBHQ6yMgQsnM0UVG6lBR9YSGvVvM8D4CcRCo3MbGwtJRY20gc7GXu7rxanbFhQ/6a1RIDj1ZWDp99VmPZMgB4Fhd79MQJR3v73Jwc3W8TGox2uVGSHDx0aMqHUyy7dzfp1Fnn789y7Atz1WguYu7atZZ9+/bt12/UyJHnzp9/PhnP09PT3dOTQSy7c4c8n2qLCABCqRoYxtzcXC6X63S6l5mmdIkMeh0KAvzBXacu1s6dOrEcVxobq4uK5BCfy4NhGAAoLQVEK0vLF0ozoyfDYDAolUoUBHiJ5vyWkUYt24KCgskffHDwwIFP5s4dNn164+nTDY8fZX53pOjKZTEzixVEFoAQBgiLgFCluE4U6YIQlrCEYKGyYM2a0gcP3M+cXb5ihUaj2bhp09tvqfCGkSYIgomJyfjx4z+cPr1Tu3ag0WgDnuTu2lWYk82rVBK9gZPLZRYWRColJiYyuYzRG7BYpU5L0+Xn83l5QmEBarWCRsvRTFyaAG5uzlhYFF2+zLm4eLi5+vv7GwDS8/NjoqMVYWGP791TREQmxMdpDQbj2omiKJVKg4KCrl/7pd/AgXZzZqf7+3Mv059EkeVYXUhI3u7dNT7/fMuXm2/cvFlSUmLUuOiuNGzQgBCiy842JCcxzwUPEJEA6MPDEdHJycnNzS00NFQqlVK4GstA6ICWZmbjJkxo2KYNw7Kg0/7RswgAzZo0AQCtIkos00AV1REACAMCaBUKYJjmzZuTioAkXR9jMSgFfN06deZ/ulBqYgIA4nPc4W16yBDR2dl5+fLlLVq1KlGpvvvuuzNnzjx49Mj188/HTZg4dsoHLb75xhVAd/Nm9tkzql9+0aWkEpHnaGY9xwI1VisvBYUcIXKO1d28mT5ntuux42tWr/a9dCkyMvJtg+1NRa4ptx45cmRERAQiGtLT0374IXnHDtXFixgTgzotCoLaYMgqKU7Mz4/Jzo7KyIjJyYnJyYlKT9f82s1dzPpqW5SlRTRLwgEiatYMd6/7FOAxQCBAEECEhUV0q1YpkyYV7tkt3L2L+fn0c6lK5VV//5Vr1/bv39/ZwcE4q65duiCioNM9a9PmBTHZXyPFJIqQcGvr0pgYRNz+1VdQKVJMX1B/SUloaLhUEgVQNXeWAQVhwjhOde8eIp794dTzSyQhpH3bttu2b09XKhFRGxWVPHNmpLV1ecfi14tcU83n+tWriJj59ddhtB/rizJgFF5ehtJSRJw3a9bzk7G2sBg8cOCps2fLEBFR+fPPcf37R0gkUUzV5/rdyHUVa9bJyelPRK7p8dv59deIiFotIqIg9OjRo/L4rVu02LBpU3BMTPlpCQ7KWb06+r33guXyX68xYImCY1/QOJllQxlG9fixMWvv7XRNfsMZxsbGGLt3765Rowbo9ZxUWmvkSC0hkXFx9+/ceejnFx0RmZ+XW6xS6bSVqjYYmP3JrJUbN8otLUsePsxeu1Z78wYriFoA83Fj6+7cxTo6QlaW8OyZ8vHj4gf3Sx4/0QUFlQQF5Z48yQAQjpN61JM3amzdoUOf9h36LVoEJiZqgIjwcL/r1+9cv+7v53f+zOmRY8Y6fL44bfQoDuEl5prIsCwUFWUuXFDXx3fOnDk+Pj5+/r+pW7O2tgYAsawUDQaGecEtPsgwhOczPvlE6uMzatz4e/U8Th07lpSUZGpqWtvVtUWbNp26davn5AQAat9LMYe+0d24weh0LLxGa4NK30XZsLm5OQCgqhhe+HFRJCzhY2LSZs1yPXDg6z172nTpcsXXV1lYaGNrW9fDo12nTh06dXKQy0FVlLd/f9J33/FPnxJqtTOvO5O/g2RSKc/z+Zd8dTFxrsuWHv7mm649eqSmptJE5KchIU9DQpYtWdK4QYPeAwb0HjSo/bJl3qtWgUpVdud23qXLqhvX9WnpVCFiqnRGI8Aglty6ZdG2bds2beBF3R3/BdojdY4bDIZx48YtXLiwdp060XFx169d87t1KyU19WWfGjl8+PK1a5s3bmxISkpasKD4+DGOFwgAb2PjvGmT84wZGr1++8aNcguLtp06ec6d675kCQBAUpL64cOCW7dK/P0MCYn6ZzH8sxj1+fOpAIyVpdTLy6Zbt1a9+3T45JMvFi1KUyoLMjNR4K2HDC7o1k179+5LrTVB4Di29MrP+QcOOM2adWDfvrYdOpSWlhpNl/KeNiICvuQ4iiJLGCEiIr5jR9t58zqNHdtp165yM0yng6ysktu3k65eLb5xA7OzJQAsgMgSYu8g5ub8LierbFwBAMuxAID4UuUHRZFjScnRo7FRUfbz5k3s33+iMeOxVA2JSQUHD8Zeu1Z6z5+UlkmoAmZlxRBGLCpiXpu9Ul/UG4mn0edSq9Ucx5na2GauWW3RuJHb0KFXL18ePHRoYlKShONERJptExkdHRkdveOrr+ysrdt26NB30KCeAwY0HjYcAHR37qQdOlTm68OUlnGkkseVYQBAn5nJMIytrS3NKHibLtk3JkDpjP39/asUVhoVA7ollJH069172erVnTp2hOLi1C++KNq/jykukTJgAJB271Zv/wG5l9fDBw8++eSTsPBwOo65iUnDRo1atW/fuXv3Nr16eUycCAAQG5t/9Vq+z0/awACiLmVVxRgQmBcQmL1lK2Nhbtq+g+Pw4bUHDACWY1iouW1bbJs2nCDiSyodURQlhOQsW2berZt3o0Zfbds2fcYMo46RmZWFAJytDTExQY0GXtR+FBFZlmB2dv6SJTlLlzL2dlILCxRFg7IIaZIRAE3L0wNImjats22b7vGj7JWrJM83YnhRyIQ2VAWA9LSMtu2Bc3J6hZxBUZSwhA8MzJg0KU0mY+1sORMTUafXFxYwZRoGgAOQM4AAegDz4cNrrl+ftWBB2fXr5JWToRtKXSlVnEZ/GmN0NABITk4GAGJvL0FMHz9OOHK04dix9+7fnzJ58o1bt6Ais5mCXBTFgqKiq1evXr16FQCaNm48dOSoSdOm1j91Sh8Xl75iRenp01XARkxMAECn17/96OIbdnfSVaMSoHKQmud5ujG9e/S4cfv21evXO7VunbFxY3h9T+WXX0rVagKgl8ps1q71vn1H7uW1Yd267t27h4WHG4Pdao0m4OnT/Xv2TBg5skGNGs2bNp07b96l1FRu9izv27ebp6a5nTwhGzjQYGaGtNq3RK2/cSP5k09CPT3jevXK2b9f6uFRY8MGQ3nC44u5BcMAUanSp00zqEs/nj79g8mTeZ6nnCI8IoIBkLu6sbVr4cvbj9LYjoRj5YjSvHxMTILkFKlKJWfARCaVcKwBwODo6LB1i/ejR1a9e5dLg1fKEZqFQZvMtGzRYvjIkVSmmTZvDoSA8CrJRlgi5Vi5TsdlZmFCIpOeLi/TyFkil8sIgB5BbNaszk8/eVy4YNKwIRoMvxt3oGg3GAxyiaRr165jxo5t2rTpH4ZZxftZQmg0qE6tWr169XJ0cgIAiYMDsbHmNNrMcePSVix3cXG5fvPm5g0bLMzMaOshY783Y8dyAAiPjFy3ZnWzevXmzpptcHV1//FHs8FDBBEZ6oBARESThg0RMSUlhfr632qM8e/L5ads2PjPwQMG3KKJ2AZDxpYtYbVrhwJEAURLuFCAyObNix88QESFQtG9a9fKGkVlVkpLTip/i4Ot7Yjhw787eTKzuBgRMT8/f+/eqI4daJWxAiCaJREAoQARLjXS5s59RktpnvNnVDbZQwFS5s0VEYuVSuPNhpaWlumpqSJiyoIFYcY081f8UD8HS6JYopBwCsKEA4RIpYmzZmFBASIadHqR57NWrwpjmKoFB0aPSEKCyPOzpk9v1MB7zbp1IRX3OdGmToJWG92sWQTDRL38VpdfB2SJcTL0bsEwl5qZO3fS0XidDgUhvkePV+TyizyvUatbNmvWs3v3g4cPpyiV9LMGg2Hp0qVGH4OT8+97RBInTERByMvKkkulXh4e33z7bUlF9bfAC8jzMa1aRjJMNMeGAUR37kxLZmKSkz+cMsX8tyVqle8qkEjK2/MkxcQgYuq8eeU7xZEowkTY2palpSHizP/97+17RN480ozaRbnWZ2o6ZfLkgNAwRMSSkrT16ynGIgGeyWWRACEsm7RoES2z371zp5WlJZ3MK2I7xvSuylC0NDMbPnTojxcuFIsiIhrCw5L+979QW9tyPMuk9Hi9uFztN4eyHGy5R48g4rOoKDt7O/pFK1esQER1bGyYlVUUw/z+UAxEsUTBEnp/Z8zIkbrIKESMTUwcPWLEnRs3BEHI2r0r9HncViDNUFiIiEq9jp5CzZUr8Qvm5wcHG/FW8MOpEIBoeuXa70yGUXCsgoEwgFALi5QvvkC1GhEvX7kybMgQlVIpimLCyBHlVWHPIS2uW7fyb9TrERE1moID++NWrizOzETEzZs3G8+uvV155UvC6NHhzzMROlqXroioFcVf/PxoI4a8c+cKIyONXSjTFy4MA1BIJAqOjQAIlUoSZswQkpIQMbWwcP+33w4bNsy1dm3Zc2ipVaPGvj17EVGXnR3pWieSEIVMomCYYIDMvXsQMTE+3srK6q2VhL55pFGAVR7E0919zZo1ybm5iIhpqcmLFoXa2xvPvYIBKspUd+8iYmx8PK0j/KMzef57a9aosXDBggjK/ktK0jduDHN1pTXI0TLpa5zIcnEUampadO8+Il77+Qo1/S0tLRWRkYiYc/RoCICCeWnxWxRhojhWwZJIgBAARZfOJXfvImJucfGihQstzM2honxTnZAQ7mAfCaAw3ldWMUI4IRnLlhf7+Sl//DHp/fcDLS2fenoqr19HRL+7d8eMHs3r9YiYOG1qOdhehnxSjrFwgBCWjfvgAyElBRGDw8KGDRlCF+3u7duImHf2bPBvLyg0XuYWaWeXf/xYsd/d/P37n/Xs+VgqjejT25CcjIh79uwB5tcewxzHhYeECIKQvnZtKL2H7blwSDjDpC9bVhoZiZGR6cuWBbdvn37sKCIGBwWdOnkSEYsDA0MIo2AYWnZNGUSITBYzZIjq7FmkYRLEVKUy8Nmz648eXfH3v/n4cVhiYikiIhY/ehjTvj29uzgMIFgiSdu8CRFL1SVdOneGt9hK5E0irYqWaGluNmrEiIuXL5c3jbl/P3bcuBC5LMyIMY4NBwi1sEhdt5bysF1ff21jbf27ouwPQY5lmEEDBty8e7c8TLd7d7ira2jFxbavI4siASJcXWlEa+/u3XTYxo0aZWVmImLm/v0hUmkEPZcSrvx+Wo4tfw0QDhAMENG8eeG5s4hYhrhty5Ya1IcBIJFILC0tg58+RcSCX34JdXQMq7gQVFFpHNrtJwAgUCJJX7OGLteePbupl3/a1Kk07pQwdSq96lZhnADHKp6bzLMhQ7ShIYiYlJ4+fepUjmOpIGJZtl3bdmWlpYiYtmFD+aW7lZ6LSrkwgGCAJwChdd2U584hYqFaPX36dKhULUHXf97cuYhYmpYW4eYaARAt4RQSLuo3s+LolB4BhLVprQkPR8QbN27Y29vb2NjQYvaUtWueAoQDRNGTI5VEE4ZqByFmplFt2qRMnpy35UvV999rL17U+/pqL14o+uab9Bkzopo0Dqq4rDjE2jph8mReEY2I0Yrozp07wTvq2POXkFY5ZY5lmK6dOx/45ptMlQoRsaAgZ9euiBYtQyoWSyGVKiQcNZliRo4wxMcjYkBgYNfOnf+EKHs15Cojv2unTpd+voKIqNOlrl4dZmtbbjz8nnCjekt0mzbaggJEXL5sGR2wUaNGYaGhiFgaGBjVtWsQQCgAbbUQDuXHMVgiedanT7GvLyLqEb/99lB9Dw/jYxpVFxcXl5s3biAiZmfHT/0o2NQ0pGKosIq7pCOaNM7ZsQN1OkS8dedO1y5dKsfTJ4wfr1KpEDHv2LFQd/cggLBKkwkFCAIIsbVJ/PBDPiwMEbOUyiWLF1tZWFRec3ryevTokZKcjIjq+/eiunc3PhcdJxggWCaN7tlT5eODiDzioW++cXNzg0q9Jyor9rQYtzQ8PKJ58yqzCquAgaJdu6Jz56h0Wrl8ufEAdOnSJT0tDRF1Dx4kvv9+WO1awYShF3yHVLpo+ynAE4BHAA8BHgDcA3gIEAAQYmOT0KdP9vJl+lu36Lo9S07+fNEiSwsLeOu9Bf4q0ow+RgBwd3VdsmRJRHw81bGLL16MGT4sxMyUGmMKwiikEoWEi6Rd2Vq2LPr5Z0TMU6kWzpsn4bi/KMpeLeKMw/bt1ev+o0eIqE9JiRk65DWFG2W9sQMGGLRaRJz1ySflctvScsvmzaU8j4hCUFD26lUJw4bFtm8X161r2v9mlBw/jrm5iJhVXLzj668beHlVxliVcD8h5JOZM+OSkhER8/IK9+5JHDUqtlOn5MmTlbt2oSKaHsSLly716927yjh0yxp4e1+8cKHckLt8OX3evPh+fWPatY0f0C9z8efan6+gXo+IEXFx8+fNs7e1feFk6G46OTpt37ZNRS2xiIjsNavj+/aN69E9ffYs9cmTmJODiDmlpTt37mrcsOHL+CPlI3K5fP++fXRWpb6+qbNnx/XsEdu+XUKf3qnTp6v27aO3dasE4dA3hxp4e1cJGDo7O69buzYmNbWiWV+u+Pix9swZ9f79RVu3FKxfX7BubcH69UVfflm8Y7t6/37d6dOC311MiEd1eZO/XE3Z3cDAdZs2devcWVLBed9+bvFfQppxh9q1afP9qVM0l0ofHJw0c2ZojRrBRiHGsVFUbaDcsW7d7P376Srs27u3ZkX7h7+bxxjdMwzAvNmz1TodImbt3x9mY/M6wo32ZkqYMEEwGIxuKzqgm6vrki++uPf0aa5GI1Z0Hyzi+YikpO9Onhw5YkRl0fGK9CUAMJHLx4wceeHSpTRVEfXBqUUxLjv7wtWrM2bMqFunTpXgZJWNBID2bdvu3L07NC5OVdELkUfM1WgeR0Zu3raty3vvkUoKnjEkxbIsx7Icy7IMMd6aXaemy4J58+49eaI0GOhQSr0+IjHxyIkTo0YMt7WyevVDVX6u9u3aHTj4zbNKCXcGRKXBEJ2eftrHZ8qUKS4VDUgqI984LEdI08aNJ02evGbz5jOXL98LDQ2Jj1ekpcVmZcXn5MRlZz/LyIhMTQmJj/cPCbl4/frOg998vnz56LFjmzVpYmlmVmWh3kn+9J9HGp1unTp1fjx9mq5d/vHjkR3a08SzKAAFR6IkHNXIKcZCnZzSN22i3sWffHxat2xp1H/e2sMbF7pRw4a3b91CRF1c7LO+fUKpdfRK4abguNBKYJszazYASCTSym7P+h4ezZs1a+DtbRQav3scjStaeeVNpNJ6des2adzY2dGRfYmi/gr9goY9GjZo0KxZM4969aqcNuqtreJAen6ljC/lVlZu9eu71feSV7CMP6RTGGdFAFycnRs1bNikSRP3unUrN8B72RJVMQGejwKzNK/lNTwI7wpjVZDGIKKPj8+wYcNepzc9Dfa5u7vfvnWrjqtrwekzGStXiLGxHABLGOA4RGQAgOdFBB4AXGrYTp9R+9NFYG527+HD9StXXr91C/7IvQFvOCOG43ieZxjms08XrtuyVcowmdu3561ezZaUsBz7ipuNGI7TG3jzMaNdvzvCmZltXL9+2YoVACCTyWjl/AvX9/Wf0Xguq2yBsdLvd9OdjNdev1CLpq5zhhCxYnwiN3GrVbOZt7eLpaWLlZWTmZkMQMKxDDAVd2UZVEUqNDFhCKGhKhbRoFabubo6NGt28fLlr3fs+N10+MqXBLxwwq/uHWSUvRWR55cW11a+Xa1KFf+7JQqrP5xhTHt7dOnUqY6rqzo1NWX8WBmCVCYFUURBQL1BBBAABABZixYuH09z+Phj4CQPAwK2bdhw0dfXqBi8q0p7nucps9iy7atbt27v3ru3w8KFNn37psyerbt7VwoAL0lEQp6XSrjSM2fjs7LcTv2wdPlyV1fXmbNmlZSU0F4MlTMB/kTvGuNHqly39/rjVE6MqnKdH4UfYVlREICQPsOHd3N379OiuZd3A0NZWWFWlqjRlBWr9GUaFHjE8rw5udy6Qe8+Rae+Lz17jjAgCgI4ONp/9tlDufzO3btPnjwGgN89ysY6ncpS5fUf7YXoel5A/X3l7e8sR4TixNvbW6fTIWLSvHlBJiZPAcr9QhYWinZtM1esEMPCEFGHeO7ixT49e77MxniHRDUTCcetWr6c2kVpGzeGmppEvNJyU0i4cIBID4+iB/cRMTwsrE3r1lU0pX8m0el169v33tWr6UuXGr7/PuDKlfGjR7u6uZnZWHPm5mBqCqamYGYGZmbEwgJMTY/4+pb+8MNTuTyCgUiAYAa09+9/unHji/Mzfvvzu4kHz3+k/KdSNkKVt1V2b1b5eJXv+s2UCOEIedlX/KPtNDrLsWPHpqenIyIWFWF4GAYHYXwcajU0cOQfGLiwoi3R23F7/OnDBwAd2rV7GhSEiOrgYEXHjq+23BQcGwkQamKSvn07ImoFYcHcuaTCE/jPxBud1YhxYw0pybFNmmTOmH793j2ZpeUrPmIilWakpSW2ahUGECXhogDCzUwNGZnNW7ViAGQyGcdx7O89LPecr5Vj2dcxmF7GlF/BrI2OXOYftvh/vj6Ntnk7ffr09evXu3Tu3K5zZ3tnZ6lMpi4uToyNiwgJjo6MTM/KqqKm/wMbM9EHYVn20ZMnnd57b9WKFV8sXdrgwYO0NWsLN29itVpWwqJQ1XJDQSAskWo0+QsXlt275/rVV9t37hw+atRnCxc+efqUruw/SpmhWfYmJiZbv9ySO3uWMiLC867f8GFDdcXFUqmUNxiwknZjNOrk5uY0gZcqsuV/1uvMLCyhokMMAJg6ODRu1qyOra2zmZm5uRnHEIPAK3X6mKysgCdPNPn5VcwVXhCAYZw8PT3d3WuZm9uyrBnHSmRy1tyc3kvOWFmdu3gxWqEQBEFmY9OlW/fmdWrLADJKS8/8+GOpWi0IgrmTU6euXbwdHM0IwyOml5b5XrhQolIZL+Zs0rFjI1dXJ5Y15zhTicQgCBqGEaTSEr3eFJjanh5+jx/7/PTTW665/jNJlrTTm1Kp9PH19fH1fRnveVNtAP9WzZmm6mu12iXLll2/fn33vr2NVq206d8vdc5sfUCgFAA4DkWhMt5otr6UEO3Fi8/87tqvWNF5/oJHgYEH9+/fumVLYnLyPw1viGhta2snk2YEPjWzsuJRVBcV0XMmVnouUpFWDwA6ne4F8pkhwJS3+ujYu/ekQYNaGQx24eF2Oh2bmaGMjmYIS8xMiZ0dtGyV0rfv5dTUs5cuxcfGIYiCINTy8Bw1ckSP2rVrxyfYFuQ72tgyjvY6G1t9bFzZlcssx5bpdJ4+vlqJJHr16k9mzXq/aVNXhQIePdIqlW6LF/fq0+d/M2fOWTB/hJ2904P77OPHQqlaZIjtiBELbt7s3bevqqioYZMm+7ZscQsKksTEEGtrUSaTMWCqNxClUpOcrEpNNWnd2mH+/Hu05OqfbKe9QNvmOOpINb74h1ssr1ZXLMzNv96+nRriKcuXh5iZVSRJsc9nFRrDGFHt2yuvXEFEtSB8+eWXbnVqV3Gsv/On4zguMDy8cPoMfwDNqe+PXr5c2WNOGIYqwDJT0yMnTvicP9+8RYvEhITkdm3DaWo/QLipCZ+a1rpDB1Mzs+/PnSv8/vv09u0jJJKc5csurF9/ctWqpG1bI+ztwwCCAAIBUhs1wpiYQ0eP0KO1cvPm1MtXcidOjDYxSevaNX7f3h3Llw8aOHD7kaN6v7sBAJEAgQCFp09f9fOLDA7CqKjcbdvCHexD6QrX99QhBl3yLZw7J6d37+g2bUJYEgYQBhAIgKkpPfr1B4B7T5/q1qx5BJC3Y4d/UNDUzz7rP2FCv2HDPp448ezq1c9mzxYCnnw0e/bbNGf+ZXfNvM1FAYC+vXuHhUcgopCcHP/hhyEmJqHGHhU0kdfoMiEMTdoKAVD06lV8+zYiliIeOXasXevWVc76O7mBwWindejSRZmYmDVgQABA4YH9h48dq9+6NRgDbixb08vrzIkTePkyKpUdu3RJiI1NadfOiLQIM1NdUtJ73br9/Msv+i1bggACAEp27jzj50cHCMgvyJv1yROA1JYt83ftunTqVI8+fQBAKpGcu3yZP3Y0XCp9ApCzcOH94OD6bdrQT81atAjv3g1imGiZNJhhSn766dKtW6uWLRvav/+zvLzMD6eEMiSKkGgPj6y9e/NnTE88enTFsmXXnj5VrV8XwjDREi6EIfrIyEGjRgFA8LMY1cyZTwDCbayf9ewZPnPmreXL9i9ePGf27H4TJw6fPbtp+w5v+aj/K28q/LuJ3jxICPnlxo27bVp//NFHny5fXu+772D9+vQ9uwt/PK1PSirvfwYAHAsV7URYCcciCjdvJty8KWnf3mXevCmTJ0+ZPDkwMvLHo0d9zp9PSE42RrrefpNTWvX4yN//veHDN69c2bp7t+IjR8Z4eQ+YMCFGrc4sK+UJa29h0czNzVapzDI3X71sWcDDh2bm5mWVtF9CWJVSOWPBgp5yWdjnn5sTRsdy5kOHbp0wwcXDY92SJS6Hvy0Nj6i7Z/dDO/s9Z87c9PEBUSSEzP1iyUhn54BBg0wBrBs0MF2+fFKrVslJSaYyWZlOJyKAXA6IgCgimpiY3PHz275hAwCsysmx1GppixdDZoaYm/t4wMDFmzdHPXq0z8urq42NiAiIgKKRhU39YPKpDRvq5ORob94suXVLvHWrBkA9W5uRDRrwnp4ZVlaxY0Zf8vb68ejRt78L1Uh7QVyL9hvfs3//sePHR40aNX3u3PYbN9XauEnv759z4YLq5g1NTAzwAltxjTLVDlnCcIjC48epjx+nfbHYZsTIVlOmtNm2bdO2bU9DQq75+Fy/du3JkyfvJJyKiJxEoggLGzJyZMuuXbt36uyq1dZKTna2sPC2sgK5SSFv8H36NFxVdCvwaWxYmLWNjfAiI7Nz9+6FGzdKWBYIA6KgUSqXLlnikZjoXVBQwHGB06fvOXfulo9PZZBPnDA+e+MGegMFI5EYWKIjBADKCKnTpEnrjh00iYlMpfdbWlpKJRIURZbjaGG7yAvS2s62S5ZO8/TITktjWVYqk6GycoyeEQVRKpEM7tkzQq+P7dDRvVmzNhxnGRsrRIRrYmOzHzzkHzw0A+jo7j7h4IEmjRsvq7icqBpp/wjhVlJaeuTYsSPHjrVs1mz0+PH9R4xo8vXXtQEgP18XEFAcHKSOfqZ79kxfkI/FxWJJCfACPTRCSmr2jh0ZO3ZIvOrbDBjYdNiwjsuWr1m16v79+6NGjcrLy4PXCPu+Ke2F5mHwBgMAEIYJ9vMLpiqfTMbIZBwhoiAIZWXGRkYvK/unN8I1dnfXC4JcImdFQ8aSJd0GDSqztj6Un7/P1zeSDkuIXe3abby9RwwenKdSWcrlZQkJHCGEMJrwcM3SZRdWrlIkxDvLZHWUhZYXLyTGJ8i48machGGKS0r0BgNhGAErWiMRwkg4TX6+nOPoBQmiKAIhwDBI/86SgiIlI5OtWrSo7PvvLep7Lvjqq+zU1OYNvNt2fK/l8BH1ed5CodDfuVOYmGj47POPblxfs2SJ/l/asec/Kdwo3gRBCA4LCw4LW/LFF/U9PDp26tS+a9dmrVu7du3qamZW7u4wGEBdAnoD8AYw8MAwQAgIApSVgU6LUhnwBkbCderUydLSMjc39+00sWCAEQSBkcldnBztrK0LCgoyMjJYlmVobxKdDnU6Q/k7y0My+JLsDVEUTc3Nt69bt2HRp/XGjE4+c1YCUHztmj4/33LNGoiJGerlNbJFC5kounBsy5q1mrRuXebtPX/58vCYmEHDhgc9fGQmAAuQu3ev1d69XTlW7ujEdulCpk11Aia8Vy/asaCM5zu3b99kw4buo0ba1KqdW6oGAF4UUam0sCoPMACAVCYTNBoeEREQoLSk5KNRo9ynTSM2Nunfn/RUFv3y6adnUlPP3Lr17U8/6QEaNmly/NtvrefMybpwwfOTT3yDgg08/5Zl2h/Le/x/S8Zbpir/0lQmc6npUqt2HRt7exs7OwdHJzMLc1Mz08rJx0AIQwgIgqDVFuTl+vr4hoeHvwVWakzpmjV//qjGjZs0aSLWqXP05MnPP/usyrdXTv4ympFW1tZRERH6ESPUgYHlV8Lb23uEhdd/7z2W477bt7dRcDDve4lPSjTk5IiCaFuzJufoIFpZSWrXMbi6JtWs+VNK6v6jR/Kys+vVr3/++HG3c+eU35/EQiUxkbNudUnv3imtWh26fy8sIvLHHdsdvj1cdP68qFRyffo4jR3Le3geenB/1OTJ5osX5589K/eqbzH5g4f1648eNUqr1QqCMHfx4p1jxiSOHElyspFh5AMGOk6YkGBtfTUqakSjRmTPHiYh3qZRY/T01Do6aE1NOU5CiktKninKGjS8x3HLly4tLCh4O2qFMe+xGml/BnJUw/xz+/R2NBa6m6u+3Ly6TZuy5NQLHPv54sVZFRkFvwtROzv76MiI4v79S0NCOJlUr9M7DBum2rq1VbOmmjINAHTu379zs+a1AW0lEjnDGHQ6tVabzxtSDHxgQkJ4WHhZfh5UpHTLzcwmffjhe87ONlqtnuPiEe9GRt755ReDWg0ANvb2E6dM6WBvb1ZWpjLoQ4tUvn5+CQrFilWrOjg7ZyclZchk9yIjb/z0U+U7t8ZPntyrQQMbtVpk2RSN1j8+7uadO2qlsoara4fOnd3s7KSlpUSrJYQgx6p5ISknJ1WtTk5OLsrIeMsObYq0ai//X5IbxiIU7vXo7cTWyrt216ihzM5WtGvLJyc3a98eAIyto15B9D29BwzAjIwwC4solo1iSQAAhoVPnTOHvoF57jTBc4enylXav77zt+952V9f9zSybOV2gK/zqbdcRFPt5X8zttw/81IyKjZt7e3NCFEHBQmPH02dN2/u48cGg4GljoTnZ84wtOzEYDCYmJpu3bUrb/NmVKsFRB6g1ZHvTsbGHN69mxBiMPDl5xUARZFWLtCTy1RYesYWumDMeiMERVEUBAaAsGzl99C/iqKIFYaxWOEBpnUVxvdXnjPLsoBIB2QIgYq+veWdlct36NcKNvyzZRZv8rhUy7T/nrBlGEYilT4KDlbN+uQBgOrcuT1Hj7o2afK7n63XooXfk4CCNWueAIQDpLVurTx/fsvu3SzL0hKw6uWtlmnV9Cv3JIQY9PrJEyZcOHGiMWGTR40a3qtnz8mT/XW6u9HPQp5FZ2VnazVag0HPMIxUIrG1sfH28OjVqtUoNzeTLxZn3bnj2revfkD/B1bW2/fsCbhzB95FzP0/xf6qPSL/YcmGiOZWVouXL+9va2t1/75ZYqKFnS2p666xsVYiqFmiYwgrkZhJJbZyuRUvMGlpednZSkurbK/6/jnZPtdvRDx6VG7Wv7wgvZpexyNSLdP+45JNrVKt+OyzDTY2jVu2bFCvnpOEc9LpHFXFJvQ2No5Dlmh4IaOgIFOpzNPrMzSahMePM/fthYpIN/wbbqP/51M10v7LRL0RhBCtUvn01q2nf+hksKxIC3+qRVk10qrpdSQb9cgxFaUxtOYSAQARGKA3izEV3najl4+vlmPVSKumP4E3fOG9hlj+H1Tj6m8mUr0E1VRN1Uirpmr6D2mPxorg6uWopmp6s2S8Y4QDAJ1O93zv22qqpmr660QDJGVlZYwoivHx8d99951SqaxOAqimanqDRJPXpFJpv379GBpyqV6Uaqqmvxd1xtbn1XZaNVXT30f/B30Vl6ZdwAFiAAAAAElFTkSuQmCC" alt="Addis Jeans" class="h-9 sm:h-10 w-auto rounded-md shadow-md border border-zinc-900 bg-black object-contain" />
       </div>
+      <div class="flex flex-wrap items-center gap-1.5 text-xs">
+        <button id="userSwitchBtn" type="button" class="inline-flex items-center gap-1 bg-zinc-950/90 hover:bg-zinc-900 border border-zinc-800 px-2.5 py-1 rounded-full text-xs font-bold text-amber-300 transition">
+          <span id="activeUserDot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span>User: <strong id="activeUserName">Shameem</strong></span>
+          <span class="text-zinc-400">▾</span>
+        </button>
+        <button id="syncSettingsBtn" type="button" class="inline-flex items-center gap-1 bg-zinc-950/90 hover:bg-zinc-900 border border-zinc-800 px-2.5 py-1 rounded-full text-xs font-semibold text-zinc-100 transition">
+          <span id="syncStatusDot" class="w-2 h-2 rounded-full bg-sky-400"></span>
+          <span id="syncStatusText">Local Auto-Sync</span>
+        </button>
+        <button id="appModeToggleBtn" type="button" class="inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 border border-emerald-500 px-2.5 py-1 rounded-full text-xs font-bold text-white transition">
+          ✏️ Edit Mode
+        </button>
+      </div>
+    </div>
 
-      <!-- Top Utility Buttons: Backup, Add Row -->
-      <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
-        <button id="pendingLotsBtn" type="button" class="px-3 py-1.5 rounded-lg bg-yellow-400 hover:bg-yellow-500 text-slate-950 font-bold text-xs sm:text-sm shadow transition">
-          ⏳ Pending Lots
-        </button>
-        <button id="savedHisabBtn" type="button" class="px-3 py-1.5 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white font-bold text-xs sm:text-sm shadow transition">
-          📑 Saved Hisab
-        </button>
-        <button id="backupRestoreBtn" type="button" class="px-3 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-600 text-slate-950 font-bold text-xs sm:text-sm shadow transition">
-          💾 Backup
-        </button>
-        <button id="addRowBtn" type="button" class="edit-only-control px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs sm:text-sm shadow transition">
+    <!-- Action Bar (Charcoal Pill Buttons) -->
+    <div class="bg-[#161922] px-3 py-2 flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800">
+      <div class="flex flex-wrap items-center gap-1.5">
+        <button id="addRowBtn" type="button" class="edit-only-control px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold text-xs sm:text-sm shadow transition">
           + Add Row
         </button>
+        <button id="pendingLotsBtn" type="button" class="px-3 py-1.5 rounded-lg bg-rose-950/80 hover:bg-rose-900 border border-rose-700/70 text-rose-200 font-bold text-xs sm:text-sm transition">
+          ⏳ Pending Lots
+        </button>
+        <button id="savedHisabBtn" type="button" class="px-3 py-1.5 rounded-lg bg-purple-700 hover:bg-purple-600 text-white font-bold text-xs sm:text-sm shadow transition">
+          📑 Saved Hisab
+        </button>
+        <button id="backupRestoreBtn" type="button" class="px-3 py-1.5 rounded-lg bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700/70 text-emerald-200 font-bold text-xs sm:text-sm transition">
+          💾 Backup
+        </button>
+      </div>
+
+      <!-- Search & Totals -->
+      <div class="flex flex-wrap items-center gap-2 flex-1 justify-end min-w-[220px]">
+        <div class="flex items-center gap-1.5 flex-1 max-w-xs">
+          <input id="searchInput" type="text" placeholder="Search Lot, Master, Fabric..." class="w-full bg-[#0b0d11] border border-zinc-700 rounded-lg px-2.5 py-1 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-amber-400" />
+          <button id="clearSearchBtn" type="button" class="hidden px-2 py-1 bg-zinc-800 hover:bg-zinc-700 rounded text-zinc-200 text-xs">Clear</button>
+        </div>
+        <div class="flex items-center gap-2.5 text-xs text-zinc-400">
+          <span>Lots: <strong id="totalLotsCount" class="text-white">0</strong></span>
+          <span>Pcs: <strong id="totalPiecesCount" class="text-amber-400">0</strong></span>
+          <span>Jama: <strong id="totalJamaCount" class="text-emerald-400">0</strong></span>
+        </div>
       </div>
     </div>
 
     <!-- Department Hisab Bar (All 8 Departments - Unpaid Only) -->
-    <div class="bg-slate-950/60 border-t border-slate-800 px-3 py-1.5 flex items-center gap-1.5 overflow-x-auto table-scroll">
-      <span class="text-[11px] font-semibold text-slate-400 shrink-0 mr-1">Hisab:</span>
-      <button type="button" id="topMasterBtn" data-hisab-dept="master" class="px-2.5 py-1 rounded-md bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs shrink-0 transition">Master</button>
-      <button type="button" id="topEmbroideryBtn" data-hisab-dept="embroidery" class="px-2.5 py-1 rounded-md bg-violet-500 hover:bg-violet-600 text-white font-bold text-xs shrink-0 transition">Embroidery</button>
-      <button type="button" data-hisab-dept="fabrication" class="px-2.5 py-1 rounded-md bg-cyan-500 hover:bg-cyan-600 text-slate-950 font-bold text-xs shrink-0 transition">Fabrication</button>
-      <button type="button" data-hisab-dept="washing" class="px-2.5 py-1 rounded-md bg-blue-500 hover:bg-blue-600 text-white font-bold text-xs shrink-0 transition">Washing</button>
-      <button type="button" data-hisab-dept="tanki" class="px-2.5 py-1 rounded-md bg-teal-500 hover:bg-teal-600 text-slate-950 font-bold text-xs shrink-0 transition">Tanki</button>
-      <button type="button" data-hisab-dept="packing" class="px-2.5 py-1 rounded-md bg-orange-500 hover:bg-orange-600 text-slate-950 font-bold text-xs shrink-0 transition">Packing</button>
-      <button type="button" data-hisab-dept="laser" class="px-2.5 py-1 rounded-md bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs shrink-0 transition">Laser</button>
-      <button type="button" data-hisab-dept="print" class="px-2.5 py-1 rounded-md bg-fuchsia-500 hover:bg-fuchsia-600 text-white font-bold text-xs shrink-0 transition">Print</button>
-    </div>
-
-    <!-- Search & Quick Filter Bar -->
-    <div class="bg-slate-800/90 border-t border-slate-700 px-3 py-1.5 flex flex-wrap items-center justify-between gap-2 text-xs">
-      <div class="flex items-center gap-2 flex-1 min-w-[200px] max-w-md">
-        <input id="searchInput" type="text" placeholder="Search Lot no, Master, Fabric, Karigar..." class="w-full bg-slate-900 border border-slate-700 rounded-md px-2.5 py-1 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-indigo-400" />
-        <button id="clearSearchBtn" type="button" class="hidden px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-200">Clear</button>
-      </div>
-      <div class="flex items-center gap-3 text-slate-300">
-        <span>Total Lots: <strong id="totalLotsCount" class="text-white">0</strong></span>
-        <span>Total Peice: <strong id="totalPiecesCount" class="text-emerald-400">0</strong></span>
-        <span>Total Jama: <strong id="totalJamaCount" class="text-sky-400">0</strong></span>
-      </div>
+    <div class="bg-[#0e1016] px-3 py-1.5 flex items-center gap-1.5 overflow-x-auto table-scroll">
+      <span class="text-[11px] font-bold text-amber-400 shrink-0 mr-1 uppercase tracking-wider">Hisab:</span>
+      <button type="button" id="topMasterBtn" data-hisab-dept="master" class="px-2.5 py-1 rounded-md bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs shrink-0 transition">Master</button>
+      <button type="button" id="topEmbroideryBtn" data-hisab-dept="embroidery" class="px-2.5 py-1 rounded-md bg-purple-700 hover:bg-purple-600 text-white font-bold text-xs shrink-0 transition">Embroidery</button>
+      <button type="button" data-hisab-dept="fabrication" class="px-2.5 py-1 rounded-md bg-emerald-800 hover:bg-emerald-700 border border-emerald-600/50 text-emerald-100 font-bold text-xs shrink-0 transition">Fabrication</button>
+      <button type="button" data-hisab-dept="washing" class="px-2.5 py-1 rounded-md bg-blue-700 hover:bg-blue-600 text-white font-bold text-xs shrink-0 transition">Washing</button>
+      <button type="button" data-hisab-dept="tanki" class="px-2.5 py-1 rounded-md bg-teal-800 hover:bg-teal-700 border border-teal-600/50 text-teal-100 font-bold text-xs shrink-0 transition">Tanki</button>
+      <button type="button" data-hisab-dept="packing" class="px-2.5 py-1 rounded-md bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs shrink-0 transition">Packing</button>
+      <button type="button" data-hisab-dept="laser" class="px-2.5 py-1 rounded-md bg-rose-700 hover:bg-rose-600 text-white font-bold text-xs shrink-0 transition">Laser</button>
+      <button type="button" data-hisab-dept="print" class="px-2.5 py-1 rounded-md bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-zinc-100 font-bold text-xs shrink-0 transition">Print</button>
     </div>
   </header>
 
-  <!-- Main Table Container -->
-  <main class="flex-1 p-2 sm:p-4 overflow-hidden flex flex-col">
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex-1 flex flex-col overflow-hidden">
+  <!-- Main Table Container (Obsidian Dark Surface & Amber-Gold Header) -->
+  <main class="flex-1 p-2 sm:p-3 overflow-hidden flex flex-col">
+    <div class="bg-[#14171f] rounded-xl shadow-xl border border-zinc-800 flex-1 flex flex-col overflow-hidden">
       <div class="table-scroll overflow-x-auto overflow-y-auto flex-1">
         <table class="w-full border-collapse text-left text-xs sm:text-sm min-w-[1250px]">
-          <thead class="bg-slate-900 text-white sticky top-0 z-20">
+          <thead class="bg-amber-500 text-zinc-950 font-extrabold sticky top-0 z-20 uppercase text-xs tracking-wide">
             <tr>
-              <th class="sticky-lot px-3 py-2.5 border-b border-r border-slate-700 w-24 text-center">Lot no</th>
-              <th class="px-3 py-2.5 border-b border-r border-slate-700 w-24 text-center">peice</th>
-              <th class="px-3 py-2.5 border-b border-r border-slate-700 w-24 text-center">size</th>
-              <th class="px-3 py-2.5 border-b border-r border-slate-700 w-28 text-center">fabric</th>
-              <th class="px-3 py-2.5 border-b border-r border-slate-700 w-28 text-center">Master</th>
-              <th class="px-3 py-2.5 border-b border-r border-slate-700 w-32 text-center">Embroidery</th>
-              <th class="px-3 py-2.5 border-b border-r border-slate-700 w-32 text-center">Fabrication</th>
-              <th class="px-3 py-2.5 border-b border-r border-slate-700 w-28 text-center">Tanki</th>
-              <th class="px-3 py-2.5 border-b border-r border-slate-700 w-32 text-center">washing</th>
-              <th class="px-3 py-2.5 border-b border-r border-slate-700 w-32 text-center">packing</th>
-              <th class="px-3 py-2.5 border-b border-r border-slate-700 w-24 text-center">Jama</th>
-              <th class="px-3 py-2.5 border-b border-r border-slate-700 w-28 text-center">Laser</th>
-              <th class="px-3 py-2.5 border-b border-slate-700 w-28 text-center">Print</th>
+              <th class="sticky-lot px-3 py-2.5 border-b border-r border-amber-600/40 w-24 text-center">Lot no</th>
+              <th class="px-3 py-2.5 border-b border-r border-amber-600/40 w-24 text-center">peice</th>
+              <th class="px-3 py-2.5 border-b border-r border-amber-600/40 w-24 text-center">size</th>
+              <th class="px-3 py-2.5 border-b border-r border-amber-600/40 w-28 text-center">fabric</th>
+              <th class="px-3 py-2.5 border-b border-r border-amber-600/40 w-28 text-center">Master</th>
+              <th class="px-3 py-2.5 border-b border-r border-amber-600/40 w-32 text-center">Embroidery</th>
+              <th class="px-3 py-2.5 border-b border-r border-amber-600/40 w-32 text-center">Fabrication</th>
+              <th class="px-3 py-2.5 border-b border-r border-amber-600/40 w-28 text-center">Tanki</th>
+              <th class="px-3 py-2.5 border-b border-r border-amber-600/40 w-32 text-center">washing</th>
+              <th class="px-3 py-2.5 border-b border-r border-amber-600/40 w-32 text-center">packing</th>
+              <th class="px-3 py-2.5 border-b border-r border-amber-600/40 w-24 text-center">Jama</th>
+              <th class="px-3 py-2.5 border-b border-r border-amber-600/40 w-28 text-center">Laser</th>
+              <th class="px-3 py-2.5 border-b border-amber-600/40 w-28 text-center">Print</th>
             </tr>
           </thead>
-          <tbody id="lotTableBody" class="divide-y divide-slate-200">
+          <tbody id="lotTableBody" class="divide-y divide-zinc-800 text-zinc-100">
             <!-- Rendered by JS -->
           </tbody>
         </table>
@@ -179,26 +194,26 @@
   </main>
 
   <!-- Toast Notification -->
-  <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-4 py-2 rounded-full text-xs sm:text-sm font-medium shadow-lg opacity-0 pointer-events-none transition-opacity duration-200 z-50"></div>
+  <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-amber-500 text-zinc-950 px-4 py-2 rounded-full text-xs sm:text-sm font-bold shadow-xl opacity-0 pointer-events-none transition-opacity duration-200 z-50"></div>
 
   <!-- Generic Modal Backdrop -->
-  <div id="modalBackdrop" class="fixed inset-0 bg-slate-950/60 backdrop-blur-xs hidden items-center justify-center p-3 z-40">
-    <div id="modalContent" class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto border border-slate-200">
+  <div id="modalBackdrop" class="fixed inset-0 bg-black/75 backdrop-blur-xs hidden items-center justify-center p-3 z-40">
+    <div id="modalContent" class="bg-[#181b22] text-zinc-100 rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto border border-zinc-700">
       <!-- Dynamic Modal Body -->
     </div>
   </div>
 
-  <!-- Hisab (Master / Embroidery) Fullscreen Overlay -->
-  <div id="hisabOverlay" class="fixed inset-0 bg-slate-100 hidden flex-col z-40 overflow-y-auto">
-    <div class="bg-slate-900 text-white px-3 py-2.5 flex items-center justify-between sticky top-0 z-10 no-print">
+  <!-- Hisab Fullscreen Overlay -->
+  <div id="hisabOverlay" class="fixed inset-0 bg-[#0b0d11] hidden flex-col z-40 overflow-y-auto">
+    <div class="bg-[#161922] text-white px-3 py-2.5 flex items-center justify-between sticky top-0 z-10 border-b border-zinc-800 no-print">
       <div class="flex items-center gap-2">
-        <button id="hisabBackBtn" type="button" class="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs sm:text-sm font-semibold">← Back</button>
-        <h2 id="hisabTitle" class="text-sm sm:text-base font-bold">Hisab</h2>
+        <button id="hisabBackBtn" type="button" class="px-3 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-xs sm:text-sm font-semibold">← Back</button>
+        <h2 id="hisabTitle" class="text-sm sm:text-base font-bold text-amber-400">Hisab</h2>
       </div>
       <div class="flex items-center gap-1.5 sm:gap-2">
-        <button id="hisabSaveBtn" type="button" class="px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold text-xs sm:text-sm">💾 Save Hisab</button>
-        <button id="hisabPrintBtn" type="button" class="px-3 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-600 text-slate-950 font-bold text-xs sm:text-sm">🖨️ Print</button>
-        <button id="hisabShareBtn" type="button" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs sm:text-sm">📄 PDF / WhatsApp</button>
+        <button id="hisabSaveBtn" type="button" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs sm:text-sm">💾 Save Hisab</button>
+        <button id="hisabPrintBtn" type="button" class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm">🖨️ Print</button>
+        <button id="hisabShareBtn" type="button" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm">📄 PDF / WhatsApp</button>
       </div>
     </div>
     <div class="p-3 sm:p-5 max-w-4xl w-full mx-auto">
@@ -588,54 +603,56 @@
             const hasName = (data?.name || '').trim() !== '';
             const isStage = !!stageStats;
             const isClear = isStage && data?.status === 'Clear';
+            const isLightCell = data?.paid || isClear;
             const paidClass = data?.paid
               ? (data?.paidLight ? 'cell-paid-light' : 'cell-paid-bright')
-              : (isClear ? 'cell-status-clear' : 'hover:bg-indigo-50/70');
+              : (isClear ? 'cell-status-clear' : 'hover:bg-zinc-800/80');
 
             let subHtml = '';
             if (isStage) {
               if (stageStats.come || stageStats.gone) {
-                subHtml = `<div class="sub-text text-[11px] text-slate-700 mt-0.5 font-medium">${stageStats.come} - ${stageStats.gone} <span class="text-rose-600 font-bold">(${stageStats.balance})</span></div>`;
+                const balColor = isLightCell ? 'text-rose-700' : 'text-rose-400';
+                subHtml = `<div class="sub-text text-[11px] ${isLightCell ? 'text-zinc-800' : 'text-zinc-300'} mt-0.5 font-medium">${stageStats.come} - ${stageStats.gone} <span class="${balColor} font-bold">(${stageStats.balance})</span></div>`;
               }
             } else if (data?.peice) {
-              subHtml = `<div class="sub-text text-[11px] text-slate-600 mt-0.5">${escapeHtml(data.peice + ' pcs')}</div>`;
+              subHtml = `<div class="sub-text text-[11px] ${isLightCell ? 'text-zinc-800' : 'text-zinc-400'} mt-0.5">${escapeHtml(data.peice + ' pcs')}</div>`;
             }
 
             const statusBtnHtml = isStage
-              ? `<div class="mt-1"><button type="button" data-toggle-stage-status="${row.id}" data-stage-dept="${cellType}" class="px-2 py-0.5 rounded-full text-[10px] font-bold border transition ${isClear ? 'bg-amber-400 border-amber-600 text-slate-950' : 'bg-slate-200 border-slate-300 text-slate-700 hover:bg-slate-300'}">${isClear ? 'Clear' : 'Pending'}</button></div>`
+              ? `<div class="mt-1"><button type="button" data-toggle-stage-status="${row.id}" data-stage-dept="${cellType}" class="px-2 py-0.5 rounded-full text-[10px] font-bold border transition ${isClear ? 'bg-amber-400 border-amber-600 text-zinc-950' : 'bg-zinc-800 border-zinc-600 text-zinc-300 hover:bg-zinc-700'}">${isClear ? 'Clear' : 'Pending'}</button></div>`
               : '';
 
-            return `<td data-row-id="${row.id}" data-cell="${cellType}" class="cell-trigger cursor-pointer px-2 py-2 border-r border-slate-200 text-center align-middle transition ${paidClass}">
-              ${hasName ? `<div class="font-semibold text-xs sm:text-sm leading-tight">${escapeHtml(data.name)}</div>` : `<div class="text-slate-300 text-xs">+ Entry</div>`}
+            return `<td data-row-id="${row.id}" data-cell="${cellType}" class="cell-trigger cursor-pointer px-2 py-2 border-r border-zinc-800 text-center align-middle transition ${paidClass}">
+              ${hasName ? `<div class="font-semibold text-xs sm:text-sm leading-tight">${escapeHtml(data.name)}</div>` : `<div class="text-zinc-600 text-xs">+ Entry</div>`}
               ${subHtml}
               ${statusBtnHtml}
             </td>`;
           }
 
-          return `<tr class="hover:bg-slate-50/80 transition">
+          return `<tr class="hover:bg-zinc-900/60 transition">
             <!-- Lot no (Bold, manual entry supported) -->
-            <td class="sticky-lot px-2 py-2 border-r border-slate-200 text-center">
-              <input type="text" ${appMode === 'view' ? 'readonly disabled' : ''} data-lot-input="${row.id}" value="${escapeHtml(row.lotNo)}" placeholder="${isFirst ? 'Lot #' : ''}" class="lot-bold w-full text-center bg-transparent border border-transparent hover:border-slate-300 focus:border-indigo-500 focus:bg-white rounded px-1 py-1 text-slate-900 text-sm focus:outline-none" />
+            <td class="sticky-lot px-2 py-2 border-r border-zinc-800 text-center">
+              <input type="text" ${appMode === 'view' ? 'readonly disabled' : ''} data-lot-input="${row.id}" value="${escapeHtml(row.lotNo)}" placeholder="${isFirst ? 'Lot #' : ''}" class="lot-bold w-full text-center bg-transparent border border-transparent hover:border-zinc-600 focus:border-amber-400 focus:bg-zinc-900 rounded px-1 py-1 text-amber-400 text-sm focus:outline-none" />
             </td>
 
             <!-- peice (Click opens entry modal) -->
-            <td data-row-id="${row.id}" data-cell="peice" class="cell-trigger cursor-pointer px-2 py-2 border-r border-slate-200 text-center hover:bg-indigo-50/70 transition">
-              ${row.peice ? `<div class="font-bold text-slate-900">${escapeHtml(row.peice)}</div><div class="text-[10px] text-slate-400">${escapeHtml(formatDateDMY(row.date))}</div>` : `<span class="text-indigo-500 text-xs font-medium">+ Peice</span>`}
+            <td data-row-id="${row.id}" data-cell="peice" class="cell-trigger cursor-pointer px-2 py-2 border-r border-zinc-800 text-center hover:bg-zinc-800/80 transition">
+              ${row.peice ? `<div class="font-bold text-white">${escapeHtml(row.peice)}</div><div class="text-[10px] text-zinc-400">${escapeHtml(formatDateDMY(row.date))}</div>` : `<span class="text-amber-400 text-xs font-medium">+ Peice</span>`}
             </td>
 
             <!-- size (Manual or from peice modal) -->
-            <td class="px-1.5 py-2 border-r border-slate-200 text-center">
-              <input type="text" ${appMode === 'view' ? 'readonly disabled' : ''} data-inline-field="size" data-row-id="${row.id}" value="${escapeHtml(row.size)}" placeholder="-" class="w-full text-center bg-transparent border border-transparent hover:border-slate-300 focus:border-indigo-500 focus:bg-white rounded px-1 py-1 text-xs sm:text-sm focus:outline-none" />
+            <td class="px-1.5 py-2 border-r border-zinc-800 text-center">
+              <input type="text" ${appMode === 'view' ? 'readonly disabled' : ''} data-inline-field="size" data-row-id="${row.id}" value="${escapeHtml(row.size)}" placeholder="-" class="w-full text-center bg-transparent border border-transparent hover:border-zinc-600 focus:border-amber-400 focus:bg-zinc-900 rounded px-1 py-1 text-zinc-200 text-xs sm:text-sm focus:outline-none" />
             </td>
 
             <!-- fabric (Manual or from peice modal) -->
-            <td class="px-1.5 py-2 border-r border-slate-200 text-center">
-              <input type="text" ${appMode === 'view' ? 'readonly disabled' : ''} data-inline-field="fabric" data-row-id="${row.id}" value="${escapeHtml(row.fabric)}" placeholder="-" class="w-full text-center bg-transparent border border-transparent hover:border-slate-300 focus:border-indigo-500 focus:bg-white rounded px-1 py-1 text-xs sm:text-sm focus:outline-none" />
+            <td class="px-1.5 py-2 border-r border-zinc-800 text-center">
+              <input type="text" ${appMode === 'view' ? 'readonly disabled' : ''} data-inline-field="fabric" data-row-id="${row.id}" value="${escapeHtml(row.fabric)}" placeholder="-" class="w-full text-center bg-transparent border border-transparent hover:border-zinc-600 focus:border-amber-400 focus:bg-zinc-900 rounded px-1 py-1 text-zinc-200 text-xs sm:text-sm focus:outline-none" />
             </td>
 
             <!-- Master (Name from peice modal; click opens Paid toggle; green when paid) -->
-            <td data-row-id="${row.id}" data-cell="master" class="cell-trigger cursor-pointer px-2 py-2 border-r border-slate-200 text-center transition ${row.masterPaid ? (row.masterPaidLight ? 'cell-paid-light' : 'cell-paid-bright') : 'hover:bg-amber-50'}">
-              ${row.masterName ? `<div class="font-semibold text-xs sm:text-sm">${escapeHtml(row.masterName)}</div><div class="sub-text text-[10px] text-slate-500">${row.masterPaid ? 'PAID' : 'Unpaid'}</div>` : `<span class="text-slate-300 text-xs">-</span>`}
+            <td data-row-id="${row.id}" data-cell="master" class="cell-trigger cursor-pointer px-2 py-2 border-r border-zinc-800 text-center transition ${row.masterPaid ? (row.masterPaidLight ? 'cell-paid-light' : 'cell-paid-bright') : 'hover:bg-zinc-800/80'}">
+              ${row.masterName ? `<div class="font-semibold text-xs sm:text-sm">${escapeHtml(row.masterName)}</div><div class="sub-text text-[10px] ${row.masterPaid ? 'text-emerald-900' : 'text-zinc-400'}">${row.masterPaid ? 'PAID' : 'Unpaid'}</div>` : `<span class="text-zinc-600 text-xs">-</span>`}
             </td>
 
             <!-- Embroidery -->
@@ -654,9 +671,9 @@
             ${renderJobCell('packing', { name: packName, status: row.packing?.status, paid: row.packing?.paid, paidLight: row.packing?.paidLight }, getStageTotals(row, 'packing'))}
 
             <!-- Jama (Auto total from packing) -->
-            <td class="px-2 py-2 border-r border-slate-200 text-center bg-sky-50/50">
-              <div class="font-extrabold text-sky-700 text-sm">${jamaTotal || 0}</div>
-              <div class="text-[10px] text-slate-400">Jama</div>
+            <td class="px-2 py-2 border-r border-zinc-800 text-center bg-emerald-950/30">
+              <div class="font-extrabold text-emerald-400 text-sm">${jamaTotal || 0}</div>
+              <div class="text-[10px] text-zinc-500">Jama</div>
             </td>
 
             <!-- Laser -->
