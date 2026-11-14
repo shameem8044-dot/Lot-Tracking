@@ -230,12 +230,14 @@
       const STORAGE_KEY = 'lot_tracker_v2_data';
       const SYNC_CONFIG_KEY = 'lot_tracker_v2_sync_cfg';
       const USER_KEY = 'lot_tracker_v2_user';
+      const DEFAULT_EDIT_PIN = '4311';
 
       const bc = ('BroadcastChannel' in window) ? new BroadcastChannel('lot_tracker_sync_channel') : null;
 
       let appMode = 'edit'; // 'edit' | 'view'
       let state = {
         activeUser: 'Shameem',
+        editPin: DEFAULT_EDIT_PIN,
         rows: [],
         savedHisabs: [],
         hisabMeta: {
@@ -410,7 +412,9 @@
           if (raw) {
             const parsed = JSON.parse(raw);
             if (parsed && Array.isArray(parsed.rows)) {
-              state.rows = parsed.rows.map(normalizeRowStages);
+              if (parsed.editPin) state.editPin = String(parsed.editPin);
+              if (parsed.editPin) state.editPin = String(parsed.editPin);
+        state.rows = parsed.rows.map(normalizeRowStages);
               state.savedHisabs = Array.isArray(parsed.savedHisabs) ? parsed.savedHisabs : [];
               state.hisabMeta = Object.assign({ master: {}, embroidery: {}, fabrication: {}, washing: {}, tanki: {}, packing: {}, laser: {}, print: {} }, parsed.hisabMeta || {});
               return;
@@ -427,6 +431,7 @@
           localStorage.setItem(USER_KEY, state.activeUser);
           localStorage.setItem(SYNC_CONFIG_KEY, JSON.stringify(state.syncConfig));
           localStorage.setItem(STORAGE_KEY, JSON.stringify({
+            editPin: state.editPin,
             rows: state.rows,
             savedHisabs: state.savedHisabs,
             hisabMeta: state.hisabMeta,
@@ -474,6 +479,7 @@
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
+                editPin: state.editPin,
                 rows: state.rows,
                 savedHisabs: state.savedHisabs,
                 hisabMeta: state.hisabMeta,
@@ -501,6 +507,7 @@
           if (!res.ok) return;
           const data = await res.json();
           if (data && Array.isArray(data.rows)) {
+            if (data.editPin) state.editPin = String(data.editPin);
             state.rows = data.rows.map(normalizeRowStages);
             state.savedHisabs = Array.isArray(data.savedHisabs) ? data.savedHisabs : [];
             state.hisabMeta = Object.assign({ master: {}, embroidery: {}, fabrication: {}, washing: {}, tanki: {}, packing: {}, laser: {}, print: {} }, data.hisabMeta || {});
@@ -821,8 +828,8 @@
                   <div class="text-sm font-bold text-slate-900">Master Payment Status</div>
                   <div class="text-xs text-slate-600">Paid ON karne par cell bright green hoga aur Top Master list me nahi judega</div>
                 </div>
-                <button id="toggleMasterPaidBtn" type="button" ${appMode === 'view' ? 'disabled' : ''} class="px-4 py-2 rounded-lg font-bold text-sm shadow transition ${appMode === 'view' ? 'bg-slate-300 text-slate-600 cursor-not-allowed' : (row.masterPaid ? 'bg-green-600 text-white' : 'bg-slate-900 text-white hover:bg-slate-800')}">
-                  ${row.masterPaid ? '✓ PAID (ON)' : 'Mark Paid'}
+                <button id="toggleMasterPaidBtn" type="button" ${appMode === 'view' ? 'disabled' : ''} class="px-4 py-2 rounded-lg font-bold text-sm shadow transition ${appMode === 'view' ? 'bg-slate-300 text-slate-600 cursor-not-allowed' : (row.masterPaid ? 'bg-green-600 hover:bg-green-500 text-white' : 'bg-rose-600 hover:bg-rose-500 text-white')}">
+                  ${row.masterPaid ? '✓ Paid' : 'Unpaid'}
                 </button>
               </div>
             </div>
@@ -831,14 +838,51 @@
 
         document.getElementById('toggleMasterPaidBtn').addEventListener('click', () => {
           if (appMode === 'view') return;
-          row.masterPaid = !row.masterPaid;
+          if (row.masterPaid) {
+            const box = document.getElementById('masterPinBox');
+            if (box) box.classList.remove('hidden');
+            return;
+          }
+          row.masterPaid = true;
+          row.masterPaidLight = false;
           row.updatedBy = state.activeUser;
           row.updatedAt = Date.now();
           saveLocalState();
           renderTable();
           closeModal();
-          showToast(row.masterPaid ? 'Master marked PAID' : 'Master marked Unpaid');
+          showToast('Master marked PAID');
         });
+
+        const masterUnlockArea = document.querySelector('#modalContent .space-y-4');
+        if (masterUnlockArea && row.masterPaid && appMode !== 'view') {
+          const pinDiv = document.createElement('div');
+          pinDiv.id = 'masterPinBox';
+          pinDiv.className = 'hidden p-3 rounded-xl border border-amber-500/50 bg-amber-950/30 space-y-2';
+          pinDiv.innerHTML = `
+            <div class="text-xs font-bold text-amber-300">Read-Only Unlock karne ke liye PIN daalein:</div>
+            <div class="flex gap-2">
+              <input id="masterPinInput" type="password" inputmode="numeric" maxlength="6" placeholder="Enter PIN" class="flex-1 border rounded-lg px-3 py-1.5 text-sm" />
+              <button id="masterPinSubmitBtn" type="button" class="px-4 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs">Unlock</button>
+            </div>
+            <div id="masterPinErr" class="hidden text-xs text-rose-400 font-semibold">Galat PIN!</div>
+          `;
+          masterUnlockArea.appendChild(pinDiv);
+          document.getElementById('masterPinSubmitBtn').addEventListener('click', () => {
+            const val = (document.getElementById('masterPinInput').value || '').trim();
+            if (val === (state.editPin || DEFAULT_EDIT_PIN)) {
+              row.masterPaid = false;
+              row.masterPaidLight = false;
+              row.updatedBy = state.activeUser;
+              row.updatedAt = Date.now();
+              saveLocalState();
+              renderTable();
+              closeModal();
+              showToast('Master unlocked for editing');
+            } else {
+              document.getElementById('masterPinErr').classList.remove('hidden');
+            }
+          });
+        }
       }
 
       function openJobModal(rowId, cellType) {
@@ -856,7 +900,7 @@
         const hasRate = ['embroidery', 'fabrication', 'tanki', 'washing'].includes(cellType);
         const isWashing = cellType === 'washing';
         const isEmbroidery = cellType === 'embroidery';
-        const btnLabel = isEmbroidery ? 'Paid' : 'Payment Done';
+        const btnLabel = 'Unpaid';
         const isLocked = data.paid || appMode === 'view';
         const ro = isLocked ? 'readonly disabled' : '';
         const roClass = isLocked ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-white';
@@ -866,10 +910,22 @@
             <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
               <div>
                 <h3 class="text-base font-bold text-slate-900">${titles[cellType]} — Lot ${escapeHtml(row.lotNo)}</h3>
-                ${data.paid ? '<span class="inline-block mt-1 px-2 py-0.5 bg-green-500 text-white text-[11px] font-bold rounded-full">✓ PAID / READ ONLY</span>' : ''}
+                ${data.paid ? `<div class="flex flex-wrap items-center gap-2 mt-1">
+                  <span class="inline-block px-2 py-0.5 bg-green-500 text-white text-[11px] font-bold rounded-full">✓ PAID / READ ONLY</span>
+                  ${appMode !== 'view' ? '<button id="jobUnlockPinBtn" type="button" class="px-2.5 py-0.5 rounded-full bg-amber-500 hover:bg-amber-400 text-zinc-950 text-[11px] font-bold">🔓 Edit with PIN</button>' : ''}
+                </div>` : ''}
               </div>
               <button type="button" data-close-modal class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold">✕</button>
             </div>
+            ${(data.paid && appMode !== 'view') ? `
+              <div id="jobPinBox" class="hidden mb-3 p-3 rounded-xl border border-amber-500/50 bg-amber-950/30 space-y-2">
+                <div class="text-xs font-bold text-amber-300">Read-Only Entry Edit karne ke liye PIN daalein:</div>
+                <div class="flex gap-2">
+                  <input id="jobPinInput" type="password" inputmode="numeric" maxlength="6" placeholder="Enter PIN" class="flex-1 border rounded-lg px-3 py-1.5 text-sm" />
+                  <button id="jobPinSubmitBtn" type="button" class="px-4 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs">Unlock</button>
+                </div>
+                <div id="jobPinErr" class="hidden text-xs text-rose-400 font-semibold">Galat PIN!</div>
+              </div>` : ''}
             <form id="jobForm" class="space-y-3">
               <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">Date</label>
@@ -895,8 +951,8 @@
                 ${buildDatalistHtml('dl_job_' + cellType, cellType)}
               </div>
               <div class="pt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200">
-                <button id="jobPaidBtn" type="button" ${isLocked ? 'disabled' : ''} class="px-4 py-2 rounded-lg font-bold text-xs sm:text-sm shadow transition ${data.paid ? 'bg-green-600 text-white opacity-80 cursor-not-allowed' : (appMode === 'view' ? 'hidden' : 'bg-emerald-500 hover:bg-emerald-600 text-slate-950')}">
-                  ${data.paid ? '✓ ' + btnLabel : btnLabel}
+                <button id="jobPaidBtn" type="button" ${appMode === 'view' ? 'disabled' : ''} class="px-4 py-2 rounded-lg font-bold text-xs sm:text-sm shadow transition ${data.paid ? 'bg-green-600 hover:bg-green-500 text-white' : (appMode === 'view' ? 'hidden' : 'bg-rose-600 hover:bg-rose-500 text-white')}">
+                  ${data.paid ? '✓ Paid' : 'Unpaid'}
                 </button>
                 <div class="flex gap-2">
                   <button type="button" data-close-modal class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold">Close</button>
@@ -906,6 +962,31 @@
             </form>
           </div>
         `);
+
+        const unlockJobBtn = document.getElementById('jobUnlockPinBtn');
+        if (unlockJobBtn) {
+          unlockJobBtn.addEventListener('click', () => {
+            const box = document.getElementById('jobPinBox');
+            if (box) box.classList.remove('hidden');
+            const inp = document.getElementById('jobPinInput');
+            if (inp) inp.focus();
+          });
+          document.getElementById('jobPinSubmitBtn').addEventListener('click', () => {
+            const val = (document.getElementById('jobPinInput').value || '').trim();
+            if (val === (state.editPin || DEFAULT_EDIT_PIN)) {
+              data.paid = false;
+              data.paidLight = false;
+              row.updatedBy = state.activeUser;
+              row.updatedAt = Date.now();
+              saveLocalState();
+              renderTable();
+              openJobModal(rowId, cellType);
+              showToast('Unlocked for editing!');
+            } else {
+              document.getElementById('jobPinErr').classList.remove('hidden');
+            }
+          });
+        }
 
         const form = document.getElementById('jobForm');
         form.addEventListener('submit', (e) => {
@@ -926,7 +1007,14 @@
         });
 
         document.getElementById('jobPaidBtn').addEventListener('click', () => {
-          if (data.paid) return;
+          if (appMode === 'view') return;
+          if (data.paid) {
+            const box = document.getElementById('jobPinBox');
+            if (box) box.classList.remove('hidden');
+            const inp = document.getElementById('jobPinInput');
+            if (inp) inp.focus();
+            return;
+          }
           const fd = new FormData(form);
           data.date = fd.get('date') || data.date;
           data.peice = fd.get('peice') || data.peice;
@@ -939,7 +1027,7 @@
           saveLocalState();
           renderTable();
           closeModal();
-          showToast(titles[cellType] + ' marked ' + btnLabel);
+          showToast(titles[cellType] + ' marked Paid');
         });
       }
 
@@ -989,10 +1077,23 @@
               <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-3">
                 <div>
                   <h3 class="text-base font-bold text-slate-900">${titles[dept]} — Lot ${escapeHtml(row.lotNo)}</h3>
-                  ${paid ? '<span class="inline-block mt-1 px-2 py-0.5 bg-green-500 text-white text-[11px] font-bold rounded-full">✓ PAYMENT DONE / READ ONLY</span>' : ''}
+                  ${paid ? `<div class="flex flex-wrap items-center gap-2 mt-1">
+                    <span class="inline-block px-2 py-0.5 bg-green-500 text-white text-[11px] font-bold rounded-full">✓ PAYMENT DONE / READ ONLY</span>
+                    ${appMode !== 'view' ? '<button id="stageUnlockPinBtn" type="button" class="px-2.5 py-0.5 rounded-full bg-amber-500 hover:bg-amber-400 text-zinc-950 text-[11px] font-bold">🔓 Edit with PIN</button>' : ''}
+                  </div>` : ''}
                 </div>
                 <button type="button" data-close-modal class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold">✕</button>
               </div>
+
+              ${(paid && appMode !== 'view') ? `
+              <div id="stagePinBox" class="hidden mb-3 p-3 rounded-xl border border-amber-500/50 bg-amber-950/30 space-y-2">
+                <div class="text-xs font-bold text-amber-300">Read-Only Entry Edit karne ke liye PIN daalein:</div>
+                <div class="flex gap-2">
+                  <input id="stagePinInput" type="password" inputmode="numeric" maxlength="6" placeholder="Enter PIN" class="flex-1 border rounded-lg px-3 py-1.5 text-sm" />
+                  <button id="stagePinSubmitBtn" type="button" class="px-4 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs">Unlock</button>
+                </div>
+                <div id="stagePinErr" class="hidden text-xs text-rose-400 font-semibold">Galat PIN!</div>
+              </div>` : ''}
 
               <!-- Name, Rate & Washing Type -->
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-3">
@@ -1060,8 +1161,8 @@
 
               <!-- Action Buttons -->
               <div class="pt-2 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200">
-                <button id="stagePaidBtn" type="button" ${isLocked ? 'disabled' : ''} class="px-4 py-2 rounded-lg font-bold text-xs sm:text-sm shadow transition ${paid ? 'bg-green-600 text-white opacity-80 cursor-not-allowed' : (appMode === 'view' ? 'hidden' : 'bg-emerald-500 hover:bg-emerald-600 text-slate-950')}">
-                  ${paid ? '✓ Payment Done' : 'Payment Done'}
+                <button id="stagePaidBtn" type="button" ${appMode === 'view' ? 'disabled' : ''} class="px-4 py-2 rounded-lg font-bold text-xs sm:text-sm shadow transition ${paid ? 'bg-green-600 hover:bg-green-500 text-white' : (appMode === 'view' ? 'hidden' : 'bg-rose-600 hover:bg-rose-500 text-white')}">
+                  ${paid ? '✓ Paid' : 'Unpaid'}
                 </button>
                 <div class="flex gap-2">
                   <button type="button" data-close-modal class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold">Close</button>
@@ -1123,6 +1224,31 @@
             });
           });
 
+          const unlockStageBtn = document.getElementById('stageUnlockPinBtn');
+          if (unlockStageBtn) {
+            unlockStageBtn.addEventListener('click', () => {
+              const box = document.getElementById('stagePinBox');
+              if (box) box.classList.remove('hidden');
+              const inp = document.getElementById('stagePinInput');
+              if (inp) inp.focus();
+            });
+            document.getElementById('stagePinSubmitBtn').addEventListener('click', () => {
+              const val = (document.getElementById('stagePinInput').value || '').trim();
+              if (val === (state.editPin || DEFAULT_EDIT_PIN)) {
+                data.paid = false;
+                data.paidLight = false;
+                row.updatedBy = state.activeUser;
+                row.updatedAt = Date.now();
+                saveLocalState();
+                renderTable();
+                openStageModal(rowId, dept);
+                showToast('Unlocked for editing!');
+              } else {
+                document.getElementById('stagePinErr').classList.remove('hidden');
+              }
+            });
+          }
+
           const saveBtn = document.getElementById('stageSaveBtn');
           if (saveBtn) {
             saveBtn.addEventListener('click', () => {
@@ -1137,7 +1263,14 @@
           }
 
           document.getElementById('stagePaidBtn').addEventListener('click', () => {
-            if (data.paid) return;
+            if (appMode === 'view') return;
+            if (data.paid) {
+              const box = document.getElementById('stagePinBox');
+              if (box) box.classList.remove('hidden');
+              const inp = document.getElementById('stagePinInput');
+              if (inp) inp.focus();
+              return;
+            }
             syncInputsToData();
             data.paid = true;
             row.updatedBy = state.activeUser;
@@ -1145,7 +1278,7 @@
             saveLocalState();
             renderTable();
             closeModal();
-            showToast(titles[dept] + ' Payment Done');
+            showToast(titles[dept] + ' marked Paid');
           });
         }
 
@@ -2263,6 +2396,7 @@
           version: 2,
           exportedAt: new Date().toISOString(),
           exportedBy: state.activeUser,
+          editPin: state.editPin,
           rows: state.rows,
           savedHisabs: state.savedHisabs,
           hisabMeta: state.hisabMeta
@@ -2418,6 +2552,17 @@
                 <label class="block text-xs font-semibold text-slate-700 mb-1">Factory Sync Code (Same on both phones)</label>
                 <input name="roomCode" type="text" value="${escapeHtml(state.syncConfig.roomCode)}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-indigo-500" />
               </div>
+              <div class="p-3 rounded-xl border border-amber-500/40 bg-amber-950/20 space-y-2">
+                <div class="text-xs font-bold text-amber-300">🔐 Change Edit Unlock PIN</div>
+                <div class="grid grid-cols-2 gap-2">
+                  <input id="oldPinInput" type="password" inputmode="numeric" maxlength="6" placeholder="Old PIN" class="border rounded-lg px-2.5 py-1.5 text-xs" />
+                  <input id="newPinInput" type="password" inputmode="numeric" maxlength="6" placeholder="New PIN" class="border rounded-lg px-2.5 py-1.5 text-xs" />
+                </div>
+                <div class="flex items-center justify-between">
+                  <span id="pinChangeMsg" class="text-[11px] text-zinc-400">Default PIN: 4311</span>
+                  <button type="button" id="changePinBtn" class="px-3 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 text-xs font-bold">Update PIN</button>
+                </div>
+              </div>
               <div class="flex flex-wrap gap-2 pt-2 border-t border-slate-200">
                 <button type="button" id="exportJsonBtn" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700">⬇ Export Backup</button>
                 <label class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 cursor-pointer">
@@ -2439,6 +2584,29 @@
           startSyncPolling();
           closeModal();
           showToast('Sync settings saved');
+        });
+
+        document.getElementById('changePinBtn').addEventListener('click', () => {
+          const oldVal = (document.getElementById('oldPinInput').value || '').trim();
+          const newVal = (document.getElementById('newPinInput').value || '').trim();
+          const msgEl = document.getElementById('pinChangeMsg');
+          if (oldVal !== (state.editPin || DEFAULT_EDIT_PIN)) {
+            msgEl.textContent = 'Purana PIN galat hai!';
+            msgEl.className = 'text-[11px] text-rose-400 font-semibold';
+            return;
+          }
+          if (newVal.length < 4) {
+            msgEl.textContent = 'Naya PIN kam se kam 4 digits ka rakhein';
+            msgEl.className = 'text-[11px] text-rose-400 font-semibold';
+            return;
+          }
+          state.editPin = newVal;
+          saveLocalState();
+          document.getElementById('oldPinInput').value = '';
+          document.getElementById('newPinInput').value = '';
+          msgEl.textContent = 'PIN successfully updated!';
+          msgEl.className = 'text-[11px] text-emerald-400 font-semibold';
+          showToast('Edit PIN updated!');
         });
 
         document.getElementById('exportJsonBtn').addEventListener('click', () => {
