@@ -1643,6 +1643,7 @@
         const isTankiHisab = type === 'tanki';
 
         let totalPeice = 0;
+        let totalGonePcs = 0;
         let totalAmount = 0;
         let totalPayment = 0;
 
@@ -1657,6 +1658,7 @@
 
           if (!isIgnored) {
             totalPeice += vals.pcs;
+            totalGonePcs += vals.gone;
             totalAmount += vals.amount;
             totalPayment += payment;
           }
@@ -1715,6 +1717,7 @@
           const dAmt = dCome * dRate;
           const dPay = parseFloat(dr.payment) || 0;
           totalPeice += dCome;
+          totalGonePcs += (parseFloat(dr.gone) || 0);
           totalAmount += dAmt;
           totalPayment += dPay;
 
@@ -1762,8 +1765,10 @@
         }).join('');
 
         const lastBal = parseFloat(meta.lastBalance) || 0;
+        const pcsBal = totalPeice - totalGonePcs;
+        const pcsBalAmt = isStageDept ? (parseFloat(meta.pcsBalAmount) || 0) : 0;
         const grandKaam = totalAmount + lastBal;
-        const balance = grandKaam - totalPayment;
+        const balance = grandKaam - totalPayment - pcsBalAmt;
 
         const area = document.getElementById('hisabPrintArea');
         area.innerHTML = `
@@ -1779,7 +1784,7 @@
           </div>
 
           <!-- Top Summary Cards -->
-          <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-4">
+          <div class="grid grid-cols-2 sm:grid-cols-${isStageDept ? '6' : '5'} gap-2.5 mb-4">
             <div class="p-2.5 rounded-xl bg-[#181b22] border border-zinc-700">
               <div class="text-[11px] text-zinc-400 font-semibold">Total Peice</div>
               <div id="hisabTotalPeice" class="text-lg font-extrabold text-white">${totalPeice}</div>
@@ -1792,6 +1797,14 @@
               <label class="block text-[11px] text-zinc-300 font-semibold">Last Balance (+)</label>
               <input id="hisabLastBalanceInput" type="number" step="0.01" value="${escapeHtml(meta.lastBalance)}" placeholder="0" class="w-full mt-0.5 rounded px-2 py-0.5 text-sm font-bold focus:outline-none" />
             </div>
+            ${isStageDept ? `
+            <div class="p-2.5 rounded-xl bg-rose-950/40 border border-rose-700/60">
+              <div class="flex items-center justify-between text-[11px] text-rose-300 font-semibold">
+                <span>Pcs Bal:</span>
+                <strong id="hisabPcsBal" class="text-rose-400 text-xs">${pcsBal} pcs</strong>
+              </div>
+              <input id="hisabPcsBalAmtInput" type="number" step="0.01" value="${escapeHtml(meta.pcsBalAmount || '')}" placeholder="Rakam (-)" class="w-full mt-1 rounded px-2 py-0.5 text-sm font-bold focus:outline-none" />
+            </div>` : ''}
             <div class="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-700/60">
               <div class="text-[11px] text-emerald-300 font-semibold">Total Payment</div>
               <div id="hisabTotalPayment" class="text-lg font-extrabold text-emerald-400">₹${totalPayment.toFixed(0)}</div>
@@ -1838,6 +1851,15 @@
           saveLocalState();
           recalcHisabTotalsOnly();
         });
+
+        const pcsBalAmtInp = document.getElementById('hisabPcsBalAmtInput');
+        if (pcsBalAmtInp) {
+          pcsBalAmtInp.addEventListener('input', (e) => {
+            meta.pcsBalAmount = e.target.value;
+            saveLocalState();
+            recalcHisabTotalsOnly();
+          });
+        }
 
         document.getElementById('addHisabLotRowBtn').addEventListener('click', () => {
           meta.draftRows.push({
@@ -2089,6 +2111,7 @@
 
         function recalcHisabTotalsOnly() {
           let tPcs = 0;
+          let tGone = 0;
           let tAmt = 0;
           let tPay = 0;
           matchingRows.forEach(r => {
@@ -2098,6 +2121,7 @@
             if (amtCell) amtCell.textContent = '₹' + vals.amount.toFixed(0);
             if (!en.ignored) {
               tPcs += vals.pcs;
+              tGone += vals.gone;
               tAmt += vals.amount;
               tPay += parseFloat(en.payment) || 0;
             }
@@ -2108,15 +2132,20 @@
             const dRate = parseFloat(dr.rate) || 0;
             const dAmt = dCome * dRate;
             tPcs += dCome;
+            tGone += (parseFloat(dr.gone) || 0);
             tAmt += dAmt;
             tPay += parseFloat(dr.payment) || 0;
             const dAmtCell = area.querySelector(`[data-draft-amount-cell="${dIdx}"]`);
             if (dAmtCell) dAmtCell.textContent = '₹' + dAmt.toFixed(0);
           });
           const lb = parseFloat(meta.lastBalance) || 0;
-          const bal = (tAmt + lb) - tPay;
+          const pBal = tPcs - tGone;
+          const pBalAmt = isStageDept ? (parseFloat(meta.pcsBalAmount) || 0) : 0;
+          const bal = (tAmt + lb) - tPay - pBalAmt;
           const pcsEl = document.getElementById('hisabTotalPeice');
           if (pcsEl) pcsEl.textContent = tPcs;
+          const pBalEl = document.getElementById('hisabPcsBal');
+          if (pBalEl) pBalEl.textContent = pBal + ' pcs';
           document.getElementById('hisabTotalAmount').textContent = '₹' + tAmt.toFixed(0);
           document.getElementById('hisabTotalPayment').textContent = '₹' + tPay.toFixed(0);
           document.getElementById('hisabFinalBalance').textContent = '₹' + bal.toFixed(0);
@@ -2136,6 +2165,7 @@
         }
 
         let totalPeice = 0;
+        let totalGone = 0;
         let totalAmount = 0;
         let totalPayment = 0;
         const snapshotRows = included.map(r => {
@@ -2143,6 +2173,7 @@
           const vals = getDeptRowValues(type, r, name, en);
           const payment = parseFloat(en.payment) || 0;
           totalPeice += vals.pcs;
+          totalGone += vals.gone;
           totalAmount += vals.amount;
           totalPayment += payment;
           return {
@@ -2159,8 +2190,11 @@
           };
         });
 
+        const isStage = ['fabrication', 'tanki', 'washing', 'packing'].includes(type);
+        const pcsBal = totalPeice - totalGone;
+        const pcsBalAmount = isStage ? (parseFloat(meta.pcsBalAmount) || 0) : 0;
         const lastBalance = parseFloat(meta.lastBalance) || 0;
-        const finalBalance = (totalAmount + lastBalance) - totalPayment;
+        const finalBalance = (totalAmount + lastBalance) - totalPayment - pcsBalAmount;
         const nextNum = (state.savedHisabs.length || 0) + 1;
         const hisabTitle = 'Hisab ' + nextNum;
 
@@ -2173,6 +2207,8 @@
           savedDate: todayISO(),
           savedBy: state.activeUser,
           totalPeice,
+          pcsBal,
+          pcsBalAmount,
           totalAmount,
           lastBalance,
           totalPayment,
@@ -2340,7 +2376,7 @@
             if (!h.rows[idx]) return;
             h.rows[idx].payment = parseFloat(e.target.value) || 0;
             h.totalPayment = h.rows.reduce((sum, item) => sum + (parseFloat(item.payment) || 0), 0);
-            h.finalBalance = (Number(h.totalAmount || 0) + Number(h.lastBalance || 0)) - h.totalPayment;
+            h.finalBalance = (Number(h.totalAmount || 0) + Number(h.lastBalance || 0)) - h.totalPayment - Number(h.pcsBalAmount || 0);
             document.getElementById('savedHisabTotalPay').textContent = '₹' + h.totalPayment.toFixed(0);
             document.getElementById('savedHisabFinalBal').textContent = '₹' + h.finalBalance.toFixed(0);
             saveLocalState();
@@ -2487,7 +2523,8 @@
                 body.push([r.lotNo, vals.pcs, Number(vals.rate || 0).toFixed(2), 'Rs ' + vals.amount.toFixed(0), dStr, pay ? 'Rs ' + pay.toFixed(0) : '']);
               }
             });
-            finalBalance = (totalAmount + lastBalance) - totalPayment;
+            const pBalAmt = isStage ? (parseFloat(meta.pcsBalAmount) || 0) : 0;
+            finalBalance = (totalAmount + lastBalance) - totalPayment - pBalAmt;
           }
 
           doc.setFontSize(15);
