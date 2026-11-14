@@ -204,6 +204,13 @@
       </div>
     </div>
 
+    <!-- Table Tabs Bar (Main, A, B, C...) -->
+    <div class="bg-[#11131a] border-t border-zinc-800 px-3 py-1.5 flex items-center gap-1.5 overflow-x-auto table-scroll">
+      <span class="text-[11px] font-bold text-zinc-400 shrink-0 mr-1 uppercase tracking-wider">Tables:</span>
+      <div id="tableTabsList" class="flex items-center gap-1.5"></div>
+      <button id="addTableBtn" type="button" class="edit-only-control px-2.5 py-1 rounded-md bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/60 text-amber-300 font-bold text-xs shrink-0 transition">+ Add Table</button>
+    </div>
+
     <!-- Department Hisab Bar (All 8 Departments - Unpaid Only) -->
     <div class="bg-[#0e1016] px-3 py-1.5 flex items-center gap-1.5 overflow-x-auto table-scroll">
       <span class="text-[11px] font-bold text-amber-400 shrink-0 mr-1 uppercase tracking-wider">Hisab:</span>
@@ -293,6 +300,8 @@
       let state = {
         activeUser: 'Shameem',
         editPin: DEFAULT_EDIT_PIN,
+        tables: ['Main'],
+        activeTable: 'Main',
         rows: [],
         savedHisabs: [],
         hisabMeta: {
@@ -380,9 +389,10 @@
         ];
       }
 
-      function createRow(lotNo) {
+      function createRow(lotNo, tableKey) {
         return {
           id: uid(),
+          tableKey: tableKey || state.activeTable || 'Main',
           lotNo: lotNo !== undefined ? String(lotNo) : '',
           date: todayISO(),
           peice: '',
@@ -450,6 +460,7 @@
             : [{ date: '', peice: '', ripit: '' }];
         }
         if (r.packing.goneEntries.length === 0) r.packing.goneEntries.push({ date: '', peice: '', ripit: '' });
+        if (!r.tableKey) r.tableKey = 'Main';
         return r;
       }
 
@@ -468,8 +479,9 @@
             const parsed = JSON.parse(raw);
             if (parsed && Array.isArray(parsed.rows)) {
               if (parsed.editPin) state.editPin = String(parsed.editPin);
-              if (parsed.editPin) state.editPin = String(parsed.editPin);
-        state.rows = parsed.rows.map(normalizeRowStages);
+              if (Array.isArray(parsed.tables) && parsed.tables.length) state.tables = parsed.tables;
+              if (parsed.activeTable && state.tables.includes(parsed.activeTable)) state.activeTable = parsed.activeTable;
+              state.rows = parsed.rows.map(normalizeRowStages);
               state.savedHisabs = Array.isArray(parsed.savedHisabs) ? parsed.savedHisabs : [];
               state.hisabMeta = Object.assign({ master: {}, embroidery: {}, fabrication: {}, washing: {}, tanki: {}, packing: {}, laser: {}, print: {} }, parsed.hisabMeta || {});
               return;
@@ -487,6 +499,8 @@
           localStorage.setItem(SYNC_CONFIG_KEY, JSON.stringify(state.syncConfig));
           localStorage.setItem(STORAGE_KEY, JSON.stringify({
             editPin: state.editPin,
+            tables: state.tables,
+            activeTable: state.activeTable,
             rows: state.rows,
             savedHisabs: state.savedHisabs,
             hisabMeta: state.hisabMeta,
@@ -535,6 +549,8 @@
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 editPin: state.editPin,
+                tables: state.tables,
+                activeTable: state.activeTable,
                 rows: state.rows,
                 savedHisabs: state.savedHisabs,
                 hisabMeta: state.hisabMeta,
@@ -563,6 +579,7 @@
           const data = await res.json();
           if (data && Array.isArray(data.rows)) {
             if (data.editPin) state.editPin = String(data.editPin);
+            if (Array.isArray(data.tables) && data.tables.length) state.tables = data.tables;
             state.rows = data.rows.map(normalizeRowStages);
             state.savedHisabs = Array.isArray(data.savedHisabs) ? data.savedHisabs : [];
             state.hisabMeta = Object.assign({ master: {}, embroidery: {}, fabrication: {}, washing: {}, tanki: {}, packing: {}, laser: {}, print: {} }, data.hisabMeta || {});
@@ -628,11 +645,32 @@
         return (row.packing?.name || '').trim();
       }
 
+      function renderTableTabs() {
+        const container = document.getElementById('tableTabsList');
+        if (!container) return;
+        container.innerHTML = state.tables.map(t => {
+          const isActive = t === state.activeTable;
+          const count = state.rows.filter(r => (r.tableKey || 'Main') === t).length;
+          return `<button type="button" data-switch-table="${escapeHtml(t)}" class="px-3 py-1 rounded-md text-xs font-extrabold shrink-0 transition ${isActive ? 'bg-amber-500 text-zinc-950 shadow' : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700'}">
+            ${escapeHtml(t === 'Main' ? 'Main Table' : 'Table ' + t)} <span class="opacity-75 text-[10px]">(${count})</span>
+          </button>`;
+        }).join('');
+        container.querySelectorAll('[data-switch-table]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            state.activeTable = btn.getAttribute('data-switch-table');
+            saveLocalState(true);
+            renderTable();
+          });
+        });
+      }
+
       function renderTable() {
+        renderTableTabs();
         const tbody = document.getElementById('lotTableBody');
         const q = currentSearch.trim().toLowerCase();
+        const tableRows = state.rows.filter(r => (r.tableKey || 'Main') === state.activeTable);
 
-        const filtered = state.rows.filter(r => {
+        const filtered = tableRows.filter(r => {
           if (!q) return true;
           return [
             r.lotNo, r.size, r.fabric, r.masterName,
@@ -643,11 +681,11 @@
 
         let totalPcs = 0;
         let totalJama = 0;
-        state.rows.forEach(r => {
+        tableRows.forEach(r => {
           totalPcs += parseFloat(r.peice) || 0;
           totalJama += getPackingTotalPeice(r);
         });
-        document.getElementById('totalLotsCount').textContent = state.rows.length;
+        document.getElementById('totalLotsCount').textContent = tableRows.length;
         document.getElementById('totalPiecesCount').textContent = totalPcs;
         document.getElementById('totalJamaCount').textContent = totalJama;
 
@@ -747,27 +785,55 @@
         }).join('');
       }
 
-      function getNextLotNo() {
-        let nextLot = '101';
-        if (state.rows.length > 0) {
-          const lastLot = (state.rows[state.rows.length - 1].lotNo || '').trim();
-          const match = lastLot.match(/^(.*?)(\d+)$/);
-          if (match) {
-            const prefix = match[1];
-            const num = parseInt(match[2], 10) + 1;
-            nextLot = prefix + String(num).padStart(match[2].length, '0');
-          } else if (lastLot === '') {
-            nextLot = String(state.rows.length + 1);
-          } else {
-            nextLot = lastLot + '-2';
-          }
+      function getNextTableLetter() {
+        const letters = state.tables.filter(t => t !== 'Main');
+        if (!letters.length) return 'A';
+        const last = letters[letters.length - 1];
+        if (last.length === 1 && last < 'Z') {
+          return String.fromCharCode(last.charCodeAt(0) + 1);
         }
-        return nextLot;
+        return 'T' + (letters.length + 1);
+      }
+
+      function addNewTable() {
+        if (appMode === 'view') return;
+        const nextKey = getNextTableLetter();
+        state.tables.push(nextKey);
+        state.activeTable = nextKey;
+        const firstLot = '0001' + nextKey;
+        state.rows.push(createRow(firstLot, nextKey));
+        saveLocalState();
+        renderTable();
+        showToast('Table ' + nextKey + ' added (Lot ' + firstLot + ')');
+      }
+
+      function getNextLotNo(tableKey) {
+        const tKey = tableKey || state.activeTable || 'Main';
+        const tRows = state.rows.filter(r => (r.tableKey || 'Main') === tKey);
+        if (tRows.length === 0) {
+          return tKey === 'Main' ? '101' : ('0001' + tKey);
+        }
+        const lastLot = (tRows[tRows.length - 1].lotNo || '').trim();
+        const suffixMatch = lastLot.match(/^(\d+)([A-Za-z]+)$/);
+        if (suffixMatch) {
+          const num = parseInt(suffixMatch[1], 10) + 1;
+          return String(num).padStart(suffixMatch[1].length, '0') + suffixMatch[2];
+        }
+        const match = lastLot.match(/^(.*?)(\d+)$/);
+        if (match) {
+          const prefix = match[1];
+          const num = parseInt(match[2], 10) + 1;
+          return prefix + String(num).padStart(match[2].length, '0');
+        }
+        if (lastLot === '') {
+          return tKey === 'Main' ? String(tRows.length + 1) : (String(tRows.length + 1).padStart(4, '0') + tKey);
+        }
+        return lastLot + '-2';
       }
 
       function addNewRow() {
-        const nextLot = getNextLotNo();
-        state.rows.push(createRow(nextLot));
+        const nextLot = getNextLotNo(state.activeTable);
+        state.rows.push(createRow(nextLot, state.activeTable));
         saveLocalState();
         renderTable();
         showToast('Row added: Lot ' + nextLot);
@@ -1836,14 +1902,38 @@
                 }
               });
 
-              if (targetNum !== null && targetNum > maxNum && maxNum > 0 && (targetNum - maxNum) <= 500) {
+              const sufMatch = enteredLot.match(/^(\d+)([A-Za-z]+)$/);
+              if (sufMatch) {
+                const tNum = parseInt(sufMatch[1], 10);
+                const padLen = sufMatch[1].length;
+                const suf = sufMatch[2];
+                const tKey = state.tables.includes(suf.toUpperCase()) ? suf.toUpperCase() : state.activeTable;
+                let maxSufNum = 0;
+                state.rows.forEach(r => {
+                  const m = (r.lotNo || '').trim().match(/^(\d+)([A-Za-z]+)$/);
+                  if (m && m[2].toLowerCase() === suf.toLowerCase()) {
+                    const n = parseInt(m[1], 10);
+                    if (n > maxSufNum) maxSufNum = n;
+                  }
+                });
+                if (tNum > maxSufNum && (tNum - maxSufNum) <= 500) {
+                  for (let n = maxSufNum + 1; n <= tNum; n++) {
+                    const created = createRow(String(n).padStart(padLen, '0') + suf, tKey);
+                    state.rows.push(created);
+                    if (n === tNum) targetRow = created;
+                  }
+                } else {
+                  targetRow = createRow(enteredLot, tKey);
+                  state.rows.push(targetRow);
+                }
+              } else if (targetNum !== null && targetNum > maxNum && maxNum > 0 && (targetNum - maxNum) <= 500) {
                 for (let n = maxNum + 1; n <= targetNum; n++) {
-                  const created = createRow(String(n));
+                  const created = createRow(String(n), 'Main');
                   state.rows.push(created);
                   if (n === targetNum) targetRow = created;
                 }
               } else {
-                targetRow = createRow(enteredLot);
+                targetRow = createRow(enteredLot, state.activeTable);
                 state.rows.push(targetRow);
               }
             }
@@ -2484,6 +2574,7 @@
           exportedAt: new Date().toISOString(),
           exportedBy: state.activeUser,
           editPin: state.editPin,
+          tables: state.tables,
           rows: state.rows,
           savedHisabs: state.savedHisabs,
           hisabMeta: state.hisabMeta
@@ -2495,6 +2586,8 @@
           showToast('Invalid backup file');
           return false;
         }
+        if (parsed.editPin) state.editPin = String(parsed.editPin);
+        if (Array.isArray(parsed.tables) && parsed.tables.length) state.tables = parsed.tables;
         state.rows = parsed.rows.map(normalizeRowStages);
         state.savedHisabs = Array.isArray(parsed.savedHisabs) ? parsed.savedHisabs : [];
         state.hisabMeta = Object.assign({ master: {}, embroidery: {}, fabrication: {}, washing: {}, tanki: {}, packing: {}, laser: {}, print: {} }, parsed.hisabMeta || {});
@@ -2810,6 +2903,7 @@
         }
         renderTable();
       });
+      document.getElementById('addTableBtn').addEventListener('click', addNewTable);
       document.getElementById('addRowBtn').addEventListener('click', addNewRow);
       document.querySelectorAll('[data-hisab-dept]').forEach(btn => {
         btn.addEventListener('click', () => openDeptListModal(btn.getAttribute('data-hisab-dept')));
