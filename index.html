@@ -205,10 +205,12 @@
     </div>
 
     <!-- Table Tabs Bar (Main, A, B, C...) -->
-    <div class="bg-[#11131a] border-t border-zinc-800 px-3 py-1.5 flex items-center gap-1.5 overflow-x-auto table-scroll">
-      <span class="text-[11px] font-bold text-zinc-400 shrink-0 mr-1 uppercase tracking-wider">Tables:</span>
-      <div id="tableTabsList" class="flex items-center gap-1.5"></div>
-      <button id="addTableBtn" type="button" class="edit-only-control px-2.5 py-1 rounded-md bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/60 text-amber-300 font-bold text-xs shrink-0 transition">+ Add Table</button>
+    <div class="bg-[#11131a] border-t border-zinc-800 px-3 py-1.5 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-1.5 overflow-x-auto table-scroll flex-1 min-w-0">
+        <span class="text-[11px] font-bold text-zinc-400 shrink-0 mr-1 uppercase tracking-wider">Tables:</span>
+        <div id="tableTabsList" class="flex items-center gap-1.5 shrink-0"></div>
+      </div>
+      <button id="addTableBtn" type="button" title="Add Table" aria-label="Add Table" class="edit-only-control w-7 h-7 flex items-center justify-center rounded-md bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/60 text-amber-300 font-extrabold text-base shrink-0 transition">+</button>
     </div>
 
     <!-- Department Hisab Bar (All 8 Departments - Unpaid Only) -->
@@ -470,9 +472,68 @@
             : [{ date: '', peice: '', ripit: '' }];
         }
         if (r.packing.goneEntries.length === 0) r.packing.goneEntries.push({ date: '', peice: '', ripit: '' });
-        if (!r.tableKey) r.tableKey = 'Main';
         if (r.lotNo) r.lotNo = normalizeLotNo(r.lotNo);
+        const suf = (r.lotNo || '').match(/^\d+([A-Za-z]+)$/);
+        if (suf) {
+          const letter = suf[1].toUpperCase();
+          r.tableKey = letter;
+          if (!state.tables.includes(letter)) state.tables.push(letter);
+        } else if (/^\d+$/.test(r.lotNo || '')) {
+          r.tableKey = 'Main';
+        } else if (!r.tableKey) {
+          r.tableKey = 'Main';
+        }
         return r;
+      }
+
+      function parseLotSortKey(lotNo) {
+        const s = normalizeLotNo(lotNo);
+        const m = s.match(/^(\d+)([A-Za-z]*)$/);
+        if (m) return { num: parseInt(m[1], 10), suf: m[2].toUpperCase(), raw: s };
+        return { num: Number.MAX_SAFE_INTEGER, suf: s.toUpperCase(), raw: s };
+      }
+
+      function deduplicateAndSortRows() {
+        const seen = new Map();
+        const deduped = [];
+        state.rows.forEach(rawRow => {
+          const r = normalizeRowStages(rawRow);
+          const key = (r.tableKey || 'Main') + '::' + (r.lotNo || r.id).toLowerCase();
+          if (!r.lotNo) {
+            deduped.push(r);
+            return;
+          }
+          if (seen.has(key)) {
+            const existing = seen.get(key);
+            if (!existing.peice && r.peice) existing.peice = r.peice;
+            if (!existing.size && r.size) existing.size = r.size;
+            if (!existing.fabric && r.fabric) existing.fabric = r.fabric;
+            if (!existing.masterName && r.masterName) existing.masterName = r.masterName;
+            if (r.masterPaid) existing.masterPaid = true;
+            ['embroidery', 'laser', 'print'].forEach(d => {
+              if (!existing[d]?.name && r[d]?.name) existing[d] = r[d];
+              if (r[d]?.paid) existing[d].paid = true;
+            });
+            ['fabrication', 'tanki', 'washing', 'packing'].forEach(d => {
+              if (!existing[d]?.name && r[d]?.name) existing[d].name = r[d].name;
+              if (!existing[d]?.rate && r[d]?.rate) existing[d].rate = r[d].rate;
+              if (r[d]?.status === 'Clear') existing[d].status = 'Clear';
+              if (r[d]?.paid) existing[d].paid = true;
+            });
+          } else {
+            seen.set(key, r);
+            deduped.push(r);
+          }
+        });
+
+        deduped.sort((a, b) => {
+          const ka = parseLotSortKey(a.lotNo);
+          const kb = parseLotSortKey(b.lotNo);
+          if (ka.suf !== kb.suf) return ka.suf.localeCompare(kb.suf);
+          if (ka.num !== kb.num) return ka.num - kb.num;
+          return ka.raw.localeCompare(kb.raw);
+        });
+        state.rows = deduped;
       }
 
       function loadLocalState() {
@@ -493,6 +554,7 @@
               if (Array.isArray(parsed.tables) && parsed.tables.length) state.tables = parsed.tables;
               if (parsed.activeTable && state.tables.includes(parsed.activeTable)) state.activeTable = parsed.activeTable;
               state.rows = parsed.rows.map(normalizeRowStages);
+              deduplicateAndSortRows();
               state.savedHisabs = Array.isArray(parsed.savedHisabs) ? parsed.savedHisabs : [];
               state.hisabMeta = Object.assign({ master: {}, embroidery: {}, fabrication: {}, washing: {}, tanki: {}, packing: {}, laser: {}, print: {} }, parsed.hisabMeta || {});
               return;
@@ -592,6 +654,7 @@
             if (data.editPin) state.editPin = String(data.editPin);
             if (Array.isArray(data.tables) && data.tables.length) state.tables = data.tables;
             state.rows = data.rows.map(normalizeRowStages);
+            deduplicateAndSortRows();
             state.savedHisabs = Array.isArray(data.savedHisabs) ? data.savedHisabs : [];
             state.hisabMeta = Object.assign({ master: {}, embroidery: {}, fabrication: {}, washing: {}, tanki: {}, packing: {}, laser: {}, print: {} }, data.hisabMeta || {});
             saveLocalState(true);
@@ -845,6 +908,7 @@
       function addNewRow() {
         const nextLot = getNextLotNo(state.activeTable);
         state.rows.push(createRow(nextLot, state.activeTable));
+        deduplicateAndSortRows();
         saveLocalState();
         renderTable();
         showToast('Row added: Lot ' + nextLot);
@@ -1923,7 +1987,7 @@
             const dr = meta.draftRows[dIdx];
             if (!dr) return;
 
-            let targetRow = state.rows.find(r => (r.lotNo || '').trim().toLowerCase() === enteredLot.toLowerCase());
+            let targetRow = state.rows.find(r => normalizeLotNo(r.lotNo).toLowerCase() === enteredLot.toLowerCase());
             if (!targetRow) {
               // Auto-create all intermediate rows up to enteredLot if numeric
               const targetNum = /^\d+$/.test(enteredLot) ? parseInt(enteredLot, 10) : null;
@@ -2018,6 +2082,7 @@
             targetRow.updatedBy = state.activeUser;
             targetRow.updatedAt = Date.now();
             meta.draftRows.splice(dIdx, 1);
+            deduplicateAndSortRows();
             saveLocalState();
             renderTable();
             renderHisabContent();
@@ -2637,6 +2702,7 @@
         if (parsed.editPin) state.editPin = String(parsed.editPin);
         if (Array.isArray(parsed.tables) && parsed.tables.length) state.tables = parsed.tables;
         state.rows = parsed.rows.map(normalizeRowStages);
+        deduplicateAndSortRows();
         state.savedHisabs = Array.isArray(parsed.savedHisabs) ? parsed.savedHisabs : [];
         state.hisabMeta = Object.assign({ master: {}, embroidery: {}, fabrication: {}, washing: {}, tanki: {}, packing: {}, laser: {}, print: {} }, parsed.hisabMeta || {});
         saveLocalState();
@@ -2916,11 +2982,21 @@
           const row = getRow(lotId);
           if (row) {
             const norm = normalizeLotNo(e.target.value);
+            const sufMatch = norm.match(/^\d+([A-Za-z]+)$/);
+            const tKey = sufMatch ? sufMatch[1].toUpperCase() : (/^\d+$/.test(norm) ? 'Main' : (row.tableKey || 'Main'));
+            const dup = norm && state.rows.find(r => r.id !== row.id && (r.tableKey || 'Main') === tKey && normalizeLotNo(r.lotNo) === norm);
+            if (dup) {
+              showToast('Lot ' + norm + ' is table me pehle se maujood hai!');
+              e.target.value = row.lotNo;
+              return;
+            }
             row.lotNo = norm;
-            e.target.value = norm;
+            normalizeRowStages(row);
+            deduplicateAndSortRows();
             row.updatedBy = state.activeUser;
             row.updatedAt = Date.now();
             saveLocalState();
+            renderTable();
           }
         }
       });
