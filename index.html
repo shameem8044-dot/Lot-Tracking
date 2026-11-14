@@ -2260,47 +2260,68 @@
 
       function openPendingLotsModal() {
         const depts = [
-          { key: 'fabrication', label: 'Fabrication', color: 'bg-cyan-50 border-cyan-200 text-cyan-900' },
-          { key: 'tanki', label: 'Tanki', color: 'bg-teal-50 border-teal-200 text-teal-900' },
-          { key: 'washing', label: 'Washing', color: 'bg-blue-50 border-blue-200 text-blue-900' },
-          { key: 'packing', label: 'Packing', color: 'bg-orange-50 border-orange-200 text-orange-900' }
+          { key: 'fabrication', label: 'Fabrication', color: 'bg-zinc-900/90 border-cyan-700/50 text-cyan-200' },
+          { key: 'tanki', label: 'Tanki', color: 'bg-zinc-900/90 border-teal-700/50 text-teal-200' },
+          { key: 'washing', label: 'Washing', color: 'bg-zinc-900/90 border-blue-700/50 text-blue-200' },
+          { key: 'packing', label: 'Packing', color: 'bg-zinc-900/90 border-orange-700/50 text-orange-200' }
         ];
 
-        const sectionsHtml = depts.map(d => {
-          const pendingRows = state.rows.filter(r => (r[d.key]?.status || 'Pending') === 'Pending');
-          return `
-            <div class="p-3 rounded-xl border ${d.color}">
-              <div class="flex items-center justify-between mb-2">
-                <span class="font-bold text-sm">${d.label}</span>
-                <span class="px-2.5 py-0.5 rounded-full bg-white/80 text-xs font-extrabold">${pendingRows.length} Pending</span>
-              </div>
-              ${pendingRows.length ? `
-                <div class="flex flex-wrap gap-1.5">
-                  ${pendingRows.map(r => `
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-slate-200 text-xs font-bold text-slate-800">
-                      Lot ${escapeHtml(r.lotNo)}${r[d.key]?.name ? ` <span class="font-normal text-slate-500">(${escapeHtml(r[d.key].name)})</span>` : ''}
-                    </span>
-                  `).join('')}
+        function buildPendingSections(query) {
+          const q = (query || '').trim().toLowerCase();
+          return depts.map(d => {
+            const pendingRows = state.rows.filter(r => {
+              if ((r[d.key]?.status || 'Pending') !== 'Pending') return false;
+              if (!q) return true;
+              const lotMatch = (r.lotNo || '').toLowerCase().includes(q);
+              const nameMatch = (r[d.key]?.name || '').toLowerCase().includes(q);
+              const deptMatch = d.label.toLowerCase().includes(q);
+              return lotMatch || nameMatch || deptMatch;
+            });
+            return `
+              <div class="p-3 rounded-xl border ${d.color}">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="font-bold text-sm">${d.label}</span>
+                  <span class="px-2.5 py-0.5 rounded-full bg-amber-500 text-zinc-950 text-xs font-extrabold">${pendingRows.length} Pending</span>
                 </div>
-              ` : '<div class="text-xs opacity-70">Sabhi lots Clear hain!</div>'}
-            </div>
-          `;
-        }).join('');
+                ${pendingRows.length ? `
+                  <div class="flex flex-wrap gap-1.5">
+                    ${pendingRows.map(r => `
+                      <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#0b0d11] border border-zinc-700 text-xs font-bold text-amber-300">
+                        Lot ${escapeHtml(r.lotNo)}${r[d.key]?.name ? ` <span class="font-normal text-zinc-300">(${escapeHtml(r[d.key].name)})</span>` : ''}
+                      </span>
+                    `).join('')}
+                  </div>
+                ` : `<div class="text-xs text-zinc-400">${q ? 'Koi matching pending lot nahi mila' : 'Sabhi lots Clear hain!'}</div>`}
+              </div>
+            `;
+          }).join('');
+        }
 
         openModal(`
           <div class="p-4 sm:p-5">
             <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-3">
               <div>
-                <h3 class="text-base font-bold text-slate-900">Pending Lots Status</h3>
+                <h3 class="text-base font-bold">Pending Lots Status</h3>
                 <p class="text-xs text-slate-500">Har department me kitne lots Pending hain</p>
               </div>
-              <button type="button" data-close-modal class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold">✕</button>
+              <button type="button" data-close-modal class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 font-bold">✕</button>
             </div>
-            <div class="space-y-2.5 max-h-[68vh] overflow-y-auto">
-              ${sectionsHtml}
+            <div class="mb-3">
+              <input id="pendingSearchInput" type="text" placeholder="Search Lot no, Karigar Name, ya Department..." class="w-full border rounded-lg px-3 py-2 text-xs sm:text-sm focus:outline-none" />
+            </div>
+            <div id="pendingSectionsContainer" class="space-y-2.5 max-h-[60vh] overflow-y-auto">
+              ${buildPendingSections('')}
             </div>
           </div>
         `);
+
+        const searchEl = document.getElementById('pendingSearchInput');
+        const container = document.getElementById('pendingSectionsContainer');
+        if (searchEl && container) {
+          searchEl.addEventListener('input', () => {
+            container.innerHTML = buildPendingSections(searchEl.value);
+          });
+        }
       }
 
       async function shareHisabAsPdf() {
