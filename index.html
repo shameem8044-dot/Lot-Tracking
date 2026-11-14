@@ -376,6 +376,16 @@
           .replace(/'/g, '&#39;');
       }
 
+      function normalizeLotNo(val) {
+        const s = String(val || '').trim();
+        if (!s) return '';
+        const pureNum = s.match(/^0*(\d+)$/);
+        if (pureNum) return String(parseInt(pureNum[1], 10));
+        const sufNum = s.match(/^0*(\d+)([A-Za-z]+)$/);
+        if (sufNum) return String(parseInt(sufNum[1], 10)) + sufNum[2];
+        return s;
+      }
+
       function uid() {
         return 'lot_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
       }
@@ -393,7 +403,7 @@
         return {
           id: uid(),
           tableKey: tableKey || state.activeTable || 'Main',
-          lotNo: lotNo !== undefined ? String(lotNo) : '',
+          lotNo: lotNo !== undefined ? normalizeLotNo(lotNo) : '',
           date: todayISO(),
           peice: '',
           size: '',
@@ -461,6 +471,7 @@
         }
         if (r.packing.goneEntries.length === 0) r.packing.goneEntries.push({ date: '', peice: '', ripit: '' });
         if (!r.tableKey) r.tableKey = 'Main';
+        if (r.lotNo) r.lotNo = normalizeLotNo(r.lotNo);
         return r;
       }
 
@@ -800,7 +811,7 @@
         const nextKey = getNextTableLetter();
         state.tables.push(nextKey);
         state.activeTable = nextKey;
-        const firstLot = '0001' + nextKey;
+        const firstLot = '1' + nextKey;
         state.rows.push(createRow(firstLot, nextKey));
         saveLocalState();
         renderTable();
@@ -811,22 +822,22 @@
         const tKey = tableKey || state.activeTable || 'Main';
         const tRows = state.rows.filter(r => (r.tableKey || 'Main') === tKey);
         if (tRows.length === 0) {
-          return tKey === 'Main' ? '101' : ('0001' + tKey);
+          return tKey === 'Main' ? '1' : ('1' + tKey);
         }
-        const lastLot = (tRows[tRows.length - 1].lotNo || '').trim();
+        const lastLot = normalizeLotNo(tRows[tRows.length - 1].lotNo || '');
         const suffixMatch = lastLot.match(/^(\d+)([A-Za-z]+)$/);
         if (suffixMatch) {
           const num = parseInt(suffixMatch[1], 10) + 1;
-          return String(num).padStart(suffixMatch[1].length, '0') + suffixMatch[2];
+          return String(num) + suffixMatch[2];
         }
         const match = lastLot.match(/^(.*?)(\d+)$/);
         if (match) {
           const prefix = match[1];
           const num = parseInt(match[2], 10) + 1;
-          return prefix + String(num).padStart(match[2].length, '0');
+          return prefix + String(num);
         }
         if (lastLot === '') {
-          return tKey === 'Main' ? String(tRows.length + 1) : (String(tRows.length + 1).padStart(4, '0') + tKey);
+          return tKey === 'Main' ? String(tRows.length + 1) : (String(tRows.length + 1) + tKey);
         }
         return lastLot + '-2';
       }
@@ -1907,7 +1918,7 @@
         area.querySelectorAll('[data-draft-lot-input]').forEach(inp => {
           inp.addEventListener('change', (e) => {
             const dIdx = parseInt(e.target.getAttribute('data-draft-lot-input'), 10);
-            const enteredLot = (e.target.value || '').trim();
+            const enteredLot = normalizeLotNo(e.target.value);
             if (!enteredLot) return;
             const dr = meta.draftRows[dIdx];
             if (!dr) return;
@@ -1940,7 +1951,7 @@
                 });
                 if (tNum > maxSufNum && (tNum - maxSufNum) <= 500) {
                   for (let n = maxSufNum + 1; n <= tNum; n++) {
-                    const created = createRow(String(n).padStart(padLen, '0') + suf, tKey);
+                    const created = createRow(String(n) + suf, tKey);
                     state.rows.push(created);
                     if (n === tNum) targetRow = created;
                   }
@@ -2021,7 +2032,7 @@
             const row = getRow(lotId);
             if (!row) return;
             if (field === 'lotNo') {
-              row.lotNo = e.target.value;
+              row.lotNo = normalizeLotNo(e.target.value) || e.target.value;
             } else if (field === 'come') {
               normalizeRowStages(row);
               if (type === 'fabrication') {
@@ -2895,6 +2906,22 @@
           else if (cellType === 'master') openMasterCellModal(rowId);
           else if (['fabrication', 'tanki', 'washing', 'packing'].includes(cellType)) openStageModal(rowId, cellType);
           else openJobModal(rowId, cellType);
+        }
+      });
+
+      document.getElementById('lotTableBody').addEventListener('change', (e) => {
+        if (appMode === 'view') return;
+        const lotId = e.target.getAttribute('data-lot-input');
+        if (lotId) {
+          const row = getRow(lotId);
+          if (row) {
+            const norm = normalizeLotNo(e.target.value);
+            row.lotNo = norm;
+            e.target.value = norm;
+            row.updatedBy = state.activeUser;
+            row.updatedAt = Date.now();
+            saveLocalState();
+          }
         }
       });
 
