@@ -7,6 +7,8 @@
   <meta name="theme-color" content="#0f172a" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href='data:application/manifest+json,{"name":"Addis Jeans Lot Tracker","short_name":"Addis Lot","display":"fullscreen","orientation":"any","background_color":"#0b0d11","theme_color":"#f59e0b"}' />
   <title>Lot Production &amp; Hisab Tracker — Shameem &amp; Saleem</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -30,6 +32,50 @@
     #modalContent .bg-slate-50, #modalContent .bg-slate-100 { background-color: #20242e; color: #f4f4f5; border-color: #3f3f46; }
     #modalContent .text-slate-900, #modalContent .text-slate-700 { color: #f4f4f5; }
     #modalContent .border-slate-200 { border-color: #2e3440; }
+    #hisabPrintArea {
+      background-color: #14171f !important;
+      color: #f8fafc !important;
+      border-color: #27272a !important;
+    }
+    #hisabPrintArea input {
+      background-color: #0b0d11 !important;
+      color: #f8fafc !important;
+      border-color: #3f3f46 !important;
+    }
+    #hisabPrintArea input:focus {
+      border-color: #f59e0b !important;
+    }
+    #hisabPrintArea input:disabled, #hisabPrintArea input[readonly] {
+      background-color: #1f2430 !important;
+      color: #9ca3af !important;
+    }
+    #hisabPrintArea input[data-hisab-lot-field="lotNo"],
+    #hisabPrintArea input[data-draft-lot-input] {
+      color: #fbbf24 !important;
+    }
+    #hisabPrintArea thead {
+      background-color: #f59e0b !important;
+      color: #09090b !important;
+    }
+    #hisabPrintArea thead th {
+      border-color: rgba(217, 119, 6, 0.4) !important;
+    }
+    #hisabPrintArea tbody tr {
+      background-color: #14171f;
+      border-color: #27272a !important;
+    }
+    #hisabPrintArea tbody td {
+      border-color: #27272a !important;
+      color: #f4f4f5 !important;
+    }
+    #hisabPrintArea [data-hisab-date-label],
+    #hisabPrintArea [data-draft-date-label] {
+      color: #f8fafc !important;
+    }
+    #hisabPrintArea .relative.border {
+      background-color: #0b0d11 !important;
+      border-color: #3f3f46 !important;
+    }
     * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; -webkit-tap-highlight-color: transparent; }
     body { background: #0b0d11; color: #f8fafc; }
     .lot-bold { font-weight: 800; letter-spacing: 0.02em; }
@@ -86,8 +132,14 @@
         top: 0 !important;
         width: 100% !important;
         background: #ffffff !important;
+        color: #0f172a !important;
         padding: 16px !important;
         box-shadow: none !important;
+      }
+      #hisabPrintArea input, #hisabPrintArea td, #hisabPrintArea span {
+        background: transparent !important;
+        color: #0f172a !important;
+        border-color: #cbd5e1 !important;
       }
       .no-print { display: none !important; }
     }
@@ -114,6 +166,9 @@
         </button>
         <button id="appModeToggleBtn" type="button" class="inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 border border-emerald-500 px-2.5 py-1 rounded-full text-xs font-bold text-white transition">
           ✏️ Edit Mode
+        </button>
+        <button id="fullscreenToggleBtn" type="button" title="Full Screen" class="inline-flex items-center justify-center bg-zinc-950/90 hover:bg-zinc-900 border border-zinc-800 px-2.5 py-1 rounded-full text-xs font-bold text-amber-300 transition">
+          ⛶ Full
         </button>
       </div>
     </div>
@@ -1646,38 +1701,38 @@
 
         const area = document.getElementById('hisabPrintArea');
         area.innerHTML = `
-          <div class="flex flex-wrap items-center justify-between gap-2 border-b-2 border-slate-900 pb-3 mb-4">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b-2 border-amber-500 pb-3 mb-4">
             <div>
-              <div class="text-xs uppercase tracking-wider font-bold text-slate-500">${escapeHtml(label)} Hisab Sheet (Unpaid Only)</div>
-              <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900">${escapeHtml(name)}</h2>
+              <div class="text-xs uppercase tracking-wider font-bold text-amber-400">${escapeHtml(label)} Hisab Sheet (Unpaid Only)</div>
+              <h2 class="text-xl sm:text-2xl font-extrabold text-white">${escapeHtml(name)}</h2>
             </div>
-            <div class="text-right text-xs text-slate-500">
-              <div>Date: <strong>${formatDateDMY(todayISO())}</strong></div>
-              <div>By: <strong>${escapeHtml(state.activeUser)}</strong></div>
+            <div class="text-right text-xs text-zinc-400">
+              <div>Date: <strong class="text-zinc-100">${formatDateDMY(todayISO())}</strong></div>
+              <div>By: <strong class="text-amber-300">${escapeHtml(state.activeUser)}</strong></div>
             </div>
           </div>
 
           <!-- Top Summary Cards -->
           <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-4">
-            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-              <div class="text-[11px] text-slate-500 font-semibold">Total Peice</div>
-              <div id="hisabTotalPeice" class="text-lg font-extrabold text-slate-900">${totalPeice}</div>
+            <div class="p-2.5 rounded-xl bg-[#181b22] border border-zinc-700">
+              <div class="text-[11px] text-zinc-400 font-semibold">Total Peice</div>
+              <div id="hisabTotalPeice" class="text-lg font-extrabold text-white">${totalPeice}</div>
             </div>
-            <div class="p-2.5 rounded-xl bg-indigo-50 border border-indigo-200">
-              <div class="text-[11px] text-indigo-700 font-semibold">Total Amount (Kaam)</div>
-              <div id="hisabTotalAmount" class="text-lg font-extrabold text-indigo-900">₹${totalAmount.toFixed(0)}</div>
+            <div class="p-2.5 rounded-xl bg-[#181b22] border border-amber-500/40">
+              <div class="text-[11px] text-amber-300 font-semibold">Total Amount (Kaam)</div>
+              <div id="hisabTotalAmount" class="text-lg font-extrabold text-amber-400">₹${totalAmount.toFixed(0)}</div>
             </div>
-            <div class="p-2.5 rounded-xl bg-amber-50 border border-amber-200">
-              <label class="block text-[11px] text-amber-800 font-semibold">Last Balance (+)</label>
-              <input id="hisabLastBalanceInput" type="number" step="0.01" value="${escapeHtml(meta.lastBalance)}" placeholder="0" class="w-full mt-0.5 bg-white border border-amber-300 rounded px-2 py-0.5 text-sm font-bold text-slate-900 focus:outline-none" />
+            <div class="p-2.5 rounded-xl bg-[#181b22] border border-zinc-700">
+              <label class="block text-[11px] text-zinc-300 font-semibold">Last Balance (+)</label>
+              <input id="hisabLastBalanceInput" type="number" step="0.01" value="${escapeHtml(meta.lastBalance)}" placeholder="0" class="w-full mt-0.5 rounded px-2 py-0.5 text-sm font-bold focus:outline-none" />
             </div>
-            <div class="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200">
-              <div class="text-[11px] text-emerald-700 font-semibold">Total Payment</div>
-              <div id="hisabTotalPayment" class="text-lg font-extrabold text-emerald-900">₹${totalPayment.toFixed(0)}</div>
+            <div class="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-700/60">
+              <div class="text-[11px] text-emerald-300 font-semibold">Total Payment</div>
+              <div id="hisabTotalPayment" class="text-lg font-extrabold text-emerald-400">₹${totalPayment.toFixed(0)}</div>
             </div>
-            <div class="col-span-2 sm:col-span-1 p-2.5 rounded-xl bg-slate-900 text-white">
-              <div class="text-[11px] text-slate-300 font-semibold">Final Balance</div>
-              <div id="hisabFinalBalance" class="text-lg font-extrabold text-amber-300">₹${balance.toFixed(0)}</div>
+            <div class="col-span-2 sm:col-span-1 p-2.5 rounded-xl bg-amber-500 text-zinc-950">
+              <div class="text-[11px] text-zinc-900 font-bold">Final Balance</div>
+              <div id="hisabFinalBalance" class="text-lg font-extrabold text-zinc-950">₹${balance.toFixed(0)}</div>
             </div>
           </div>
 
@@ -2112,37 +2167,37 @@
 
         const area = document.getElementById('hisabPrintArea');
         area.innerHTML = `
-          <div class="flex flex-wrap items-center justify-between gap-2 border-b-2 border-slate-900 pb-3 mb-4">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b-2 border-amber-500 pb-3 mb-4">
             <div>
-              <div class="text-xs uppercase tracking-wider font-bold text-indigo-600">${escapeHtml(h.title)} • ${escapeHtml(h.deptLabel)} (SAVED)</div>
-              <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900">${escapeHtml(h.name)}</h2>
+              <div class="text-xs uppercase tracking-wider font-bold text-amber-400">${escapeHtml(h.title)} • ${escapeHtml(h.deptLabel)} (SAVED)</div>
+              <h2 class="text-xl sm:text-2xl font-extrabold text-white">${escapeHtml(h.name)}</h2>
             </div>
-            <div class="text-right text-xs text-slate-500">
-              <div>Saved Date: <strong>${escapeHtml(formatDateDMY(h.savedDate))}</strong></div>
-              <div>By: <strong>${escapeHtml(h.savedBy)}</strong></div>
+            <div class="text-right text-xs text-zinc-400">
+              <div>Saved Date: <strong class="text-zinc-100">${escapeHtml(formatDateDMY(h.savedDate))}</strong></div>
+              <div>By: <strong class="text-amber-300">${escapeHtml(h.savedBy)}</strong></div>
             </div>
           </div>
 
           <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-4">
-            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-              <div class="text-[11px] text-slate-500 font-semibold">Total Peice</div>
-              <div class="text-lg font-extrabold text-slate-900">${h.totalPeice}</div>
+            <div class="p-2.5 rounded-xl bg-[#181b22] border border-zinc-700">
+              <div class="text-[11px] text-zinc-400 font-semibold">Total Peice</div>
+              <div class="text-lg font-extrabold text-white">${h.totalPeice}</div>
             </div>
-            <div class="p-2.5 rounded-xl bg-indigo-50 border border-indigo-200">
-              <div class="text-[11px] text-indigo-700 font-semibold">Total Amount (Kaam)</div>
-              <div class="text-lg font-extrabold text-indigo-900">₹${Number(h.totalAmount || 0).toFixed(0)}</div>
+            <div class="p-2.5 rounded-xl bg-[#181b22] border border-amber-500/40">
+              <div class="text-[11px] text-amber-300 font-semibold">Total Amount (Kaam)</div>
+              <div class="text-lg font-extrabold text-amber-400">₹${Number(h.totalAmount || 0).toFixed(0)}</div>
             </div>
-            <div class="p-2.5 rounded-xl bg-amber-50 border border-amber-200">
-              <div class="text-[11px] text-amber-800 font-semibold">Last Balance (+)</div>
-              <div class="text-lg font-extrabold text-amber-900">₹${Number(h.lastBalance || 0).toFixed(0)}</div>
+            <div class="p-2.5 rounded-xl bg-[#181b22] border border-zinc-700">
+              <div class="text-[11px] text-zinc-300 font-semibold">Last Balance (+)</div>
+              <div class="text-lg font-extrabold text-white">₹${Number(h.lastBalance || 0).toFixed(0)}</div>
             </div>
-            <div class="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200">
-              <div class="text-[11px] text-emerald-700 font-semibold">Total Payment</div>
-              <div id="savedHisabTotalPay" class="text-lg font-extrabold text-emerald-900">₹${Number(h.totalPayment || 0).toFixed(0)}</div>
+            <div class="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-700/60">
+              <div class="text-[11px] text-emerald-300 font-semibold">Total Payment</div>
+              <div id="savedHisabTotalPay" class="text-lg font-extrabold text-emerald-400">₹${Number(h.totalPayment || 0).toFixed(0)}</div>
             </div>
-            <div class="col-span-2 sm:col-span-1 p-2.5 rounded-xl bg-slate-900 text-white">
-              <div class="text-[11px] text-slate-300 font-semibold">Final Balance</div>
-              <div id="savedHisabFinalBal" class="text-lg font-extrabold text-amber-300">₹${Number(h.finalBalance || 0).toFixed(0)}</div>
+            <div class="col-span-2 sm:col-span-1 p-2.5 rounded-xl bg-amber-500 text-zinc-950">
+              <div class="text-[11px] text-zinc-900 font-bold">Final Balance</div>
+              <div id="savedHisabFinalBal" class="text-lg font-extrabold text-zinc-950">₹${Number(h.finalBalance || 0).toFixed(0)}</div>
             </div>
           </div>
 
@@ -2765,6 +2820,64 @@
         clearSearchBtn.classList.add('hidden');
         renderTable();
       });
+
+      let userExitedFullscreen = false;
+
+      function isFullscreenActive() {
+        return !!(document.fullscreenElement || document.webkitFullscreenElement);
+      }
+
+      function updateFullscreenBtn() {
+        const btn = document.getElementById('fullscreenToggleBtn');
+        if (!btn) return;
+        btn.textContent = isFullscreenActive() ? '✕ Exit Full' : '⛶ Full';
+      }
+
+      async function enterImmersiveFullscreen() {
+        if (isFullscreenActive()) return;
+        const el = document.documentElement;
+        try {
+          if (el.requestFullscreen) {
+            await el.requestFullscreen({ navigationUI: 'hide' });
+          } else if (el.webkitRequestFullscreen) {
+            el.webkitRequestFullscreen();
+          }
+        } catch (e) {
+          // Ignore if blocked by iframe policy
+        }
+        updateFullscreenBtn();
+      }
+
+      async function toggleImmersiveFullscreen() {
+        try {
+          if (isFullscreenActive()) {
+            userExitedFullscreen = true;
+            if (document.exitFullscreen) await document.exitFullscreen();
+            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+          } else {
+            userExitedFullscreen = false;
+            await enterImmersiveFullscreen();
+          }
+        } catch (e) {
+          // Ignore if blocked
+        }
+        updateFullscreenBtn();
+      }
+
+      document.getElementById('fullscreenToggleBtn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleImmersiveFullscreen();
+      });
+      document.addEventListener('fullscreenchange', updateFullscreenBtn);
+      document.addEventListener('webkitfullscreenchange', updateFullscreenBtn);
+
+      // Auto-enter immersive fullscreen on first user tap (Android Chrome requirement)
+      document.addEventListener('pointerdown', function onFirstTap() {
+        if (!userExitedFullscreen && !isFullscreenActive()) {
+          enterImmersiveFullscreen();
+        }
+        document.removeEventListener('pointerdown', onFirstTap);
+      }, { passive: true });
 
       loadLocalState();
       document.getElementById('activeUserName').textContent = state.activeUser;
