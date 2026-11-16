@@ -2341,6 +2341,7 @@
           if (meta.entries[r.id]) meta.entries[r.id].ignored = false;
         });
         meta.paymentRows = [];
+        meta.pcsBalAmount = '';
 
         state.savedHisabs.push(snapshot);
         saveLocalState();
@@ -2412,7 +2413,7 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-4">
+          <div class="grid grid-cols-2 sm:grid-cols-${['fabrication', 'tanki', 'washing', 'packing'].includes(h.dept) ? '6' : '5'} gap-2.5 mb-4">
             <div class="p-2.5 rounded-xl bg-[#181b22] border border-zinc-700">
               <div class="text-[11px] text-zinc-400 font-semibold">Total Peice</div>
               <div class="text-lg font-extrabold text-white">${h.totalPeice}</div>
@@ -2425,6 +2426,14 @@
               <div class="text-[11px] text-zinc-300 font-semibold">Last Balance (+)</div>
               <div class="text-lg font-extrabold text-white">₹${Number(h.lastBalance || 0).toFixed(0)}</div>
             </div>
+            ${['fabrication', 'tanki', 'washing', 'packing'].includes(h.dept) ? `
+            <div class="p-2.5 rounded-xl bg-rose-950/40 border border-rose-700/60">
+              <div class="flex items-center justify-between text-[11px] text-rose-300 font-semibold">
+                <span>Pcs Bal:</span>
+                <strong class="text-rose-400 text-xs">${Number(h.pcsBal || 0)} pcs</strong>
+              </div>
+              <div class="text-lg font-extrabold text-rose-400 mt-0.5">-₹${Number(h.pcsBalAmount || 0).toFixed(0)}</div>
+            </div>` : ''}
             <div class="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-700/60">
               <div class="text-[11px] text-emerald-300 font-semibold">Total Payment</div>
               <div id="savedHisabTotalPay" class="text-lg font-extrabold text-emerald-400">₹${Number(h.totalPayment || 0).toFixed(0)}</div>
@@ -2628,7 +2637,7 @@
           const isStage = ['fabrication', 'tanki', 'washing', 'packing'].includes(type);
           const isTanki = type === 'tanki';
 
-          let totalPeice = 0, totalAmount = 0, lastBalance = 0, totalPayment = 0, finalBalance = 0;
+          let totalPeice = 0, totalGonePdf = 0, pcsBalPdf = 0, pcsBalAmtPdf = 0, totalAmount = 0, lastBalance = 0, totalPayment = 0, finalBalance = 0;
           let head = [];
           let body = [];
           let payBody = [];
@@ -2641,6 +2650,8 @@
             titleText = `${h.title} (${h.deptLabel}) — ${h.name}`;
             dateText = formatDateDMY(h.savedDate);
             totalPeice = h.totalPeice || 0;
+            pcsBalPdf = Number(h.pcsBal || 0);
+            pcsBalAmtPdf = Number(h.pcsBalAmount || 0);
             totalAmount = Number(h.totalAmount || 0);
             lastBalance = Number(h.lastBalance || 0);
             totalPayment = Number(h.totalPayment || 0);
@@ -2676,6 +2687,7 @@
               const en = meta.entries[r.id] || {};
               const vals = getDeptRowValues(type, r, name, en);
               totalPeice += vals.pcs;
+              totalGonePdf += vals.gone;
               totalAmount += vals.amount;
               if (isStage) {
                 body.push(isTanki
@@ -2691,8 +2703,9 @@
               totalPayment += p;
               payBody.push([idx + 1, formatDateDMY(pr.date || '') || '-', 'Rs ' + p.toFixed(0)]);
             });
-            const pBalAmt = isStage ? (parseFloat(meta.pcsBalAmount) || 0) : 0;
-            finalBalance = (totalAmount + lastBalance) - totalPayment - pBalAmt;
+            pcsBalPdf = totalPeice - totalGonePdf;
+            pcsBalAmtPdf = isStage ? (parseFloat(meta.pcsBalAmount) || 0) : 0;
+            finalBalance = (totalAmount + lastBalance) - totalPayment - pcsBalAmtPdf;
           }
 
           doc.setFontSize(15);
@@ -2702,12 +2715,14 @@
           doc.setFont('helvetica', 'normal');
           doc.text(`Date: ${dateText}   |   By: ${state.activeUser}`, 36, 56);
 
-          doc.setFontSize(10);
+          doc.setFontSize(9.5);
           doc.setFont('helvetica', 'bold');
+          const pcsBalLine = isStage ? `   |   Pcs Bal: ${pcsBalPdf} pcs (-Rs ${pcsBalAmtPdf.toFixed(0)})` : '';
           doc.text(
-            `Total Peice: ${totalPeice}   |   Kaam: Rs ${totalAmount.toFixed(0)}   |   Last Bal: Rs ${lastBalance.toFixed(0)}   |   Payment: Rs ${totalPayment.toFixed(0)}   |   Final Bal: Rs ${finalBalance.toFixed(0)}`,
-            36,
-            76
+            `Total Peice: ${totalPeice}   |   Kaam: Rs ${totalAmount.toFixed(0)}   |   Last Bal: Rs ${lastBalance.toFixed(0)}${pcsBalLine}   |   Pay: Rs ${totalPayment.toFixed(0)}   |   Final Bal: Rs ${finalBalance.toFixed(0)}`,
+            24,
+            76,
+            { maxWidth: 547 }
           );
 
           const hasPay = payBody.length > 0;
