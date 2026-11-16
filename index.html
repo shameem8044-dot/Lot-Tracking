@@ -2275,7 +2275,8 @@
         if (!type || !name || isSavedView) return;
         const meta = state.hisabMeta[type]?.[name] || { lastBalance: '', entries: {} };
         const matchingRows = getUnpaidDeptRows(type, name);
-        const included = matchingRows.filter(r => !(meta.entries[r.id]?.ignored));
+        const ignoredIds = new Set(matchingRows.filter(r => Boolean(meta.entries[r.id] && meta.entries[r.id].ignored)).map(r => r.id));
+        const included = matchingRows.filter(r => !ignoredIds.has(r.id));
 
         if (!included.length) {
           showToast('Save karne ke liye kam se kam 1 non-ignored lot chahiye');
@@ -2335,14 +2336,24 @@
           paymentRows
         };
 
-        // Mark included lots Paid & light green in Main Table
-        included.forEach(r => {
-          if (type === 'master') {
-            r.masterPaid = true;
-            r.masterPaidLight = true;
+        // Mark ONLY non-ignored included lots Paid & green; keep ignored lots strictly Unpaid for future Hisab
+        matchingRows.forEach(r => {
+          if (ignoredIds.has(r.id)) {
+            if (type === 'master') {
+              r.masterPaid = false;
+              r.masterPaidLight = false;
+            } else {
+              r[type].paid = false;
+              r[type].paidLight = false;
+            }
           } else {
-            r[type].paid = true;
-            r[type].paidLight = true;
+            if (type === 'master') {
+              r.masterPaid = true;
+              r.masterPaidLight = true;
+            } else {
+              r[type].paid = true;
+              r[type].paidLight = true;
+            }
           }
           r.updatedBy = state.activeUser;
           r.updatedAt = Date.now();
