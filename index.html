@@ -1940,6 +1940,19 @@
                 <tbody>
                   ${(rowsHtml || draftRowsHtml) ? (rowsHtml + draftRowsHtml) : `<tr><td colspan="${isTankiHisab ? 8 : (isStageDept ? 6 : 5)}" class="text-center py-5 text-zinc-400">No unpaid lot entries</td></tr>`}
                 </tbody>
+                <tfoot class="bg-amber-500/15 font-extrabold text-xs sm:text-sm border-t-2 border-amber-500">
+                  <tr>
+                    <td class="px-2.5 py-2 text-amber-300 border-r border-zinc-700">Total</td>
+                    ${isStageDept ? `
+                      <td id="hisabFooterComeTotal" class="px-2.5 py-2 text-right text-amber-300 border-r border-zinc-700">${totalPeice}</td>
+                      <td id="hisabFooterGoneTotal" class="px-2.5 py-2 text-right text-emerald-300 border-r border-zinc-700">${totalGonePcs}</td>
+                      ${isTankiHisab ? '<td class="border-r border-zinc-700"></td><td class="border-r border-zinc-700"></td>' : ''}
+                    ` : `<td id="hisabFooterPeiceTotal" class="px-2.5 py-2 text-right text-amber-300 border-r border-zinc-700">${totalPeice}</td>`}
+                    <td class="border-r border-zinc-700"></td>
+                    <td id="hisabFooterAmountTotal" class="px-2.5 py-2 text-right text-amber-300 border-r border-zinc-700">₹${totalAmount.toFixed(0)}</td>
+                    <td class="no-print" data-html2canvas-ignore="true"></td>
+                  </tr>
+                </tfoot>
               </table>
             </div>
           </div>
@@ -2262,6 +2275,14 @@
           const bal = (tAmt + lb) - tPay - pBalAmt;
           const pcsEl = document.getElementById('hisabTotalPeice');
           if (pcsEl) pcsEl.textContent = tPcs;
+          const fComeEl = document.getElementById('hisabFooterComeTotal');
+          if (fComeEl) fComeEl.textContent = tPcs;
+          const fGoneEl = document.getElementById('hisabFooterGoneTotal');
+          if (fGoneEl) fGoneEl.textContent = tGone;
+          const fPeiceEl = document.getElementById('hisabFooterPeiceTotal');
+          if (fPeiceEl) fPeiceEl.textContent = tPcs;
+          const fAmtEl = document.getElementById('hisabFooterAmountTotal');
+          if (fAmtEl) fAmtEl.textContent = '₹' + tAmt.toFixed(0);
           const pBalEl = document.getElementById('hisabPcsBal');
           if (pBalEl) pBalEl.textContent = pBal + ' pcs';
           document.getElementById('hisabTotalAmount').textContent = '₹' + tAmt.toFixed(0);
@@ -2497,7 +2518,19 @@
                       <td class="px-2 py-2 text-right font-bold text-slate-900 whitespace-nowrap">₹${Number(r.amount || 0).toFixed(0)}</td>
                     </tr>
                   `).join('')}
-                </tbody>`;
+                </tbody>
+                <tfoot class="bg-amber-500/15 font-extrabold text-xs sm:text-sm border-t-2 border-amber-500">
+                  <tr>
+                    <td class="px-2 py-2 text-amber-300 border-r border-zinc-700">Total</td>
+                    ${isStage ? `
+                      <td class="px-2 py-2 text-right text-amber-300 border-r border-zinc-700">${h.rows.reduce((s, r) => s + (Number(r.come ?? r.peice) || 0), 0)}</td>
+                      <td class="px-2 py-2 text-right text-emerald-300 border-r border-zinc-700">${h.rows.reduce((s, r) => s + (Number(r.gone ?? r.peice) || 0), 0)}</td>
+                      ${isTanki ? '<td class="border-r border-zinc-700"></td><td class="border-r border-zinc-700"></td>' : ''}
+                    ` : `<td class="px-2 py-2 text-right text-amber-300 border-r border-zinc-700">${h.totalPeice}</td>`}
+                    <td class="border-r border-zinc-700"></td>
+                    <td class="px-2 py-2 text-right text-amber-300">₹${Number(h.totalAmount || 0).toFixed(0)}</td>
+                  </tr>
+                </tfoot>`;
               })()}
             </table>
           </div>
@@ -2749,13 +2782,22 @@
           );
 
           const hasPay = payBody.length > 0;
+          const totalGoneForFoot = body.reduce((s, row) => s + (isStage ? (Number(row[2]) || 0) : 0), 0);
+          const foot = isStage
+            ? [isTanki
+                ? ['Total', totalPeice, totalGoneForFoot, '', '', '', 'Rs ' + totalAmount.toFixed(0)]
+                : ['Total', totalPeice, totalGoneForFoot, '', 'Rs ' + totalAmount.toFixed(0)]]
+            : [['Total', totalPeice, '', 'Rs ' + totalAmount.toFixed(0)]];
+
           doc.autoTable({
             startY: 90,
             head,
             body,
+            foot,
             theme: 'grid',
             styles: { fontSize: hasPay ? 7.5 : 8.5, cellPadding: hasPay ? 3 : 4, overflow: 'linebreak' },
             headStyles: { fillColor: [15, 23, 42], textColor: 255, fontStyle: 'bold' },
+            footStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: 'bold' },
             margin: hasPay ? { left: 24, right: 205 } : { left: 32, right: 32 }
           });
 
