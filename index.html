@@ -535,6 +535,54 @@
         state.rows = deduped;
       }
 
+      function fillMissingLotsUpTo(enteredLot, excludeRowId) {
+        const norm = normalizeLotNo(enteredLot);
+        if (!norm) return;
+        const sufMatch = norm.match(/^(\d+)([A-Za-z]+)$/);
+        if (sufMatch) {
+          const targetNum = parseInt(sufMatch[1], 10);
+          const suf = sufMatch[2];
+          const tKey = suf.toUpperCase();
+          if (!state.tables.includes(tKey)) state.tables.push(tKey);
+          let maxSufNum = 0;
+          state.rows.forEach(r => {
+            if (r.id === excludeRowId) return;
+            const m = normalizeLotNo(r.lotNo).match(/^(\d+)([A-Za-z]+)$/);
+            if (m && m[2].toLowerCase() === suf.toLowerCase()) {
+              const n = parseInt(m[1], 10);
+              if (n > maxSufNum) maxSufNum = n;
+            }
+          });
+          if (maxSufNum > 0 && targetNum > maxSufNum + 1 && (targetNum - maxSufNum) <= 500) {
+            for (let n = maxSufNum + 1; n < targetNum; n++) {
+              const lotStr = String(n) + suf;
+              if (!state.rows.some(r => normalizeLotNo(r.lotNo).toLowerCase() === lotStr.toLowerCase())) {
+                state.rows.push(createRow(lotStr, tKey));
+              }
+            }
+          }
+        } else if (/^\d+$/.test(norm)) {
+          const targetNum = parseInt(norm, 10);
+          let maxNum = 0;
+          state.rows.forEach(r => {
+            if (r.id === excludeRowId) return;
+            const l = normalizeLotNo(r.lotNo);
+            if (/^\d+$/.test(l)) {
+              const n = parseInt(l, 10);
+              if (n > maxNum) maxNum = n;
+            }
+          });
+          if (maxNum > 0 && targetNum > maxNum + 1 && (targetNum - maxNum) <= 500) {
+            for (let n = maxNum + 1; n < targetNum; n++) {
+              const lotStr = String(n);
+              if (!state.rows.some(r => normalizeLotNo(r.lotNo) === lotStr)) {
+                state.rows.push(createRow(lotStr, 'Main'));
+              }
+            }
+          }
+        }
+      }
+
       function loadLocalState() {
         try {
           const savedUser = localStorage.getItem(USER_KEY);
@@ -1918,9 +1966,6 @@
           <div class="mb-5">
             <div class="flex items-center justify-between mb-2">
               <h3 class="text-xs sm:text-sm font-bold uppercase tracking-wider text-amber-400">1. Lot / Kaam Table (Serial Order)</h3>
-              <button id="addHisabLotRowBtn" type="button" class="edit-only-control no-print px-3 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold text-xs shadow transition">
-                + Add Lot Row
-              </button>
             </div>
             <div class="overflow-x-auto border border-zinc-700 rounded-xl">
               <table class="w-full border-collapse text-xs sm:text-sm">
@@ -1955,15 +2000,17 @@
                 </tfoot>
               </table>
             </div>
+            <div class="mt-2 flex justify-end no-print">
+              <button id="addHisabLotRowBtn" type="button" class="edit-only-control px-3 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold text-xs shadow transition">
+                + Add Lot Row
+              </button>
+            </div>
           </div>
 
           <!-- Table 2: Independent Date & Payment Table (Sorted by Date) -->
           <div>
             <div class="flex items-center justify-between mb-2">
               <h3 class="text-xs sm:text-sm font-bold uppercase tracking-wider text-emerald-400">2. Date &amp; Payment Table (Date Order)</h3>
-              <button id="addHisabPayRowBtn" type="button" class="edit-only-control no-print px-3 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-extrabold text-xs shadow transition">
-                + Add Payment Row
-              </button>
             </div>
             <div class="overflow-x-auto border border-zinc-700 rounded-xl">
               <table class="w-full border-collapse text-xs sm:text-sm">
@@ -1979,6 +2026,11 @@
                   ${payRowsHtml || '<tr><td colspan="4" class="text-center py-5 text-zinc-400">Abhi koi payment row nahi — + Add Payment Row par tap karein</td></tr>'}
                 </tbody>
               </table>
+            </div>
+            <div class="mt-2 flex justify-end no-print">
+              <button id="addHisabPayRowBtn" type="button" class="edit-only-control px-3 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-extrabold text-xs shadow transition">
+                + Add Payment Row
+              </button>
             </div>
           </div>
         `;
@@ -2434,9 +2486,12 @@
         });
       }
 
-      function openSavedHisabDetail(id) {
+      function openSavedHisabDetail(id, isUnlocked) {
         const h = state.savedHisabs.find(x => x.id === id);
         if (!h) return;
+        const unlocked = !!isUnlocked && appMode !== 'view';
+        const isLocked = !unlocked;
+        const ro = isLocked ? 'readonly disabled' : '';
         currentHisab = { type: h.dept, name: h.name, isSavedView: true, savedId: h.id };
         const overlay = document.getElementById('hisabOverlay');
         document.getElementById('hisabTitle').textContent = h.title + ': ' + h.name;
@@ -2444,12 +2499,21 @@
         overlay.classList.remove('hidden');
         overlay.classList.add('flex');
 
+        const isStage = ['fabrication', 'tanki', 'washing', 'packing'].includes(h.dept);
+        const isTanki = h.dept === 'tanki';
+        if (!Array.isArray(h.paymentRows)) {
+          h.paymentRows = h.rows.filter(r => r.payment || r.date).map(r => ({ date: r.date || '', payment: r.payment || 0 }));
+        }
+
         const area = document.getElementById('hisabPrintArea');
         area.innerHTML = `
           <div class="flex flex-wrap items-center justify-between gap-2 border-b-2 border-amber-500 pb-3 mb-4">
             <div>
-              <div class="text-xs uppercase tracking-wider font-bold text-amber-400">${escapeHtml(h.title)} • ${escapeHtml(h.deptLabel)} (SAVED)</div>
-              <h2 class="text-xl sm:text-2xl font-extrabold text-white">${escapeHtml(h.name)}</h2>
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-xs uppercase tracking-wider font-bold text-amber-400">${escapeHtml(h.title)} • ${escapeHtml(h.deptLabel)} (${unlocked ? 'UNLOCKED' : 'SAVED / READ ONLY'})</span>
+                ${(appMode !== 'view' && !unlocked) ? '<button id="savedUnlockPinBtn" type="button" class="no-print px-2.5 py-0.5 rounded-full bg-amber-500 hover:bg-amber-400 text-zinc-950 text-[11px] font-bold">🔓 Edit with PIN</button>' : ''}
+              </div>
+              <h2 class="text-xl sm:text-2xl font-extrabold text-white mt-0.5">${escapeHtml(h.name)}</h2>
             </div>
             <div class="text-right text-xs text-zinc-400">
               <div>Saved Date: <strong class="text-zinc-100">${escapeHtml(formatDateDMY(h.savedDate))}</strong></div>
@@ -2457,26 +2521,36 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-2 sm:grid-cols-${['fabrication', 'tanki', 'washing', 'packing'].includes(h.dept) ? '6' : '5'} gap-2.5 mb-4">
+          ${(appMode !== 'view' && !unlocked) ? `
+          <div id="savedPinBox" class="hidden no-print mb-4 p-3 rounded-xl border border-amber-500/50 bg-amber-950/30 space-y-2">
+            <div class="text-xs font-bold text-amber-300">Saved Hisab Edit karne ke liye PIN daalein:</div>
+            <div class="flex gap-2 max-w-xs">
+              <input id="savedPinInput" type="password" inputmode="numeric" maxlength="6" placeholder="Enter PIN" class="flex-1 border rounded-lg px-3 py-1.5 text-sm" />
+              <button id="savedPinSubmitBtn" type="button" class="px-4 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs">Unlock</button>
+            </div>
+            <div id="savedPinErr" class="hidden text-xs text-rose-400 font-semibold">Galat PIN!</div>
+          </div>` : ''}
+
+          <div class="grid grid-cols-2 sm:grid-cols-${isStage ? '6' : '5'} gap-2.5 mb-4">
             <div class="p-2.5 rounded-xl bg-[#181b22] border border-zinc-700">
               <div class="text-[11px] text-zinc-400 font-semibold">Total Peice</div>
-              <div class="text-lg font-extrabold text-white">${h.totalPeice}</div>
+              <div id="savedHisabTotalPeice" class="text-lg font-extrabold text-white">${h.totalPeice}</div>
             </div>
             <div class="p-2.5 rounded-xl bg-[#181b22] border border-amber-500/40">
               <div class="text-[11px] text-amber-300 font-semibold">Total Amount (Kaam)</div>
-              <div class="text-lg font-extrabold text-amber-400">₹${Number(h.totalAmount || 0).toFixed(0)}</div>
+              <div id="savedHisabTotalAmt" class="text-lg font-extrabold text-amber-400">₹${Number(h.totalAmount || 0).toFixed(0)}</div>
             </div>
             <div class="p-2.5 rounded-xl bg-[#181b22] border border-zinc-700">
-              <div class="text-[11px] text-zinc-300 font-semibold">Last Balance (+)</div>
-              <div class="text-lg font-extrabold text-white">₹${Number(h.lastBalance || 0).toFixed(0)}</div>
+              <label class="block text-[11px] text-zinc-300 font-semibold">Last Balance (+)</label>
+              <input id="savedLastBalInput" type="number" step="0.01" ${ro} value="${escapeHtml(h.lastBalance ? String(h.lastBalance) : '')}" placeholder="0" class="w-full mt-0.5 rounded px-2 py-0.5 text-sm font-bold focus:outline-none" />
             </div>
-            ${['fabrication', 'tanki', 'washing', 'packing'].includes(h.dept) ? `
+            ${isStage ? `
             <div class="p-2.5 rounded-xl bg-rose-950/40 border border-rose-700/60">
               <div class="flex items-center justify-between text-[11px] text-rose-300 font-semibold">
                 <span>Pcs Bal:</span>
-                <strong class="text-rose-400 text-xs">${Number(h.pcsBal || 0)} pcs</strong>
+                <strong id="savedPcsBal" class="text-rose-400 text-xs">${Number(h.pcsBal || 0)} pcs</strong>
               </div>
-              <div class="text-lg font-extrabold text-rose-400 mt-0.5">-₹${Number(h.pcsBalAmount || 0).toFixed(0)}</div>
+              <input id="savedPcsBalAmtInput" type="number" step="0.01" ${ro} value="${escapeHtml(h.pcsBalAmount ? String(h.pcsBalAmount) : '')}" placeholder="Rakam (-)" class="w-full mt-1 rounded px-2 py-0.5 text-sm font-bold focus:outline-none" />
             </div>` : ''}
             <div class="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-700/60">
               <div class="text-[11px] text-emerald-300 font-semibold">Total Payment</div>
@@ -2488,12 +2562,11 @@
             </div>
           </div>
 
-          <div class="overflow-x-auto border border-slate-200 rounded-xl">
-            <table class="w-full border-collapse text-xs sm:text-sm">
-              ${(() => {
-                const isStage = ['fabrication', 'tanki', 'washing', 'packing'].includes(h.dept);
-                const isTanki = h.dept === 'tanki';
-                return `<thead class="bg-slate-800 text-white">
+          <div class="mb-5">
+            <h3 class="text-xs sm:text-sm font-bold uppercase tracking-wider text-amber-400 mb-2">1. Lot / Kaam Table</h3>
+            <div class="overflow-x-auto border border-zinc-700 rounded-xl">
+              <table class="w-full border-collapse text-xs sm:text-sm">
+                <thead class="bg-slate-800 text-white">
                   <tr>
                     <th class="px-2.5 py-2 text-left border-r border-slate-700">Lot no</th>
                     ${isStage ? `
@@ -2506,16 +2579,26 @@
                   </tr>
                 </thead>
                 <tbody>
-                  ${h.rows.map(r => `
+                  ${h.rows.map((r, rIdx) => `
                     <tr class="border-b border-slate-200">
-                      <td class="px-2 py-2 font-bold text-slate-900 border-r border-slate-200 whitespace-nowrap">${escapeHtml(r.lotNo)}</td>
+                      <td class="px-2 py-2 font-bold border-r border-slate-200 whitespace-nowrap">${escapeHtml(r.lotNo)}</td>
                       ${isStage ? `
-                        <td class="px-2 py-2 text-right font-semibold border-r border-slate-200 whitespace-nowrap">${r.come ?? r.peice}</td>
-                        <td class="px-2 py-2 text-right font-semibold border-r border-slate-200 whitespace-nowrap">${r.gone ?? r.peice}</td>
+                        <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
+                          <input type="number" ${ro} data-saved-row-field="come" data-saved-row-idx="${rIdx}" value="${escapeHtml(String(r.come ?? r.peice ?? ''))}" class="w-16 text-right font-semibold rounded px-1.5 py-1 text-xs" />
+                        </td>
+                        <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
+                          <input type="number" ${ro} data-saved-row-field="gone" data-saved-row-idx="${rIdx}" value="${escapeHtml(String(r.gone ?? r.peice ?? ''))}" class="w-16 text-right font-semibold rounded px-1.5 py-1 text-xs" />
+                        </td>
                         ${isTanki ? `<td class="px-2 py-2 border-r border-slate-200 whitespace-nowrap">${escapeHtml(r.fabricationName || '-')}</td><td class="px-2 py-2 border-r border-slate-200 whitespace-nowrap">${escapeHtml(r.washingName || '-')}</td>` : ''}
-                      ` : `<td class="px-2 py-2 text-right font-semibold border-r border-slate-200 whitespace-nowrap">${r.peice}</td>`}
-                      <td class="px-2 py-2 text-right border-r border-slate-200 whitespace-nowrap">${Number(r.rate || 0).toFixed(2)}</td>
-                      <td class="px-2 py-2 text-right font-bold text-slate-900 whitespace-nowrap">₹${Number(r.amount || 0).toFixed(0)}</td>
+                      ` : `
+                        <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
+                          <input type="number" ${ro} data-saved-row-field="peice" data-saved-row-idx="${rIdx}" value="${escapeHtml(String(r.peice ?? ''))}" class="w-16 text-right font-semibold rounded px-1.5 py-1 text-xs" />
+                        </td>
+                      `}
+                      <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
+                        <input type="number" step="0.01" ${ro} data-saved-row-field="rate" data-saved-row-idx="${rIdx}" value="${escapeHtml(String(r.rate ?? ''))}" class="w-16 text-right rounded px-1.5 py-1 text-xs" />
+                      </td>
+                      <td data-saved-amt-cell="${rIdx}" class="px-2 py-2 text-right font-bold whitespace-nowrap">₹${Number(r.amount || 0).toFixed(0)}</td>
                     </tr>
                   `).join('')}
                 </tbody>
@@ -2523,23 +2606,20 @@
                   <tr>
                     <td class="px-2 py-2 text-amber-300 border-r border-zinc-700">Total</td>
                     ${isStage ? `
-                      <td class="px-2 py-2 text-right text-amber-300 border-r border-zinc-700">${h.rows.reduce((s, r) => s + (Number(r.come ?? r.peice) || 0), 0)}</td>
-                      <td class="px-2 py-2 text-right text-emerald-300 border-r border-zinc-700">${h.rows.reduce((s, r) => s + (Number(r.gone ?? r.peice) || 0), 0)}</td>
+                      <td id="savedFooterCome" class="px-2 py-2 text-right text-amber-300 border-r border-zinc-700">${h.rows.reduce((s, r) => s + (Number(r.come ?? r.peice) || 0), 0)}</td>
+                      <td id="savedFooterGone" class="px-2 py-2 text-right text-emerald-300 border-r border-zinc-700">${h.rows.reduce((s, r) => s + (Number(r.gone ?? r.peice) || 0), 0)}</td>
                       ${isTanki ? '<td class="border-r border-zinc-700"></td><td class="border-r border-zinc-700"></td>' : ''}
-                    ` : `<td class="px-2 py-2 text-right text-amber-300 border-r border-zinc-700">${h.totalPeice}</td>`}
+                    ` : `<td id="savedFooterPeice" class="px-2 py-2 text-right text-amber-300 border-r border-zinc-700">${h.totalPeice}</td>`}
                     <td class="border-r border-zinc-700"></td>
-                    <td class="px-2 py-2 text-right text-amber-300">₹${Number(h.totalAmount || 0).toFixed(0)}</td>
+                    <td id="savedFooterAmt" class="px-2 py-2 text-right text-amber-300">₹${Number(h.totalAmount || 0).toFixed(0)}</td>
                   </tr>
-                </tfoot>`;
-              })()}
-            </table>
+                </tfoot>
+              </table>
+            </div>
           </div>
 
-          <div class="mt-4">
-            <div class="flex items-center justify-between mb-2">
-              <h3 class="text-xs sm:text-sm font-bold uppercase tracking-wider text-emerald-400">2. Date &amp; Payment Table</h3>
-              ${appMode !== 'view' ? '<button id="addSavedPayRowBtn" type="button" class="no-print px-3 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-extrabold text-xs">+ Add Payment Row</button>' : ''}
-            </div>
+          <div>
+            <h3 class="text-xs sm:text-sm font-bold uppercase tracking-wider text-emerald-400 mb-2">2. Date &amp; Payment Table</h3>
             <div class="overflow-x-auto border border-zinc-700 rounded-xl">
               <table class="w-full border-collapse text-xs sm:text-sm">
                 <thead class="bg-slate-800 text-white">
@@ -2550,67 +2630,127 @@
                   </tr>
                 </thead>
                 <tbody>
-                  ${(() => {
-                    if (!Array.isArray(h.paymentRows)) {
-                      h.paymentRows = h.rows.filter(r => r.payment || r.date).map(r => ({ date: r.date || '', payment: r.payment || 0 }));
-                    }
-                    return h.paymentRows.length ? h.paymentRows.map((pr, pIdx) => `
-                      <tr class="border-b border-slate-200">
-                        <td class="px-2.5 py-2 font-bold text-xs text-zinc-400 border-r border-slate-200">${pIdx + 1}</td>
-                        <td class="px-2 py-2 border-r border-slate-200 whitespace-nowrap">
-                          <div class="relative w-28 h-7 border border-slate-300 rounded bg-white flex items-center justify-between px-1.5 text-xs">
-                            <span data-saved-pdate-label="${pIdx}" class="font-medium">${escapeHtml(formatDateDMY(pr.date || ''))}</span>
-                            <span class="text-[10px] text-slate-400 no-print">📅</span>
-                            <input type="date" ${appMode === 'view' ? 'readonly disabled' : ''} data-saved-pdate-idx="${pIdx}" value="${escapeHtml(pr.date || '')}" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                          </div>
-                        </td>
-                        <td class="px-2 py-2 text-right whitespace-nowrap">
-                          <input type="number" step="0.01" ${appMode === 'view' ? 'readonly disabled' : ''} data-saved-pay-idx="${pIdx}" value="${escapeHtml(pr.payment ? String(pr.payment) : '')}" placeholder="0" class="w-24 text-right border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none" />
-                        </td>
-                      </tr>
-                    `).join('') : '<tr><td colspan="3" class="text-center py-4 text-zinc-400">No payments yet</td></tr>';
-                  })()}
+                  ${h.paymentRows.length ? h.paymentRows.map((pr, pIdx) => `
+                    <tr class="border-b border-slate-200">
+                      <td class="px-2.5 py-2 font-bold text-xs text-zinc-400 border-r border-slate-200">${pIdx + 1}</td>
+                      <td class="px-2 py-2 border-r border-slate-200 whitespace-nowrap">
+                        <div class="relative w-28 h-7 border border-slate-300 rounded bg-white flex items-center justify-between px-1.5 text-xs">
+                          <span data-saved-pdate-label="${pIdx}" class="font-medium">${escapeHtml(formatDateDMY(pr.date || ''))}</span>
+                          <span class="text-[10px] text-slate-400 no-print">📅</span>
+                          <input type="date" ${ro} data-saved-pdate-idx="${pIdx}" value="${escapeHtml(pr.date || '')}" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                        </div>
+                      </td>
+                      <td class="px-2 py-2 text-right whitespace-nowrap">
+                        <input type="number" step="0.01" ${ro} data-saved-pay-idx="${pIdx}" value="${escapeHtml(pr.payment ? String(pr.payment) : '')}" placeholder="0" class="w-24 text-right border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none" />
+                      </td>
+                    </tr>
+                  `).join('') : '<tr><td colspan="3" class="text-center py-4 text-zinc-400">No payments yet</td></tr>'}
                 </tbody>
               </table>
             </div>
+            ${unlocked ? '<div class="mt-2 flex justify-end no-print"><button id="addSavedPayRowBtn" type="button" class="px-3 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-extrabold text-xs">+ Add Payment Row</button></div>' : ''}
           </div>
         `;
 
-        const addSavedPayBtn = document.getElementById('addSavedPayRowBtn');
-        if (addSavedPayBtn) {
-          addSavedPayBtn.addEventListener('click', () => {
-            if (!Array.isArray(h.paymentRows)) h.paymentRows = [];
-            h.paymentRows.push({ date: '', payment: 0 });
-            saveLocalState();
-            openSavedHisabDetail(id);
+        const unlockBtn = document.getElementById('savedUnlockPinBtn');
+        if (unlockBtn) {
+          unlockBtn.addEventListener('click', () => {
+            const box = document.getElementById('savedPinBox');
+            if (box) box.classList.remove('hidden');
+            const inp = document.getElementById('savedPinInput');
+            if (inp) inp.focus();
+          });
+          document.getElementById('savedPinSubmitBtn').addEventListener('click', () => {
+            const val = (document.getElementById('savedPinInput').value || '').trim();
+            if (val === (state.editPin || DEFAULT_EDIT_PIN)) {
+              openSavedHisabDetail(id, true);
+              showToast('Saved Hisab unlocked for editing!');
+            } else {
+              document.getElementById('savedPinErr').classList.remove('hidden');
+            }
           });
         }
 
-        area.querySelectorAll('[data-saved-pdate-idx]').forEach(inp => {
-          inp.addEventListener('change', (e) => {
-            if (appMode === 'view') return;
-            const idx = parseInt(e.target.getAttribute('data-saved-pdate-idx'), 10);
-            if (!h.paymentRows[idx]) return;
-            h.paymentRows[idx].date = e.target.value;
-            h.paymentRows.sort((a, b) => (!a.date && !b.date) ? 0 : (!a.date ? 1 : (!b.date ? -1 : a.date.localeCompare(b.date))));
-            saveLocalState();
-            openSavedHisabDetail(id);
+        function recalcSavedTotals() {
+          let tCome = 0, tGone = 0, tAmt = 0;
+          h.rows.forEach((r, idx) => {
+            const c = Number(isStage ? (r.come ?? r.peice) : r.peice) || 0;
+            const g = Number(r.gone ?? r.peice) || 0;
+            const rt = Number(r.rate) || 0;
+            r.amount = c * rt;
+            tCome += c;
+            tGone += g;
+            tAmt += r.amount;
+            const cell = area.querySelector(`[data-saved-amt-cell="${idx}"]`);
+            if (cell) cell.textContent = '₹' + r.amount.toFixed(0);
           });
-        });
+          h.totalPeice = tCome;
+          h.totalAmount = tAmt;
+          h.pcsBal = tCome - tGone;
+          h.totalPayment = h.paymentRows.reduce((sum, item) => sum + (parseFloat(item.payment) || 0), 0);
+          h.finalBalance = (tAmt + Number(h.lastBalance || 0)) - h.totalPayment - Number(h.pcsBalAmount || 0);
 
-        area.querySelectorAll('[data-saved-pay-idx]').forEach(inp => {
-          inp.addEventListener('input', (e) => {
-            if (appMode === 'view') return;
-            const idx = parseInt(e.target.getAttribute('data-saved-pay-idx'), 10);
-            if (!h.paymentRows[idx]) return;
-            h.paymentRows[idx].payment = parseFloat(e.target.value) || 0;
-            h.totalPayment = h.paymentRows.reduce((sum, item) => sum + (parseFloat(item.payment) || 0), 0);
-            h.finalBalance = (Number(h.totalAmount || 0) + Number(h.lastBalance || 0)) - h.totalPayment - Number(h.pcsBalAmount || 0);
-            document.getElementById('savedHisabTotalPay').textContent = '₹' + h.totalPayment.toFixed(0);
-            document.getElementById('savedHisabFinalBal').textContent = '₹' + h.finalBalance.toFixed(0);
-            saveLocalState();
+          const tpEl = document.getElementById('savedHisabTotalPeice'); if (tpEl) tpEl.textContent = tCome;
+          const taEl = document.getElementById('savedHisabTotalAmt'); if (taEl) taEl.textContent = '₹' + tAmt.toFixed(0);
+          const fcEl = document.getElementById('savedFooterCome'); if (fcEl) fcEl.textContent = tCome;
+          const fgEl = document.getElementById('savedFooterGone'); if (fgEl) fgEl.textContent = tGone;
+          const fpEl = document.getElementById('savedFooterPeice'); if (fpEl) fpEl.textContent = tCome;
+          const faEl = document.getElementById('savedFooterAmt'); if (faEl) faEl.textContent = '₹' + tAmt.toFixed(0);
+          const pbEl = document.getElementById('savedPcsBal'); if (pbEl) pbEl.textContent = h.pcsBal + ' pcs';
+          document.getElementById('savedHisabTotalPay').textContent = '₹' + h.totalPayment.toFixed(0);
+          document.getElementById('savedHisabFinalBal').textContent = '₹' + h.finalBalance.toFixed(0);
+          saveLocalState();
+        }
+
+        if (unlocked) {
+          document.getElementById('savedLastBalInput').addEventListener('input', (e) => {
+            h.lastBalance = parseFloat(e.target.value) || 0;
+            recalcSavedTotals();
           });
-        });
+          const spb = document.getElementById('savedPcsBalAmtInput');
+          if (spb) {
+            spb.addEventListener('input', (e) => {
+              h.pcsBalAmount = parseFloat(e.target.value) || 0;
+              recalcSavedTotals();
+            });
+          }
+          area.querySelectorAll('[data-saved-row-field]').forEach(inp => {
+            inp.addEventListener('input', (e) => {
+              const idx = parseInt(e.target.getAttribute('data-saved-row-idx'), 10);
+              const f = e.target.getAttribute('data-saved-row-field');
+              if (!h.rows[idx]) return;
+              h.rows[idx][f] = parseFloat(e.target.value) || 0;
+              if (f === 'come') h.rows[idx].peice = h.rows[idx][f];
+              recalcSavedTotals();
+            });
+          });
+          const addSavedPayBtn = document.getElementById('addSavedPayRowBtn');
+          if (addSavedPayBtn) {
+            addSavedPayBtn.addEventListener('click', () => {
+              h.paymentRows.push({ date: '', payment: 0 });
+              saveLocalState();
+              openSavedHisabDetail(id, true);
+            });
+          }
+          area.querySelectorAll('[data-saved-pdate-idx]').forEach(inp => {
+            inp.addEventListener('change', (e) => {
+              const idx = parseInt(e.target.getAttribute('data-saved-pdate-idx'), 10);
+              if (!h.paymentRows[idx]) return;
+              h.paymentRows[idx].date = e.target.value;
+              h.paymentRows.sort((a, b) => (!a.date && !b.date) ? 0 : (!a.date ? 1 : (!b.date ? -1 : a.date.localeCompare(b.date))));
+              saveLocalState();
+              openSavedHisabDetail(id, true);
+            });
+          });
+          area.querySelectorAll('[data-saved-pay-idx]').forEach(inp => {
+            inp.addEventListener('input', (e) => {
+              const idx = parseInt(e.target.getAttribute('data-saved-pay-idx'), 10);
+              if (!h.paymentRows[idx]) return;
+              h.paymentRows[idx].payment = parseFloat(e.target.value) || 0;
+              recalcSavedTotals();
+            });
+          });
+        }
       }
 
       function openPendingLotsModal() {
@@ -3180,6 +3320,7 @@
               return;
             }
             row.lotNo = norm;
+            fillMissingLotsUpTo(norm, row.id);
             normalizeRowStages(row);
             deduplicateAndSortRows();
             row.updatedBy = state.activeUser;
