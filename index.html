@@ -138,7 +138,7 @@
     }
   </style>
 </head>
-<body class="h-[100dvh] overflow-hidden flex flex-col">
+<body class="h-[100dvh] overflow-hidden flex flex-col view-mode-active">
 
   <!-- Top Bar (Amber-Gold & Obsidian Dark Theme) -->
   <header class="bg-[#12151c] text-white shadow-lg sticky top-0 z-30 border-b border-zinc-800">
@@ -153,8 +153,8 @@
           <strong id="activeUserName">Shameem</strong>
           <span class="text-zinc-400">▾</span>
         </button>
-        <button id="appModeToggleBtn" type="button" class="inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 border border-emerald-500 px-2 py-1 rounded-full text-[11px] font-bold text-white shrink-0 whitespace-nowrap transition">
-          ✏️ Edit Mode
+        <button id="appModeToggleBtn" type="button" class="inline-flex items-center gap-1 bg-sky-600 hover:bg-sky-700 border border-sky-500 px-2 py-1 rounded-full text-[11px] font-bold text-white shrink-0 whitespace-nowrap transition">
+          👁️ View Mode
         </button>
         <button id="syncSettingsBtn" type="button" title="Settings &amp; Sync" class="inline-flex items-center gap-1 bg-zinc-950/90 hover:bg-zinc-900 border border-zinc-800 px-2 py-1 rounded-full text-[11px] font-bold text-zinc-100 shrink-0 whitespace-nowrap transition">
           <span id="syncStatusDot" class="w-1.5 h-1.5 rounded-full bg-sky-400"></span>
@@ -297,7 +297,7 @@
 
       const bc = ('BroadcastChannel' in window) ? new BroadcastChannel('lot_tracker_sync_channel') : null;
 
-      let appMode = 'edit'; // 'edit' | 'view'
+      let appMode = 'view'; // 'edit' | 'view' (default View Mode)
       let state = {
         activeUser: 'Shameem',
         editPin: DEFAULT_EDIT_PIN,
@@ -761,6 +761,20 @@
 
       function getPackingTotalPeice(row) {
         return getStageTotals(row, 'packing').gone;
+      }
+
+      function applyJamaAutoClear(row) {
+        if (!row) return;
+        const jama = getPackingTotalPeice(row);
+        if (jama > 0) {
+          ['fabrication', 'tanki', 'washing'].forEach(d => {
+            if (row[d]) row[d].status = 'Clear';
+          });
+          const basePcs = parseFloat(row.peice) || getStageTotals(row, 'packing').come || 0;
+          if (basePcs > 0 && jama >= basePcs * 0.9) {
+            if (row.packing) row.packing.status = 'Clear';
+          }
+        }
       }
 
       function getPackingPrimaryName(row) {
@@ -1498,6 +1512,7 @@
           if (saveBtn) {
             saveBtn.addEventListener('click', () => {
               syncInputsToData();
+              if (dept === 'packing') applyJamaAutoClear(row);
               row.updatedBy = state.activeUser;
               row.updatedAt = Date.now();
               saveLocalState();
@@ -1529,6 +1544,7 @@
               return;
             }
             syncInputsToData();
+            if (dept === 'packing') applyJamaAutoClear(row);
             data.paid = true;
             row.updatedBy = state.activeUser;
             row.updatedAt = Date.now();
@@ -2177,6 +2193,30 @@
 
             normalizeRowStages(targetRow);
 
+            const alreadyPaid = (type === 'master' && targetRow.masterPaid) || (type !== 'master' && targetRow[type]?.paid);
+            if (alreadyPaid) {
+              e.target.value = '';
+              dr.lotNo = '';
+              saveLocalState();
+              showToast('Warning: Lot ' + enteredLot + ' pehle se PAID hai! Pehle Unpaid karein.');
+              openModal(`
+                <div class="p-4 sm:p-5">
+                  <div class="flex items-center justify-between border-b border-rose-500/40 pb-3 mb-3">
+                    <h3 class="text-base font-bold text-rose-400">⚠️ Lot Already Paid</h3>
+                    <button type="button" data-close-modal class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 font-bold">✕</button>
+                  </div>
+                  <p class="text-sm leading-relaxed">
+                    <strong>Lot ${escapeHtml(enteredLot)}</strong> ka <strong>${escapeHtml(label)}</strong> status pehle se <span class="text-emerald-400 font-bold">PAID</span> hai.
+                    Jab tak aap Main Table me iska status <strong>Unpaid</strong> nahi karenge, ye Hisab me add nahi hoga.
+                  </p>
+                  <div class="mt-4 flex justify-end">
+                    <button type="button" data-close-modal class="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 text-xs font-extrabold">OK</button>
+                  </div>
+                </div>
+              `);
+              return;
+            }
+
             if (type === 'master') {
               targetRow.masterName = name;
               targetRow.masterPaid = false;
@@ -2189,6 +2229,7 @@
               }
               if (dr.rate) targetRow[type].rate = dr.rate;
               if (dr.gone) targetRow[type].goneEntries[0].peice = dr.gone;
+              if (type === 'packing') applyJamaAutoClear(targetRow);
               if (dr.come) {
                 if (type === 'fabrication') targetRow.peice = dr.come;
                 else if (type === 'tanki') targetRow.fabrication.goneEntries[0].peice = dr.come;
@@ -2239,6 +2280,7 @@
             } else if (field === 'gone') {
               normalizeRowStages(row);
               row[type].goneEntries[0].peice = e.target.value;
+              if (type === 'packing') applyJamaAutoClear(row);
             } else if (field === 'fabricationName') {
               row.fabrication.name = e.target.value;
             } else if (field === 'washingName') {
@@ -3357,21 +3399,62 @@
         }
       });
 
-      document.getElementById('appModeToggleBtn').addEventListener('click', () => {
-        appMode = appMode === 'edit' ? 'view' : 'edit';
+      function setAppMode(mode) {
+        appMode = mode;
         const btn = document.getElementById('appModeToggleBtn');
         if (appMode === 'view') {
           document.body.classList.add('view-mode-active');
           btn.textContent = '👁️ View Mode';
-          btn.className = 'inline-flex items-center gap-1 bg-sky-600 hover:bg-sky-700 border border-sky-500 px-2.5 py-0.5 rounded-full text-xs font-bold text-white transition';
+          btn.className = 'inline-flex items-center gap-1 bg-sky-600 hover:bg-sky-700 border border-sky-500 px-2 py-1 rounded-full text-[11px] font-bold text-white shrink-0 whitespace-nowrap transition';
           showToast('View Mode ON (Read Only)');
         } else {
           document.body.classList.remove('view-mode-active');
           btn.textContent = '✏️ Edit Mode';
-          btn.className = 'inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 border border-emerald-500 px-2.5 py-0.5 rounded-full text-xs font-bold text-white transition';
+          btn.className = 'inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 border border-emerald-500 px-2 py-1 rounded-full text-[11px] font-bold text-white shrink-0 whitespace-nowrap transition';
           showToast('Edit Mode ON');
         }
         renderTable();
+      }
+
+      document.getElementById('appModeToggleBtn').addEventListener('click', () => {
+        if (appMode === 'edit') {
+          setAppMode('view');
+          return;
+        }
+        openModal(`
+          <div class="p-4 sm:p-5">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
+              <div>
+                <h3 class="text-base font-bold">Edit Mode Unlock</h3>
+                <p class="text-xs text-slate-500">Edit Mode chalu karne ke liye PIN daalein</p>
+              </div>
+              <button type="button" data-close-modal class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 font-bold">✕</button>
+            </div>
+            <form id="editModePinForm" class="space-y-3">
+              <div>
+                <label class="block text-xs font-semibold mb-1">Enter PIN</label>
+                <input id="editModePinInput" type="password" inputmode="numeric" maxlength="6" placeholder="PIN (Default: 4311)" class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none" autofocus />
+              </div>
+              <div id="editModePinErr" class="hidden text-xs text-rose-400 font-semibold">Galat PIN! Dubara try karein.</div>
+              <div class="flex justify-end gap-2 pt-1">
+                <button type="button" data-close-modal class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-semibold">Cancel</button>
+                <button type="submit" class="px-5 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 text-xs sm:text-sm font-extrabold shadow">Unlock Edit Mode</button>
+              </div>
+            </form>
+          </div>
+        `);
+        const pinInp = document.getElementById('editModePinInput');
+        if (pinInp) pinInp.focus();
+        document.getElementById('editModePinForm').addEventListener('submit', (e) => {
+          e.preventDefault();
+          const val = (pinInp.value || '').trim();
+          if (val === (state.editPin || DEFAULT_EDIT_PIN)) {
+            closeModal();
+            setAppMode('edit');
+          } else {
+            document.getElementById('editModePinErr').classList.remove('hidden');
+          }
+        });
       });
       document.getElementById('addTableBtn').addEventListener('click', addNewTable);
       document.getElementById('addRowBtn').addEventListener('click', addNewRow);
