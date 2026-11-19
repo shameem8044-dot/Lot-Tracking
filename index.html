@@ -1780,8 +1780,29 @@
 
       let currentHisab = { type: null, name: '' };
 
+      function getHisabSortedRows(rows, type, name, sortBy) {
+        const list = rows.slice();
+        const meta = state.hisabMeta[type]?.[name] || { entries: {} };
+        list.sort((a, b) => {
+          if (sortBy === 'rate_asc' || sortBy === 'rate_desc') {
+            const ra = getDeptRowValues(type, a, name, meta.entries?.[a.id] || {}).rate || 0;
+            const rb = getDeptRowValues(type, b, name, meta.entries?.[b.id] || {}).rate || 0;
+            if (ra !== rb) return sortBy === 'rate_asc' ? (ra - rb) : (rb - ra);
+          } else if (sortBy === 'washing') {
+            const wa = (type === 'washing' ? (a.washing?.washingType || '') : (a.washing?.name || a.washing?.washingType || '')).trim().toLowerCase();
+            const wb = (type === 'washing' ? (b.washing?.washingType || '') : (b.washing?.name || b.washing?.washingType || '')).trim().toLowerCase();
+            if (wa !== wb) return wa.localeCompare(wb);
+          }
+          const ka = parseLotSortKey(a.lotNo);
+          const kb = parseLotSortKey(b.lotNo);
+          if (ka.suf !== kb.suf) return ka.suf.localeCompare(kb.suf);
+          return ka.num - kb.num;
+        });
+        return list;
+      }
+
       function openHisabOverlay(type, name) {
-        currentHisab = { type, name, isSavedView: false };
+        currentHisab = { type, name, isSavedView: false, sortBy: 'lot' };
         const overlay = document.getElementById('hisabOverlay');
         const label = DEPT_CONFIG[type]?.label || type;
         document.getElementById('hisabTitle').textContent = label + ' Hisab: ' + name;
@@ -1813,14 +1834,11 @@
         });
 
         const label = DEPT_CONFIG[type]?.label || type;
-        const matchingRows = getUnpaidDeptRows(type, name).slice().sort((a, b) => {
-          const ka = parseLotSortKey(a.lotNo);
-          const kb = parseLotSortKey(b.lotNo);
-          if (ka.suf !== kb.suf) return ka.suf.localeCompare(kb.suf);
-          return ka.num - kb.num;
-        });
+        const sortBy = currentHisab.sortBy || 'lot';
+        const matchingRows = getHisabSortedRows(getUnpaidDeptRows(type, name), type, name, sortBy);
         const isStageDept = ['fabrication', 'tanki', 'washing', 'packing'].includes(type);
         const isTankiHisab = type === 'tanki';
+        const isWashingHisab = type === 'washing';
 
         // Sort independent paymentRows by date ascending (blank dates at end)
         meta.paymentRows.sort((a, b) => {
@@ -1870,6 +1888,10 @@
               <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
                 <input type="text" list="dl_hisab_washing" data-hisab-lot-field="washingName" data-lot-id="${r.id}" value="${escapeHtml(r.washing?.name || '')}" placeholder="Washing" class="w-24 border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
               </td>` : ''}
+              ${isWashingHisab ? `
+              <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
+                <input type="text" data-hisab-lot-field="washingType" data-lot-id="${r.id}" value="${escapeHtml(r.washing?.washingType || '')}" placeholder="Washing Type" class="w-24 border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
+              </td>` : ''}
             ` : `
               <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
                 <input type="number" inputmode="numeric" data-hisab-lot-field="peice" data-lot-id="${r.id}" value="${escapeHtml(vals.pcs ? String(vals.pcs) : '')}" placeholder="0" class="w-16 text-right font-semibold border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
@@ -1912,6 +1934,10 @@
               </td>
               <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
                 <input type="text" list="dl_hisab_washing" data-draft-field="washingName" data-draft-idx="${dIdx}" value="${escapeHtml(dr.washingName || '')}" placeholder="Washing" class="w-24 border border-slate-300 bg-white rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
+              </td>` : ''}
+              ${isWashingHisab ? `
+              <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
+                <input type="text" data-draft-field="washingType" data-draft-idx="${dIdx}" value="${escapeHtml(dr.washingType || '')}" placeholder="Washing Type" class="w-24 border border-slate-300 bg-white rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
               </td>` : ''}
             ` : `
               <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
@@ -2004,8 +2030,17 @@
 
           <!-- Table 1: Independent Lot / Kaam Table (Sorted by Lot Serial Number) -->
           <div class="mb-5">
-            <div class="flex items-center justify-between mb-2">
-              <h3 class="text-xs sm:text-sm font-bold uppercase tracking-wider text-amber-400">1. Lot / Kaam Table (Serial Order)</h3>
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+              <h3 class="text-xs sm:text-sm font-bold uppercase tracking-wider text-amber-400">1. Lot / Kaam Table</h3>
+              <div class="flex items-center gap-1.5 no-print">
+                <label class="text-[11px] text-zinc-400 font-semibold">Sort:</label>
+                <select id="hisabSortSelect" class="bg-[#0b0d11] text-zinc-100 border border-zinc-700 rounded-md px-2 py-1 text-xs font-semibold focus:outline-none focus:border-amber-400">
+                  <option value="lot" ${sortBy === 'lot' ? 'selected' : ''}>Lot No</option>
+                  <option value="rate_asc" ${sortBy === 'rate_asc' ? 'selected' : ''}>Rate (Low → High)</option>
+                  <option value="rate_desc" ${sortBy === 'rate_desc' ? 'selected' : ''}>Rate (High → Low)</option>
+                  <option value="washing" ${sortBy === 'washing' ? 'selected' : ''}>Washing</option>
+                </select>
+              </div>
             </div>
             <div class="overflow-x-auto border border-zinc-700 rounded-xl">
               <table class="w-full border-collapse text-xs sm:text-sm">
@@ -2016,6 +2051,7 @@
                       <th class="px-2.5 py-2 text-right border-r border-slate-700">Come</th>
                       <th class="px-2.5 py-2 text-right border-r border-slate-700">Gone</th>
                       ${isTankiHisab ? '<th class="px-2.5 py-2 text-left border-r border-slate-700">Fabrication</th><th class="px-2.5 py-2 text-left border-r border-slate-700">Washing</th>' : ''}
+                      ${isWashingHisab ? '<th class="px-2.5 py-2 text-left border-r border-slate-700">Washing</th>' : ''}
                     ` : `<th class="px-2.5 py-2 text-right border-r border-slate-700">Peice</th>`}
                     <th class="px-2.5 py-2 text-right border-r border-slate-700">Rate</th>
                     <th class="px-2.5 py-2 text-right border-r border-slate-700">Amount (Kaam)</th>
@@ -2023,7 +2059,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  ${(rowsHtml || draftRowsHtml) ? (rowsHtml + draftRowsHtml) : `<tr><td colspan="${isTankiHisab ? 8 : (isStageDept ? 6 : 5)}" class="text-center py-5 text-zinc-400">No unpaid lot entries</td></tr>`}
+                  ${(rowsHtml || draftRowsHtml) ? (rowsHtml + draftRowsHtml) : `<tr><td colspan="${isTankiHisab ? 8 : (isWashingHisab ? 7 : (isStageDept ? 6 : 5))}" class="text-center py-5 text-zinc-400">No unpaid lot entries</td></tr>`}
                 </tbody>
                 <tfoot class="bg-amber-500/15 font-extrabold text-xs sm:text-sm border-t-2 border-amber-500">
                   <tr>
@@ -2032,6 +2068,7 @@
                       <td id="hisabFooterComeTotal" class="px-2.5 py-2 text-right text-amber-300 border-r border-zinc-700">${totalPeice}</td>
                       <td id="hisabFooterGoneTotal" class="px-2.5 py-2 text-right text-emerald-300 border-r border-zinc-700">${totalGonePcs}</td>
                       ${isTankiHisab ? '<td class="border-r border-zinc-700"></td><td class="border-r border-zinc-700"></td>' : ''}
+                      ${isWashingHisab ? '<td class="border-r border-zinc-700"></td>' : ''}
                     ` : `<td id="hisabFooterPeiceTotal" class="px-2.5 py-2 text-right text-amber-300 border-r border-zinc-700">${totalPeice}</td>`}
                     <td class="border-r border-zinc-700"></td>
                     <td id="hisabFooterAmountTotal" class="px-2.5 py-2 text-right text-amber-300 border-r border-zinc-700">₹${totalAmount.toFixed(0)}</td>
@@ -2080,6 +2117,14 @@
           saveLocalState();
           recalcHisabTotalsOnly();
         });
+
+        const sortSel = document.getElementById('hisabSortSelect');
+        if (sortSel) {
+          sortSel.addEventListener('change', (e) => {
+            currentHisab.sortBy = e.target.value;
+            renderHisabContent();
+          });
+        }
 
         const pcsBalAmtInp = document.getElementById('hisabPcsBalAmtInput');
         if (pcsBalAmtInp) {
@@ -2262,6 +2307,7 @@
               }
               if (isTankiHisab && dr.fabricationName) targetRow.fabrication.name = dr.fabricationName;
               if (isTankiHisab && dr.washingName) targetRow.washing.name = dr.washingName;
+              if (isWashingHisab && dr.washingType) targetRow.washing.washingType = dr.washingType;
             } else {
               targetRow[type].name = name;
               targetRow[type].paid = false;
@@ -2309,6 +2355,8 @@
               row.fabrication.name = e.target.value;
             } else if (field === 'washingName') {
               row.washing.name = e.target.value;
+            } else if (field === 'washingType') {
+              row.washing.washingType = e.target.value;
             } else if (field === 'peice') {
               if (type === 'master') row.peice = e.target.value;
               else row[type].peice = e.target.value;
@@ -2438,6 +2486,7 @@
             gone: vals.gone,
             fabricationName: r.fabrication?.name || '',
             washingName: r.washing?.name || '',
+            washingType: r.washing?.washingType || '',
             rate: vals.rate,
             amount: vals.amount
           };
@@ -2570,6 +2619,7 @@
 
         const isStage = ['fabrication', 'tanki', 'washing', 'packing'].includes(h.dept);
         const isTanki = h.dept === 'tanki';
+        const isWash = h.dept === 'washing';
         if (!Array.isArray(h.paymentRows)) {
           h.paymentRows = h.rows.filter(r => r.payment || r.date).map(r => ({ date: r.date || '', payment: r.payment || 0 }));
         }
@@ -2642,6 +2692,7 @@
                       <th class="px-2.5 py-2 text-right border-r border-slate-700">Come</th>
                       <th class="px-2.5 py-2 text-right border-r border-slate-700">Gone</th>
                       ${isTanki ? '<th class="px-2.5 py-2 text-left border-r border-slate-700">Fabrication</th><th class="px-2.5 py-2 text-left border-r border-slate-700">Washing</th>' : ''}
+                      ${isWash ? '<th class="px-2.5 py-2 text-left border-r border-slate-700">Washing</th>' : ''}
                     ` : '<th class="px-2.5 py-2 text-right border-r border-slate-700">Peice</th>'}
                     <th class="px-2.5 py-2 text-right border-r border-slate-700">Rate</th>
                     <th class="px-2.5 py-2 text-right">Amount (Kaam)</th>
@@ -2659,6 +2710,7 @@
                           <input type="number" ${ro} data-saved-row-field="gone" data-saved-row-idx="${rIdx}" value="${escapeHtml(String(r.gone ?? r.peice ?? ''))}" class="w-16 text-right font-semibold rounded px-1.5 py-1 text-xs" />
                         </td>
                         ${isTanki ? `<td class="px-2 py-2 border-r border-slate-200 whitespace-nowrap">${escapeHtml(r.fabricationName || '-')}</td><td class="px-2 py-2 border-r border-slate-200 whitespace-nowrap">${escapeHtml(r.washingName || '-')}</td>` : ''}
+                        ${isWash ? `<td class="px-2 py-2 border-r border-slate-200 whitespace-nowrap">${escapeHtml(r.washingType || '-')}</td>` : ''}
                       ` : `
                         <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
                           <input type="number" ${ro} data-saved-row-field="peice" data-saved-row-idx="${rIdx}" value="${escapeHtml(String(r.peice ?? ''))}" class="w-16 text-right font-semibold rounded px-1.5 py-1 text-xs" />
@@ -2678,6 +2730,7 @@
                       <td id="savedFooterCome" class="px-2 py-2 text-right text-amber-300 border-r border-zinc-700">${h.rows.reduce((s, r) => s + (Number(r.come ?? r.peice) || 0), 0)}</td>
                       <td id="savedFooterGone" class="px-2 py-2 text-right text-emerald-300 border-r border-zinc-700">${h.rows.reduce((s, r) => s + (Number(r.gone ?? r.peice) || 0), 0)}</td>
                       ${isTanki ? '<td class="border-r border-zinc-700"></td><td class="border-r border-zinc-700"></td>' : ''}
+                      ${isWash ? '<td class="border-r border-zinc-700"></td>' : ''}
                     ` : `<td id="savedFooterPeice" class="px-2 py-2 text-right text-amber-300 border-r border-zinc-700">${h.totalPeice}</td>`}
                     <td class="border-r border-zinc-700"></td>
                     <td id="savedFooterAmt" class="px-2 py-2 text-right text-amber-300">₹${Number(h.totalAmount || 0).toFixed(0)}</td>
@@ -3429,6 +3482,7 @@
           const label = DEPT_CONFIG[type]?.label || type;
           const isStage = ['fabrication', 'tanki', 'washing', 'packing'].includes(type);
           const isTanki = type === 'tanki';
+          const isWash = type === 'washing';
 
           let totalPeice = 0, totalGonePdf = 0, pcsBalPdf = 0, pcsBalAmtPdf = 0, totalAmount = 0, lastBalance = 0, totalPayment = 0, finalBalance = 0;
           let head = [];
@@ -3453,10 +3507,14 @@
             if (isStage) {
               head = [isTanki
                 ? ['Lot no', 'Come', 'Gone', 'Fabrication', 'Washing', 'Rate', 'Amount']
-                : ['Lot no', 'Come', 'Gone', 'Rate', 'Amount']];
+                : (isWash
+                    ? ['Lot no', 'Come', 'Gone', 'Washing', 'Rate', 'Amount']
+                    : ['Lot no', 'Come', 'Gone', 'Rate', 'Amount'])];
               body = h.rows.map(r => isTanki
                 ? [r.lotNo, r.come ?? r.peice, r.gone ?? r.peice, r.fabricationName || '-', r.washingName || '-', Number(r.rate || 0).toFixed(2), 'Rs ' + Number(r.amount || 0).toFixed(0)]
-                : [r.lotNo, r.come ?? r.peice, r.gone ?? r.peice, Number(r.rate || 0).toFixed(2), 'Rs ' + Number(r.amount || 0).toFixed(0)]
+                : (isWash
+                    ? [r.lotNo, r.come ?? r.peice, r.gone ?? r.peice, r.washingType || '-', Number(r.rate || 0).toFixed(2), 'Rs ' + Number(r.amount || 0).toFixed(0)]
+                    : [r.lotNo, r.come ?? r.peice, r.gone ?? r.peice, Number(r.rate || 0).toFixed(2), 'Rs ' + Number(r.amount || 0).toFixed(0)])
               );
             } else {
               head = [['Lot no', 'Peice', 'Rate', 'Amount']];
@@ -3465,13 +3523,15 @@
             payBody = (h.paymentRows || []).map((pr, idx) => [idx + 1, formatDateDMY(pr.date || '') || '-', 'Rs ' + Number(pr.payment || 0).toFixed(0)]);
           } else {
             const meta = state.hisabMeta[type]?.[name] || { lastBalance: '', entries: {}, paymentRows: [] };
-            const matchingRows = getUnpaidDeptRows(type, name).filter(r => !(meta.entries[r.id]?.ignored));
+            const matchingRows = getHisabSortedRows(getUnpaidDeptRows(type, name).filter(r => !(meta.entries[r.id]?.ignored)), type, name, currentHisab.sortBy || 'lot');
             lastBalance = parseFloat(meta.lastBalance) || 0;
 
             if (isStage) {
               head = [isTanki
                 ? ['Lot no', 'Come', 'Gone', 'Fabrication', 'Washing', 'Rate', 'Amount']
-                : ['Lot no', 'Come', 'Gone', 'Rate', 'Amount']];
+                : (isWash
+                    ? ['Lot no', 'Come', 'Gone', 'Washing', 'Rate', 'Amount']
+                    : ['Lot no', 'Come', 'Gone', 'Rate', 'Amount'])];
             } else {
               head = [['Lot no', 'Peice', 'Rate', 'Amount']];
             }
@@ -3485,7 +3545,9 @@
               if (isStage) {
                 body.push(isTanki
                   ? [r.lotNo, vals.come, vals.gone, r.fabrication?.name || '-', r.washing?.name || '-', Number(vals.rate || 0).toFixed(2), 'Rs ' + vals.amount.toFixed(0)]
-                  : [r.lotNo, vals.come, vals.gone, Number(vals.rate || 0).toFixed(2), 'Rs ' + vals.amount.toFixed(0)]
+                  : (isWash
+                      ? [r.lotNo, vals.come, vals.gone, r.washing?.washingType || '-', Number(vals.rate || 0).toFixed(2), 'Rs ' + vals.amount.toFixed(0)]
+                      : [r.lotNo, vals.come, vals.gone, Number(vals.rate || 0).toFixed(2), 'Rs ' + vals.amount.toFixed(0)])
                 );
               } else {
                 body.push([r.lotNo, vals.pcs, Number(vals.rate || 0).toFixed(2), 'Rs ' + vals.amount.toFixed(0)]);
@@ -3523,7 +3585,9 @@
           const foot = isStage
             ? [isTanki
                 ? ['Total', totalPeice, totalGoneForFoot, '', '', '', 'Rs ' + totalAmount.toFixed(0)]
-                : ['Total', totalPeice, totalGoneForFoot, '', 'Rs ' + totalAmount.toFixed(0)]]
+                : (isWash
+                    ? ['Total', totalPeice, totalGoneForFoot, '', '', 'Rs ' + totalAmount.toFixed(0)]
+                    : ['Total', totalPeice, totalGoneForFoot, '', 'Rs ' + totalAmount.toFixed(0)])]
             : [['Total', totalPeice, '', 'Rs ' + totalAmount.toFixed(0)]];
 
           doc.autoTable({
