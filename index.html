@@ -2429,8 +2429,11 @@
         const pcsBalAmount = isStage ? (parseFloat(meta.pcsBalAmount) || 0) : 0;
         const lastBalance = parseFloat(meta.lastBalance) || 0;
         const finalBalance = (totalAmount + lastBalance) - totalPayment - pcsBalAmount;
-        const nextNum = (state.savedHisabs.length || 0) + 1;
-        const hisabTitle = 'Hisab ' + nextNum;
+        const sameNameCount = state.savedHisabs.filter(
+          h => (h.name || '').trim().toLowerCase() === name.trim().toLowerCase()
+        ).length;
+        const nextNum = String(sameNameCount + 1).padStart(2, '0');
+        const hisabTitle = name.trim() + ' ' + nextNum;
 
         const snapshot = {
           id: 'hisab_' + Date.now().toString(36),
@@ -2505,7 +2508,7 @@
                 ${list.map(h => `
                   <button type="button" data-open-saved-hisab="${escapeHtml(h.id)}" class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 text-left transition">
                     <div>
-                      <div class="font-extrabold text-indigo-700 text-sm">${escapeHtml(h.title)} — ${escapeHtml(h.name)}</div>
+                      <div class="font-extrabold text-amber-300 text-sm">${escapeHtml(h.title)}</div>
                       <div class="text-xs text-slate-500">${escapeHtml(h.deptLabel)} • ${escapeHtml(formatDateDMY(h.savedDate))} • ${h.rows.length} Lots • By ${escapeHtml(h.savedBy)}</div>
                     </div>
                     <div class="text-right">
