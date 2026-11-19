@@ -134,6 +134,29 @@
         color: #0f172a !important;
         border-color: #cbd5e1 !important;
       }
+      body.printing-thermal #hisabPrintArea,
+      body.printing-thermal #hisabPrintArea * {
+        visibility: hidden !important;
+      }
+      body.printing-thermal #thermalPrintReceipt,
+      body.printing-thermal #thermalPrintReceipt * {
+        visibility: visible !important;
+      }
+      body.printing-thermal #thermalPrintReceipt {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 76mm !important;
+        max-width: 76mm !important;
+        padding: 2mm !important;
+        margin: 0 !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        font-family: 'Courier New', monospace !important;
+        font-size: 11px !important;
+        box-shadow: none !important;
+        border: none !important;
+      }
       .no-print { display: none !important; }
     }
   </style>
@@ -275,6 +298,7 @@
       </div>
       <div class="flex items-center gap-1.5 sm:gap-2">
         <button id="hisabSaveBtn" type="button" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs sm:text-sm">💾 Save Hisab</button>
+        <button id="hisabThermalBtn" type="button" class="px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-bold text-xs sm:text-sm">🧾 3" Print</button>
         <button id="hisabPrintBtn" type="button" class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm">🖨️ Print</button>
         <button id="hisabShareBtn" type="button" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm">📄 PDF / WhatsApp</button>
       </div>
@@ -2864,6 +2888,172 @@
         }
       }
 
+      function openThermalPreviewModal() {
+        const { type, name, isSavedView, savedId } = currentHisab;
+        if (!type || !name) return;
+        const label = DEPT_CONFIG[type]?.label || type;
+        const isStage = ['fabrication', 'tanki', 'washing', 'packing'].includes(type);
+
+        let titleText = `${label} Hisab`;
+        let dateText = formatDateDMY(todayISO());
+        let rowsData = [];
+        let payData = [];
+        let totalPeice = 0, totalGone = 0, totalAmount = 0, lastBal = 0, pcsBal = 0, pcsBalAmt = 0, totalPayment = 0, finalBalance = 0;
+
+        if (isSavedView && savedId) {
+          const h = state.savedHisabs.find(x => x.id === savedId);
+          if (!h) return;
+          titleText = `${h.title} (${h.deptLabel})`;
+          dateText = formatDateDMY(h.savedDate);
+          rowsData = (h.rows || []).map(r => ({
+            lotNo: r.lotNo,
+            come: r.come ?? r.peice ?? 0,
+            gone: r.gone ?? r.peice ?? 0,
+            rate: Number(r.rate || 0),
+            amount: Number(r.amount || 0)
+          }));
+          payData = (h.paymentRows || []).map(p => ({ date: formatDateDMY(p.date || ''), payment: Number(p.payment || 0) }));
+          totalPeice = Number(h.totalPeice || 0);
+          totalGone = rowsData.reduce((s, r) => s + (Number(r.gone) || 0), 0);
+          totalAmount = Number(h.totalAmount || 0);
+          lastBal = Number(h.lastBalance || 0);
+          pcsBal = Number(h.pcsBal || 0);
+          pcsBalAmt = Number(h.pcsBalAmount || 0);
+          totalPayment = Number(h.totalPayment || 0);
+          finalBalance = Number(h.finalBalance || 0);
+        } else {
+          const meta = state.hisabMeta[type]?.[name] || { lastBalance: '', entries: {}, paymentRows: [] };
+          const matchingRows = getUnpaidDeptRows(type, name).filter(r => !(meta.entries[r.id]?.ignored));
+          rowsData = matchingRows.map(r => {
+            const en = meta.entries[r.id] || {};
+            const vals = getDeptRowValues(type, r, name, en);
+            totalPeice += vals.pcs;
+            totalGone += vals.gone;
+            totalAmount += vals.amount;
+            return { lotNo: r.lotNo, come: vals.come, gone: vals.gone, rate: vals.rate, amount: vals.amount };
+          });
+          payData = (meta.paymentRows || []).map(p => {
+            const amt = parseFloat(p.payment) || 0;
+            totalPayment += amt;
+            return { date: formatDateDMY(p.date || ''), payment: amt };
+          });
+          lastBal = parseFloat(meta.lastBalance) || 0;
+          pcsBal = totalPeice - totalGone;
+          pcsBalAmt = isStage ? (parseFloat(meta.pcsBalAmount) || 0) : 0;
+          finalBalance = (totalAmount + lastBal) - totalPayment - pcsBalAmt;
+        }
+
+        const lotRowsHtml = rowsData.map(r => `
+          <tr class="border-b border-dashed border-zinc-400">
+            <td class="py-0.5 font-bold">${escapeHtml(r.lotNo)}</td>
+            <td class="py-0.5 text-right">${isStage ? `${r.come}/${r.gone}` : r.come}</td>
+            <td class="py-0.5 text-right">${Number(r.rate).toFixed(0)}</td>
+            <td class="py-0.5 text-right font-bold">${Number(r.amount).toFixed(0)}</td>
+          </tr>
+        `).join('');
+
+        const payRowsHtml = payData.map((p, i) => `
+          <tr class="border-b border-dashed border-zinc-400">
+            <td class="py-0.5">${i + 1}</td>
+            <td class="py-0.5">${escapeHtml(p.date || '-')}</td>
+            <td class="py-0.5 text-right font-bold">₹${Number(p.payment).toFixed(0)}</td>
+          </tr>
+        `).join('');
+
+        openModal(`
+          <div class="p-4 sm:p-5">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-3 no-print">
+              <div>
+                <h3 class="text-base font-bold">3-Inch (80mm) Thermal Print Preview</h3>
+                <p class="text-xs text-slate-500">Print karne se pehle receipt preview check karein</p>
+              </div>
+              <button type="button" data-close-modal class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 font-bold">✕</button>
+            </div>
+
+            <div class="flex justify-center bg-zinc-900/70 p-3 rounded-xl border border-zinc-700 overflow-y-auto max-h-[62vh]">
+              <div id="thermalPrintReceipt" class="w-[76mm] max-w-full bg-white text-black p-3 rounded shadow-md font-mono text-[11px] leading-snug">
+                <div class="text-center border-b-2 border-dashed border-black pb-2 mb-2">
+                  <div class="text-sm font-extrabold tracking-wider">ADDIS JEANS</div>
+                  <div class="font-bold text-xs">${escapeHtml(titleText)}</div>
+                  <div class="text-xs font-extrabold mt-0.5">${escapeHtml(name)}</div>
+                  <div class="text-[10px] mt-0.5">Date: ${escapeHtml(dateText)} | By: ${escapeHtml(state.activeUser)}</div>
+                </div>
+
+                <table class="w-full border-collapse text-[11px] mb-2">
+                  <thead>
+                    <tr class="border-b border-black">
+                      <th class="text-left py-0.5">Lot</th>
+                      <th class="text-right py-0.5">${isStage ? 'C/G' : 'Pcs'}</th>
+                      <th class="text-right py-0.5">Rate</th>
+                      <th class="text-right py-0.5">Amt</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${lotRowsHtml || '<tr><td colspan="4" class="text-center py-2">No rows</td></tr>'}
+                  </tbody>
+                  <tfoot>
+                    <tr class="border-t border-black font-extrabold">
+                      <td class="py-1">Total</td>
+                      <td class="text-right py-1">${isStage ? `${totalPeice}/${totalGone}` : totalPeice}</td>
+                      <td></td>
+                      <td class="text-right py-1">₹${totalAmount.toFixed(0)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+
+                ${payData.length ? `
+                <div class="border-t border-dashed border-black pt-1.5 mb-2">
+                  <div class="font-bold text-[10px] uppercase mb-1">Payments:</div>
+                  <table class="w-full border-collapse text-[11px]">
+                    <thead>
+                      <tr class="border-b border-black">
+                        <th class="text-left">#</th>
+                        <th class="text-left">Date</th>
+                        <th class="text-right">Pay</th>
+                      </tr>
+                    </thead>
+                    <tbody>${payRowsHtml}</tbody>
+                  </table>
+                </div>` : ''}
+
+                <div class="border-t-2 border-dashed border-black pt-1.5 space-y-0.5 text-[11px]">
+                  <div class="flex justify-between"><span>Total Peice:</span><strong>${totalPeice}</strong></div>
+                  <div class="flex justify-between"><span>Total Kaam:</span><strong>₹${totalAmount.toFixed(0)}</strong></div>
+                  <div class="flex justify-between"><span>Last Bal (+):</span><strong>₹${lastBal.toFixed(0)}</strong></div>
+                  ${isStage ? `<div class="flex justify-between"><span>Pcs Bal (${pcsBal}):</span><strong>-₹${pcsBalAmt.toFixed(0)}</strong></div>` : ''}
+                  <div class="flex justify-between"><span>Total Pay (-):</span><strong>₹${totalPayment.toFixed(0)}</strong></div>
+                  <div class="flex justify-between text-xs font-extrabold border-t border-black pt-1 mt-1">
+                    <span>FINAL BAL:</span><span>₹${finalBalance.toFixed(0)}</span>
+                  </div>
+                </div>
+
+                <div class="text-center text-[10px] border-t border-dashed border-black mt-2 pt-1.5">
+                  *** Thank You ***
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-3 flex justify-end gap-2 no-print">
+              <button type="button" data-close-modal class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-semibold">Close</button>
+              <button id="thermalPrintNowBtn" type="button" class="px-5 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-zinc-950 text-xs sm:text-sm font-extrabold shadow">
+                🖨️ Print Now (3" Thermal)
+              </button>
+            </div>
+          </div>
+        `);
+
+        document.getElementById('thermalPrintNowBtn').addEventListener('click', () => {
+          document.body.classList.add('printing-thermal');
+          const cleanup = () => {
+            document.body.classList.remove('printing-thermal');
+            window.removeEventListener('afterprint', cleanup);
+          };
+          window.addEventListener('afterprint', cleanup);
+          window.print();
+          setTimeout(cleanup, 1500);
+        });
+      }
+
       async function shareHisabAsPdf() {
         if (!window.jspdf || !window.jspdf.jsPDF) {
           showToast('PDF library loading, try again');
@@ -3498,6 +3688,7 @@
       document.getElementById('hisabSaveBtn').addEventListener('click', saveCurrentHisab);
       document.getElementById('pendingLotsBtn').addEventListener('click', openPendingLotsModal);
       document.getElementById('savedHisabBtn').addEventListener('click', openSavedHisabListModal);
+      document.getElementById('hisabThermalBtn').addEventListener('click', openThermalPreviewModal);
       document.getElementById('hisabPrintBtn').addEventListener('click', () => window.print());
       document.getElementById('hisabShareBtn').addEventListener('click', shareHisabAsPdf);
 
