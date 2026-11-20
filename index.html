@@ -176,6 +176,10 @@
           <strong id="activeUserName">Shameem</strong>
           <span class="text-zinc-400">▾</span>
         </button>
+        <button id="notifBellBtn" type="button" title="Approvals &amp; Notifications" class="relative inline-flex items-center justify-center bg-zinc-950/90 hover:bg-zinc-900 border border-zinc-800 px-2 py-1 rounded-full text-xs font-bold text-amber-300 shrink-0 transition">
+          <span>🔔</span>
+          <span id="notifBadge" class="hidden ml-1 px-1.5 py-0.2 rounded-full bg-rose-600 text-white text-[10px] font-extrabold leading-tight">0</span>
+        </button>
         <button id="appModeToggleBtn" type="button" class="inline-flex items-center gap-1 bg-sky-600 hover:bg-sky-700 border border-sky-500 px-2 py-1 rounded-full text-[11px] font-bold text-white shrink-0 whitespace-nowrap transition">
           👁️ View Mode
         </button>
@@ -250,23 +254,23 @@
   <!-- Main Table Container (Obsidian Dark Surface & Amber-Gold Header) -->
   <main class="flex-1 min-h-0 p-2 sm:p-3 overflow-hidden flex flex-col">
     <div class="bg-[#14171f] rounded-xl shadow-xl border border-zinc-800 flex-1 min-h-0 flex flex-col overflow-hidden">
-      <div id="mainTableScroll" class="table-scroll overflow-x-auto overflow-y-auto flex-1 min-h-0">
+      <div id="mainTableScroll" class="table-scroll overflow-x-auto overflow-y-auto flex-1 min-h-[200px]">
         <table id="mainTableElement" class="w-full border-collapse text-left text-xs sm:text-sm min-w-[1250px]">
           <thead class="bg-amber-500 text-zinc-950 font-extrabold sticky top-0 z-20 uppercase text-xs tracking-wide">
             <tr>
-              <th class="sticky-lot px-3 py-2.5 border-b border-r border-amber-600/40 w-24 text-center">Lot no</th>
-              <th class="px-3 py-2.5 border-b border-r border-amber-600/40 w-24 text-center">piece</th>
-              <th class="px-3 py-2.5 border-b border-r border-amber-600/40 w-24 text-center">size</th>
-              <th class="px-3 py-2.5 border-b border-r border-amber-600/40 w-28 text-center">fabric</th>
-              <th class="px-3 py-2.5 border-b border-r border-amber-600/40 w-28 text-center">Master</th>
-              <th class="px-3 py-2.5 border-b border-r border-amber-600/40 w-32 text-center">Embroidery</th>
-              <th class="px-3 py-2.5 border-b border-r border-amber-600/40 w-32 text-center">Fabrication</th>
-              <th class="px-3 py-2.5 border-b border-r border-amber-600/40 w-28 text-center">Tanki</th>
-              <th class="px-3 py-2.5 border-b border-r border-amber-600/40 w-32 text-center">washing</th>
-              <th class="px-3 py-2.5 border-b border-r border-amber-600/40 w-32 text-center">packing</th>
-              <th class="px-3 py-2.5 border-b border-r border-amber-600/40 w-24 text-center">Jama</th>
-              <th class="px-3 py-2.5 border-b border-r border-amber-600/40 w-28 text-center">Laser</th>
-              <th class="px-3 py-2.5 border-b border-amber-600/40 w-28 text-center">Print</th>
+              <th data-col="lotNo" class="sticky-lot px-3 py-2.5 border-b border-r border-amber-600/40 w-24 text-center">Lot no</th>
+              <th data-col="peice" class="px-3 py-2.5 border-b border-r border-amber-600/40 w-24 text-center">piece</th>
+              <th data-col="size" class="px-3 py-2.5 border-b border-r border-amber-600/40 w-24 text-center">size</th>
+              <th data-col="fabric" class="px-3 py-2.5 border-b border-r border-amber-600/40 w-28 text-center">fabric</th>
+              <th data-col="master" class="px-3 py-2.5 border-b border-r border-amber-600/40 w-28 text-center">Master</th>
+              <th data-col="embroidery" class="px-3 py-2.5 border-b border-r border-amber-600/40 w-32 text-center">Embroidery</th>
+              <th data-col="fabrication" class="px-3 py-2.5 border-b border-r border-amber-600/40 w-32 text-center">Fabrication</th>
+              <th data-col="tanki" class="px-3 py-2.5 border-b border-r border-amber-600/40 w-28 text-center">Tanki</th>
+              <th data-col="washing" class="px-3 py-2.5 border-b border-r border-amber-600/40 w-32 text-center">washing</th>
+              <th data-col="packing" class="px-3 py-2.5 border-b border-r border-amber-600/40 w-32 text-center">packing</th>
+              <th data-col="jama" class="px-3 py-2.5 border-b border-r border-amber-600/40 w-24 text-center">Jama</th>
+              <th data-col="laser" class="px-3 py-2.5 border-b border-r border-amber-600/40 w-28 text-center">Laser</th>
+              <th data-col="print" class="px-3 py-2.5 border-b border-amber-600/40 w-28 text-center">Print</th>
             </tr>
           </thead>
           <tbody id="lotTableBody" class="divide-y divide-zinc-800 text-zinc-100">
@@ -300,11 +304,14 @@
     <button id="moveDoneBtn" type="button" class="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 text-xs font-extrabold">Done</button>
   </div>
 
+  <!-- Full-Screen Login / Register Auth Gate -->
+  <div id="authGateOverlay" class="fixed inset-0 z-[45] bg-[#0b0d11] hidden flex-col items-center justify-center p-4 overflow-y-auto"></div>
+
   <!-- Toast Notification -->
-  <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-amber-500 text-zinc-950 px-4 py-2 rounded-full text-xs sm:text-sm font-bold shadow-xl opacity-0 pointer-events-none transition-opacity duration-200 z-50"></div>
+  <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-amber-500 text-zinc-950 px-4 py-2 rounded-full text-xs sm:text-sm font-bold shadow-xl opacity-0 pointer-events-none transition-opacity duration-200 z-[60]"></div>
 
   <!-- Generic Modal Backdrop -->
-  <div id="modalBackdrop" class="fixed inset-0 bg-black/75 backdrop-blur-xs hidden items-center justify-center p-3 z-40">
+  <div id="modalBackdrop" class="fixed inset-0 bg-black/75 backdrop-blur-xs hidden items-center justify-center p-3 z-[50]">
     <div id="modalContent" class="bg-[#181b22] text-zinc-100 rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto border border-zinc-700">
       <!-- Dynamic Modal Body -->
     </div>
@@ -338,17 +345,22 @@
       const STORAGE_KEY = 'lot_tracker_v2_data';
       const SYNC_CONFIG_KEY = 'lot_tracker_v2_sync_cfg';
       const USER_KEY = 'lot_tracker_v2_user';
+      const USER_SESSION_KEY = 'lot_tracker_v2_session';
       const DEFAULT_EDIT_PIN = '4311';
+      const USER_CATEGORIES = ['Master', 'Fabrication', 'Tanki', 'Washing', 'Packing', 'Embroidery', 'Laser', 'Print'];
 
       const bc = ('BroadcastChannel' in window) ? new BroadcastChannel('lot_tracker_sync_channel') : null;
 
       let appMode = 'view'; // 'edit' | 'view' (default View Mode)
+      let activeSession = null;
       let state = {
         activeUser: 'Shameem',
         editPin: DEFAULT_EDIT_PIN,
         tables: ['Main'],
         activeTable: 'Main',
         rows: [],
+        users: [],
+        notifications: [],
         savedHisabs: [],
         alterData: {},
         daybook: {},
@@ -364,7 +376,7 @@
           print: {}
         },
         syncConfig: {
-          firebaseUrl: '',
+          firebaseUrl: 'https://addis-lot-tracking-default-rtdb.asia-southeast1.firebasedatabase.app',
           roomCode: 'shameem-saleem-factory',
           autoSync: true,
           lastSyncedAt: null
@@ -374,6 +386,9 @@
       let currentSearch = '';
       let syncTimer = null;
       let pollTimer = null;
+      let isPushPending = false;
+      let lastLocalMutationAt = 0;
+      let lastCloudUpdatedAt = 0;
 
       function todayISO() {
         const d = new Date();
@@ -401,6 +416,138 @@
       function buildDatalistHtml(id, dept) {
         const list = getColumnNameSuggestions(dept);
         return `<datalist id="${id}">${list.map(n => `<option value="${escapeHtml(n)}"></option>`).join('')}</datalist>`;
+      }
+
+      function getRoleConfig() {
+        if (!activeSession) {
+          return {
+            isLoggedIn: false,
+            isAdmin: false,
+            category: 'Guest',
+            userName: '',
+            visibleCols: [],
+            canAddRow: false,
+            canToggleMode: false,
+            hisabDept: null
+          };
+        }
+        const isAdmin = activeSession.type === 'admin';
+        const category = isAdmin ? 'Admin' : (activeSession.category || 'Packing');
+        const userName = activeSession.name || '';
+        const allCols = ['lotNo', 'peice', 'size', 'fabric', 'master', 'embroidery', 'fabrication', 'tanki', 'washing', 'packing', 'jama', 'laser', 'print'];
+        let visibleCols = allCols;
+        if (!isAdmin) {
+          if (category === 'Master') {
+            visibleCols = ['lotNo', 'peice', 'size', 'fabric', 'master', 'embroidery', 'fabrication', 'laser', 'print'];
+          } else if (category === 'Fabrication') {
+            visibleCols = ['lotNo', 'peice', 'size', 'fabric', 'master', 'embroidery', 'fabrication', 'tanki'];
+          } else if (category === 'Tanki') {
+            visibleCols = ['lotNo', 'fabrication', 'tanki', 'washing'];
+          } else if (category === 'Washing') {
+            visibleCols = ['lotNo', 'tanki', 'washing', 'packing'];
+          } else if (category === 'Packing') {
+            visibleCols = ['lotNo', 'washing', 'packing', 'jama'];
+          } else {
+            visibleCols = ['lotNo', 'peice', 'size', 'fabric', category.toLowerCase()];
+          }
+        }
+        return {
+          isLoggedIn: true,
+          isAdmin,
+          category,
+          userName,
+          visibleCols,
+          canAddRow: isAdmin || category === 'Master',
+          canToggleMode: isAdmin || ['Master', 'Fabrication', 'Tanki', 'Washing', 'Packing'].includes(category),
+          hisabDept: isAdmin ? null : category.toLowerCase()
+        };
+      }
+
+      function addNotification(notif) {
+        if (!Array.isArray(state.notifications)) state.notifications = [];
+        state.notifications.unshift(Object.assign({
+          id: 'notif_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6),
+          status: 'pending',
+          createdAt: Date.now()
+        }, notif));
+        if (state.notifications.length > 200) state.notifications = state.notifications.slice(0, 200);
+        updateNotifBadge();
+      }
+
+      function getMyNotifications() {
+        const rc = getRoleConfig();
+        if (!rc.isLoggedIn || !Array.isArray(state.notifications)) return [];
+        if (rc.isAdmin) {
+          return state.notifications.filter(n => n.targetRole === 'admin');
+        }
+        if (rc.category === 'Tanki') {
+          return state.notifications.filter(n =>
+            n.targetRole === 'tanki' &&
+            (!n.targetName || n.targetName.trim().toLowerCase() === rc.userName.trim().toLowerCase())
+          );
+        }
+        return state.notifications.filter(n =>
+          n.targetRole === 'user' &&
+          n.targetName && n.targetName.trim().toLowerCase() === rc.userName.trim().toLowerCase()
+        );
+      }
+
+      function updateNotifBadge() {
+        const badge = document.getElementById('notifBadge');
+        if (!badge) return;
+        const pendingCount = getMyNotifications().filter(n => n.status === 'pending').length;
+        if (pendingCount > 0) {
+          badge.textContent = String(pendingCount);
+          badge.classList.remove('hidden');
+        } else {
+          badge.classList.add('hidden');
+        }
+      }
+
+      function updateRoleUI() {
+        const rc = getRoleConfig();
+        const uEl = document.getElementById('activeUserName');
+        if (uEl) {
+          uEl.textContent = rc.isAdmin ? rc.userName : (rc.isLoggedIn ? `${rc.userName} (${rc.category})` : 'Login');
+        }
+        const uDot = document.getElementById('activeUserDot');
+        if (uDot) {
+          uDot.className = 'w-1.5 h-1.5 rounded-full ' + (rc.isAdmin ? 'bg-emerald-400' : 'bg-amber-400');
+        }
+
+        const adminOnlyIds = ['alterBtn', 'pendingLotsBtn', 'backupRestoreBtn', 'daybookBtn', 'addTableBtn'];
+        adminOnlyIds.forEach(id => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          el.disabled = !rc.isAdmin;
+          el.classList.toggle('opacity-40', !rc.isAdmin);
+          el.classList.toggle('pointer-events-none', !rc.isAdmin);
+        });
+
+        const addRowEl = document.getElementById('addRowBtn');
+        if (addRowEl) {
+          addRowEl.disabled = !rc.canAddRow;
+          addRowEl.classList.toggle('opacity-40', !rc.canAddRow);
+          addRowEl.classList.toggle('pointer-events-none', !rc.canAddRow);
+        }
+
+        const modeBtn = document.getElementById('appModeToggleBtn');
+        if (modeBtn) {
+          if (!rc.canToggleMode && appMode !== 'view') {
+            appMode = 'view';
+            document.body.classList.add('view-mode-active');
+            modeBtn.textContent = '👁️ View Mode';
+            modeBtn.className = 'inline-flex items-center gap-1 bg-sky-600 hover:bg-sky-700 border border-sky-500 px-2 py-1 rounded-full text-[11px] font-bold text-white shrink-0 whitespace-nowrap transition';
+          }
+          modeBtn.disabled = !rc.canToggleMode;
+          modeBtn.classList.toggle('opacity-50', !rc.canToggleMode);
+        }
+
+        const hisabBtn = document.getElementById('hisabDropdownBtn');
+        if (hisabBtn) {
+          hisabBtn.textContent = rc.isAdmin ? '📒 Hisab ▾' : '📒 My Hisab';
+        }
+        updateNotifBadge();
       }
 
       function showToast(msg) {
@@ -648,9 +795,20 @@
           if (savedUser === 'Shameem' || savedUser === 'Saleem') {
             state.activeUser = savedUser;
           }
+          const savedSess = localStorage.getItem(USER_SESSION_KEY);
+          if (savedSess) {
+            const sObj = JSON.parse(savedSess);
+            if (sObj && sObj.name && (sObj.type === 'admin' || sObj.type === 'user')) {
+              activeSession = sObj;
+              state.activeUser = sObj.name;
+            }
+          }
+
           const savedSync = localStorage.getItem(SYNC_CONFIG_KEY);
           if (savedSync) {
-            state.syncConfig = Object.assign(state.syncConfig, JSON.parse(savedSync));
+            const parsedSync = JSON.parse(savedSync);
+            state.syncConfig = Object.assign(state.syncConfig, parsedSync);
+            if (!state.syncConfig.firebaseUrl) state.syncConfig.firebaseUrl = 'https://addis-lot-tracking-default-rtdb.asia-southeast1.firebasedatabase.app';
           }
           const raw = localStorage.getItem(STORAGE_KEY);
           if (raw) {
@@ -661,10 +819,9 @@
               if (parsed.activeTable && state.tables.includes(parsed.activeTable)) state.activeTable = parsed.activeTable;
               state.rows = parsed.rows.map(normalizeRowStages);
               deduplicateAndSortRows();
+              state.users = Array.isArray(parsed.users) ? parsed.users : [];
+              state.notifications = Array.isArray(parsed.notifications) ? parsed.notifications : [];
               state.savedHisabs = Array.isArray(parsed.savedHisabs) ? parsed.savedHisabs : [];
-        state.alterData = (parsed.alterData && typeof parsed.alterData === 'object') ? parsed.alterData : {};
-        state.daybook = (parsed.daybook && typeof parsed.daybook === 'object') ? parsed.daybook : {};
-        state.settledDaybookKeys = Array.isArray(parsed.settledDaybookKeys) ? parsed.settledDaybookKeys : [];
               state.alterData = (parsed.alterData && typeof parsed.alterData === 'object') ? parsed.alterData : {};
               state.daybook = (parsed.daybook && typeof parsed.daybook === 'object') ? parsed.daybook : {};
               state.settledDaybookKeys = Array.isArray(parsed.settledDaybookKeys) ? parsed.settledDaybookKeys : [];
@@ -681,16 +838,17 @@
       function saveLocalState(skipBroadcast) {
         try {
           localStorage.setItem(USER_KEY, state.activeUser);
+          if (activeSession) localStorage.setItem(USER_SESSION_KEY, JSON.stringify(activeSession)); else localStorage.removeItem(USER_SESSION_KEY);
           localStorage.setItem(SYNC_CONFIG_KEY, JSON.stringify(state.syncConfig));
           localStorage.setItem(STORAGE_KEY, JSON.stringify({
             editPin: state.editPin,
             tables: state.tables,
             activeTable: state.activeTable,
             rows: state.rows,
+            users: state.users,
+            notifications: state.notifications,
             savedHisabs: state.savedHisabs,
             alterData: state.alterData,
-          daybook: state.daybook,
-          settledDaybookKeys: state.settledDaybookKeys,
             daybook: state.daybook,
             settledDaybookKeys: state.settledDaybookKeys,
             hisabMeta: state.hisabMeta,
@@ -700,8 +858,20 @@
           // Ignore storage quota errors
         }
         if (!skipBroadcast && bc) {
-          bc.postMessage({ type: 'SYNC_UPDATE', rows: state.rows, savedHisabs: state.savedHisabs, hisabMeta: state.hisabMeta });
+          bc.postMessage({
+            type: 'SYNC_UPDATE',
+            rows: state.rows,
+            users: state.users,
+            notifications: state.notifications,
+            savedHisabs: state.savedHisabs,
+            hisabMeta: state.hisabMeta
+          });
         }
+        if (!skipBroadcast) {
+          lastLocalMutationAt = Date.now();
+          if (getFirebaseEndpoint() && state.syncConfig.autoSync) isPushPending = true;
+        }
+        updateNotifBadge();
         scheduleCloudPush();
       }
 
@@ -719,7 +889,7 @@
       }
 
       function getFirebaseEndpoint() {
-        const base = (state.syncConfig.firebaseUrl || '').trim().replace(/\/+$/, '');
+        const base = (state.syncConfig.firebaseUrl || '').trim().replace(/^https?:/i, m => m.toLowerCase()).replace(/\/+$/, '');
         const room = (state.syncConfig.roomCode || 'default-room').trim().replace(/[^a-zA-Z0-9_-]/g, '');
         if (!base) return null;
         return base + '/lot_tracker/' + room + '.json';
@@ -735,6 +905,7 @@
         clearTimeout(syncTimer);
         syncTimer = setTimeout(async () => {
           try {
+            const pushTs = Date.now();
             const res = await fetch(url, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
@@ -743,22 +914,28 @@
                 tables: state.tables,
                 activeTable: state.activeTable,
                 rows: state.rows,
+                users: state.users,
+                notifications: state.notifications,
                 savedHisabs: state.savedHisabs,
                 alterData: state.alterData,
                 daybook: state.daybook,
                 settledDaybookKeys: state.settledDaybookKeys,
                 hisabMeta: state.hisabMeta,
                 updatedBy: state.activeUser,
-                updatedAt: Date.now()
+                updatedAt: pushTs
               })
             });
             if (res.ok) {
-              state.syncConfig.lastSyncedAt = Date.now();
+              isPushPending = false;
+              lastCloudUpdatedAt = pushTs;
+              state.syncConfig.lastSyncedAt = pushTs;
               updateSyncBadge('synced', 'Cloud Synced');
             } else {
+              isPushPending = false;
               updateSyncBadge('error', 'Sync Error');
             }
           } catch (err) {
+            isPushPending = false;
             updateSyncBadge('error', 'Offline (Saved)');
           }
         }, 600);
@@ -767,22 +944,34 @@
       async function pullFromCloud(silent) {
         const url = getFirebaseEndpoint();
         if (!url) return;
+        if (silent && isPushPending) return;
         try {
           const res = await fetch(url);
           if (!res.ok) return;
           const data = await res.json();
+          if (silent && isPushPending) return;
+          if (data && data.updatedAt && data.updatedAt <= lastLocalMutationAt) return;
+          if (silent && data && data.updatedAt && data.updatedAt === lastCloudUpdatedAt) return;
           if (data && Array.isArray(data.rows)) {
+            if (data.updatedAt) lastCloudUpdatedAt = data.updatedAt;
             if (data.editPin) state.editPin = String(data.editPin);
-            if (Array.isArray(data.tables) && data.tables.length) state.tables = data.tables;
+            if (Array.isArray(data.tables) && data.tables.length) {
+              state.tables = data.tables;
+              if (!state.tables.includes(state.activeTable)) state.activeTable = state.tables[0] || 'Main';
+            }
             state.rows = data.rows.map(normalizeRowStages);
             deduplicateAndSortRows();
+            state.users = Array.isArray(data.users) ? data.users : state.users;
+            state.notifications = Array.isArray(data.notifications) ? data.notifications : state.notifications;
             state.savedHisabs = Array.isArray(data.savedHisabs) ? data.savedHisabs : [];
             state.alterData = (data.alterData && typeof data.alterData === 'object') ? data.alterData : {};
             state.daybook = (data.daybook && typeof data.daybook === 'object') ? data.daybook : {};
             state.settledDaybookKeys = Array.isArray(data.settledDaybookKeys) ? data.settledDaybookKeys : [];
             state.hisabMeta = Object.assign({ master: {}, embroidery: {}, fabrication: {}, washing: {}, tanki: {}, packing: {}, laser: {}, print: {} }, data.hisabMeta || {});
             saveLocalState(true);
-            renderTable();
+            updateRoleUI();
+            const isTypingInTable = document.activeElement && document.activeElement.closest && document.activeElement.closest('#lotTableBody');
+            if (!isTypingInTable) renderTable();
             updateSyncBadge('synced', 'Cloud Synced');
             if (!silent) showToast('Cloud data synced!');
           }
@@ -795,7 +984,7 @@
         clearInterval(pollTimer);
         if (getFirebaseEndpoint() && state.syncConfig.autoSync) {
           pullFromCloud(true);
-          pollTimer = setInterval(() => pullFromCloud(true), 12000);
+          pollTimer = setInterval(() => pullFromCloud(true), 4000);
         }
       }
 
@@ -803,8 +992,11 @@
         bc.onmessage = (ev) => {
           if (ev.data && ev.data.type === 'SYNC_UPDATE') {
             state.rows = ev.data.rows;
+            if (ev.data.users) state.users = ev.data.users;
+            if (ev.data.notifications) state.notifications = ev.data.notifications;
             state.savedHisabs = ev.data.savedHisabs || state.savedHisabs;
             state.hisabMeta = ev.data.hisabMeta || state.hisabMeta;
+            updateRoleUI();
             renderTable();
             updateSyncBadge('synced', 'Tab Synced');
           }
@@ -879,9 +1071,37 @@
 
       function renderTable() {
         renderTableTabs();
+        const rc = getRoleConfig();
+        if (!rc.isLoggedIn) {
+          const tbody = document.getElementById('lotTableBody');
+          if (tbody) tbody.innerHTML = '';
+          return;
+        }
+        const visSet = new Set(rc.visibleCols);
+        const tblEl = document.getElementById('mainTableElement');
+        if (tblEl) {
+          tblEl.classList.toggle('min-w-[1250px]', rc.isAdmin);
+          tblEl.classList.toggle('min-w-full', !rc.isAdmin);
+        }
+        document.querySelectorAll('#mainTableElement thead th[data-col]').forEach(th => {
+          th.classList.toggle('hidden', !visSet.has(th.getAttribute('data-col')));
+        });
+        const colClass = (col) => visSet.has(col) ? '' : 'hidden';
+
         const tbody = document.getElementById('lotTableBody');
         const q = currentSearch.trim().toLowerCase();
-        const tableRows = state.rows.filter(r => (r.tableKey || 'Main') === state.activeTable);
+        let tableRows = state.rows.filter(r => (r.tableKey || 'Main') === state.activeTable);
+        if (!rc.isAdmin && rc.category !== 'Master') {
+          const uname = rc.userName.trim().toLowerCase();
+          tableRows = tableRows.filter(r => {
+            if (rc.category === 'Fabrication') return (r.fabrication?.name || '').trim().toLowerCase() === uname;
+            if (rc.category === 'Tanki') return (r.tanki?.name || '').trim().toLowerCase() === uname;
+            if (rc.category === 'Washing') return (r.washing?.name || '').trim().toLowerCase() === uname;
+            if (rc.category === 'Packing') return getPackingPrimaryName(r).trim().toLowerCase() === uname;
+            const dKey = rc.category.toLowerCase();
+            return (r[dKey]?.name || '').trim().toLowerCase() === uname;
+          });
+        }
 
         const filtered = tableRows.filter(r => {
           if (!q) return true;
@@ -903,7 +1123,10 @@
         document.getElementById('totalJamaCount').textContent = totalJama;
 
         if (!filtered.length) {
-          tbody.innerHTML = '<tr><td colspan="13" class="text-center py-8 text-slate-400">No lots found. Click <strong>+ Add Row</strong> to start.</td></tr>';
+          const emptyMsg = (!rc.isAdmin && rc.category !== 'Master')
+            ? `Aapke naam (<strong>${escapeHtml(rc.userName)}</strong> — ${escapeHtml(rc.category)}) ke koi lots is table me nahi mile.`
+            : 'No lots found. Click <strong>+ Add Row</strong> to start.';
+          tbody.innerHTML = `<tr><td colspan="13" class="text-center py-8 text-slate-400">${emptyMsg}</td></tr>`;
           return;
         }
 
@@ -911,17 +1134,23 @@
           const isFirst = idx === 0 && !q;
           const jamaTotal = getPackingTotalPeice(row);
           const packName = getPackingPrimaryName(row);
+          const isBlackoutForMaster = (!rc.isAdmin && rc.category === 'Master' && row.createdByRole === 'Master' && !row.masterFinalSubmitted);
+          const blackTdCls = isBlackoutForMaster ? 'bg-black text-black border-zinc-900 pointer-events-none select-none' : '';
+          const canInlineEdit = rc.isAdmin && appMode === 'edit';
 
           function renderJobCell(cellType, data, stageStats) {
+            const hideCls = colClass(cellType);
+            if (isBlackoutForMaster) {
+              return `<td class="${hideCls} px-2 py-2 border-r bg-black border-zinc-900 text-black select-none pointer-events-none"><div class="opacity-0">.</div></td>`;
+            }
             if ((cellType === 'embroidery' || cellType === 'laser' || cellType === 'print') && !data?.enabled) {
-              return `<td data-row-id="${row.id}" data-cell="${cellType}" data-disabled-job="1" class="cell-trigger cursor-not-allowed px-2 py-2 border-r border-blue-500 bg-blue-700 text-white text-center align-middle select-none">
+              return `<td data-row-id="${row.id}" data-cell="${cellType}" data-disabled-job="1" class="${hideCls} cell-trigger cursor-not-allowed px-2 py-2 border-r border-blue-500 bg-blue-700 text-white text-center align-middle select-none">
                 <div class="text-2xl font-extrabold leading-none tracking-tight">X</div>
               </td>`;
             }
             const hasName = (data?.name || '').trim() !== '';
             const isStage = !!stageStats;
             const isClear = isStage && data?.status === 'Clear';
-            const isLightCell = data?.paid || isClear;
             const paidClass = data?.paid
               ? (data?.paidLight ? 'cell-paid-light' : 'cell-paid-bright')
               : (isClear ? 'cell-status-clear' : 'hover:bg-zinc-800/80');
@@ -937,10 +1166,10 @@
             }
 
             const statusBtnHtml = isStage
-              ? `<div class="mt-1"><button type="button" data-toggle-stage-status="${row.id}" data-stage-dept="${cellType}" class="px-2 py-0.5 rounded-full text-[10px] font-bold border transition ${isClear ? 'bg-amber-400 border-amber-600 text-zinc-950' : 'bg-zinc-800 border-zinc-600 text-zinc-300 hover:bg-zinc-700'}">${isClear ? 'Clear' : 'Pending'}</button></div>`
+              ? `<div class="mt-1"><button type="button" ${rc.isAdmin ? `data-toggle-stage-status="${row.id}" data-stage-dept="${cellType}"` : 'disabled'} class="px-2 py-0.5 rounded-full text-[10px] font-bold border transition ${isClear ? 'bg-amber-400 border-amber-600 text-zinc-950' : 'bg-zinc-800 border-zinc-600 text-zinc-300'}">${isClear ? 'Clear' : 'Pending'}</button></div>`
               : '';
 
-            return `<td data-row-id="${row.id}" data-cell="${cellType}" class="cell-trigger cursor-pointer px-2 py-2 border-r border-zinc-800 text-center align-middle transition ${paidClass}">
+            return `<td data-row-id="${row.id}" data-cell="${cellType}" class="${hideCls} cell-trigger cursor-pointer px-2 py-2 border-r border-zinc-800 text-center align-middle transition ${paidClass}">
               ${hasName ? `<div class="font-semibold text-xs sm:text-sm leading-tight">${escapeHtml(data.name)}</div>` : `<div class="text-zinc-600 text-xs">+ Entry</div>`}
               ${subHtml}
               ${statusBtnHtml}
@@ -948,51 +1177,53 @@
           }
 
           return `<tr class="hover:bg-zinc-900/60 transition">
-            <!-- Lot no (Bold, manual entry supported) -->
-            <td class="sticky-lot px-2 py-2 border-r border-zinc-800 text-center">
-              <input type="text" ${appMode === 'view' ? 'readonly disabled' : ''} data-lot-input="${row.id}" value="${escapeHtml(row.lotNo)}" placeholder="${isFirst ? 'Lot #' : ''}" class="lot-bold w-full text-center bg-transparent border border-transparent hover:border-zinc-600 focus:border-amber-400 focus:bg-zinc-900 rounded px-1 py-1 text-amber-400 text-sm focus:outline-none" />
+            <!-- Lot no (Bold, always visible; inline edit for Admin in Edit Mode) -->
+            <td class="${colClass('lotNo')} sticky-lot px-2 py-2 border-r border-zinc-800 text-center">
+              ${canInlineEdit
+                ? `<input type="text" data-lot-input="${row.id}" value="${escapeHtml(row.lotNo)}" placeholder="${isFirst ? 'Lot #' : ''}" class="lot-bold w-full min-w-[52px] text-center bg-transparent border border-transparent hover:border-zinc-600 focus:border-amber-400 focus:bg-zinc-900 rounded px-1 py-1 text-amber-400 text-sm focus:outline-none" />`
+                : `<div class="lot-bold text-amber-400 text-sm py-1 text-center min-w-[48px]">${escapeHtml(row.lotNo || '-')}</div>`}
             </td>
 
             <!-- piece (Click opens entry modal) -->
-            <td data-row-id="${row.id}" data-cell="peice" class="cell-trigger cursor-pointer px-2 py-2 border-r border-zinc-800 text-center hover:bg-zinc-800/80 transition">
+            <td data-row-id="${row.id}" data-cell="peice" class="${colClass('peice')} cell-trigger cursor-pointer px-2 py-2 border-r border-zinc-800 text-center hover:bg-zinc-800/80 transition">
               ${row.peice ? `<div class="font-bold text-white">${escapeHtml(row.peice)}</div><div class="text-[10px] text-zinc-400">${escapeHtml(formatDateDMY(row.date))}</div>` : `<span class="text-amber-400 text-xs font-medium">+ Piece</span>`}
             </td>
 
-            <!-- size (Manual or from piece modal) -->
-            <td class="px-1.5 py-2 border-r border-zinc-800 text-center">
-              <input type="text" ${appMode === 'view' ? 'readonly disabled' : ''} data-inline-field="size" data-row-id="${row.id}" value="${escapeHtml(row.size)}" placeholder="-" class="w-full text-center bg-transparent border border-transparent hover:border-zinc-600 focus:border-amber-400 focus:bg-zinc-900 rounded px-1 py-1 text-zinc-200 text-xs sm:text-sm focus:outline-none" />
+            <!-- size -->
+            <td class="${colClass('size')} px-1.5 py-2 border-r border-zinc-800 text-center ${blackTdCls}">
+              ${isBlackoutForMaster ? '<span class="opacity-0">.</span>' : `<input type="text" ${!canInlineEdit ? 'readonly disabled' : ''} data-inline-field="size" data-row-id="${row.id}" value="${escapeHtml(row.size)}" placeholder="-" class="w-full text-center bg-transparent border border-transparent hover:border-zinc-600 focus:border-amber-400 focus:bg-zinc-900 rounded px-1 py-1 text-zinc-200 text-xs sm:text-sm focus:outline-none" />`}
             </td>
 
-            <!-- fabric (Manual or from piece modal) -->
-            <td class="px-1.5 py-2 border-r border-zinc-800 text-center">
-              <input type="text" ${appMode === 'view' ? 'readonly disabled' : ''} data-inline-field="fabric" data-row-id="${row.id}" value="${escapeHtml(row.fabric)}" placeholder="-" class="w-full text-center bg-transparent border border-transparent hover:border-zinc-600 focus:border-amber-400 focus:bg-zinc-900 rounded px-1 py-1 text-zinc-200 text-xs sm:text-sm focus:outline-none" />
+            <!-- fabric -->
+            <td class="${colClass('fabric')} px-1.5 py-2 border-r border-zinc-800 text-center ${blackTdCls}">
+              ${isBlackoutForMaster ? '<span class="opacity-0">.</span>' : `<input type="text" ${!canInlineEdit ? 'readonly disabled' : ''} data-inline-field="fabric" data-row-id="${row.id}" value="${escapeHtml(row.fabric)}" placeholder="-" class="w-full text-center bg-transparent border border-transparent hover:border-zinc-600 focus:border-amber-400 focus:bg-zinc-900 rounded px-1 py-1 text-zinc-200 text-xs sm:text-sm focus:outline-none" />`}
             </td>
 
-            <!-- Master (Name from piece modal; click opens Paid toggle; green when paid) -->
-            <td data-row-id="${row.id}" data-cell="master" class="cell-trigger cursor-pointer px-2 py-2 border-r border-zinc-800 text-center transition ${row.masterPaid ? (row.masterPaidLight ? 'cell-paid-light' : 'cell-paid-bright') : 'hover:bg-zinc-800/80'}">
-              ${row.masterName ? `<div class="font-semibold text-xs sm:text-sm">${escapeHtml(row.masterName)}</div><div class="sub-text text-[10px] ${row.masterPaid ? 'text-emerald-100' : 'text-zinc-400'}">${row.masterPaid ? 'PAID' : 'Unpaid'}</div>` : `<span class="text-zinc-600 text-xs">-</span>`}
+            <!-- Master -->
+            <td data-row-id="${row.id}" data-cell="master" class="${colClass('master')} ${isBlackoutForMaster ? blackTdCls : `cell-trigger cursor-pointer px-2 py-2 border-r border-zinc-800 text-center transition ${row.masterPaid ? (row.masterPaidLight ? 'cell-paid-light' : 'cell-paid-bright') : 'hover:bg-zinc-800/80'}`}">
+              ${isBlackoutForMaster ? '<span class="opacity-0">.</span>' : (row.masterName ? `<div class="font-semibold text-xs sm:text-sm">${escapeHtml(row.masterName)}</div><div class="sub-text text-[10px] ${row.masterPaid ? 'text-emerald-100' : 'text-zinc-400'}">${row.masterPaid ? 'PAID' : 'Unpaid'}</div>` : `<span class="text-zinc-600 text-xs">-</span>`)}
             </td>
 
             <!-- Embroidery -->
             ${renderJobCell('embroidery', row.embroidery)}
 
-            <!-- Fabrication (Come - Gone (Balance)) -->
+            <!-- Fabrication -->
             ${renderJobCell('fabrication', row.fabrication, getStageTotals(row, 'fabrication'))}
 
-            <!-- Tanki (Come - Gone (Balance)) -->
+            <!-- Tanki -->
             ${renderJobCell('tanki', row.tanki, getStageTotals(row, 'tanki'))}
 
-            <!-- washing (Come - Gone (Balance)) -->
+            <!-- washing -->
             ${renderJobCell('washing', row.washing, getStageTotals(row, 'washing'))}
 
-            <!-- packing (Come - Gone (Balance)) -->
+            <!-- packing -->
             ${renderJobCell('packing', { name: packName, status: row.packing?.status, paid: row.packing?.paid, paidLight: row.packing?.paidLight }, getStageTotals(row, 'packing'))}
 
-            <!-- Jama (Red until >= 90% Jama, then Green) -->
+            <!-- Jama -->
             ${(() => {
               const basePcs = parseFloat(row.peice) || getStageTotals(row, 'packing').come || 0;
               const isJamaDone = basePcs > 0 && jamaTotal >= basePcs * 0.9;
-              return `<td class="px-2 py-2 border-r text-center transition ${isJamaDone ? 'bg-green-700 border-green-500 text-white' : 'bg-rose-700 border-rose-500 text-white'}">
+              return `<td class="${colClass('jama')} px-2 py-2 border-r text-center transition ${isJamaDone ? 'bg-green-700 border-green-500 text-white' : 'bg-rose-700 border-rose-500 text-white'}">
                 <div class="font-extrabold text-sm">${jamaTotal || 0}</div>
                 <div class="text-[10px] font-semibold ${isJamaDone ? 'text-emerald-100' : 'text-rose-100'}">${basePcs > 0 ? Math.round((jamaTotal / basePcs) * 100) + '% Jama' : 'Jama'}</div>
               </td>`;
@@ -1054,8 +1285,26 @@
       }
 
       function addNewRow() {
+        const rc = getRoleConfig();
+        if (!rc.canAddRow) {
+          showToast('Aapko naya row add karne ki permission nahi hai');
+          return;
+        }
+        if (currentSearch) {
+          currentSearch = '';
+          const si = document.getElementById('searchInput');
+          const cb = document.getElementById('clearSearchBtn');
+          if (si) si.value = '';
+          if (cb) cb.classList.add('hidden');
+        }
         const nextLot = getNextLotNo(state.activeTable);
-        state.rows.push(createRow(nextLot, state.activeTable));
+        const nr = createRow(nextLot, state.activeTable);
+        if (!rc.isAdmin && rc.category === 'Master') {
+          nr.createdByRole = 'Master';
+          nr.masterFinalSubmitted = false;
+          nr.masterName = rc.userName;
+        }
+        state.rows.push(nr);
         deduplicateAndSortRows();
         saveLocalState();
         renderTable();
@@ -1084,7 +1333,11 @@
       function openPeiceModal(rowId) {
         const row = getRow(rowId);
         if (!row) return;
-        const isView = appMode === 'view';
+        const rc = getRoleConfig();
+        const isMasterUser = !rc.isAdmin && rc.category === 'Master';
+        const isMasterLocked = isMasterUser && !!row.masterFinalSubmitted;
+        const isRoleLocked = !rc.isAdmin && !isMasterUser;
+        const isView = appMode === 'view' || isMasterLocked || isRoleLocked;
         const ro = isView ? 'readonly disabled' : '';
         const roClass = isView ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-white';
         let embOn = !!(row.embroidery?.enabled) || !!(row.embroidery?.name || '').trim();
@@ -1160,9 +1413,10 @@
                 </div>
               </div>
 
-              <div class="pt-2 flex justify-end gap-2">
+              <div class="pt-2 flex flex-wrap justify-end gap-2">
                 <button type="button" data-close-modal class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold">Close</button>
                 ${!isView ? '<button type="submit" class="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold shadow">Save &amp; Close</button>' : ''}
+                ${(isMasterUser && !isView && !row.masterFinalSubmitted) ? '<button id="peiceFinalSubmitBtn" type="button" class="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-extrabold shadow">✓ Final Submit</button>' : ''}
               </div>
             </form>
           </div>
@@ -1201,10 +1455,8 @@
           });
         }
 
-        document.getElementById('peiceForm').addEventListener('submit', (e) => {
-          e.preventDefault();
-          if (appMode === 'view') return;
-          const fd = new FormData(e.target);
+        function applyPeiceFormData(formEl) {
+          const fd = new FormData(formEl);
           row.date = fd.get('date') || '';
           row.peice = fd.get('peice') || '';
           row.size = fd.get('size') || '';
@@ -1243,6 +1495,35 @@
           }
           row.updatedBy = state.activeUser;
           row.updatedAt = Date.now();
+        }
+
+        const peiceFinalBtn = document.getElementById('peiceFinalSubmitBtn');
+        if (peiceFinalBtn) {
+          peiceFinalBtn.addEventListener('click', () => {
+            if (isView) return;
+            applyPeiceFormData(document.getElementById('peiceForm'));
+            row.masterFinalSubmitted = true;
+            addNotification({
+              targetRole: 'admin',
+              type: 'master_submit',
+              title: 'Master Final Submit — Lot ' + (row.lotNo || '-'),
+              message: `Lot: ${row.lotNo || '-'} | Piece: ${row.peice || 0} | Size: ${row.size || '-'} | Fabric: ${row.fabric || '-'} | Master: ${row.masterName || rc.userName} | Fabrication: ${row.fabrication?.name || '-'}`,
+              rowId: row.id,
+              lotNo: row.lotNo,
+              dept: 'master',
+              fromUser: rc.userName
+            });
+            saveLocalState();
+            renderTable();
+            closeModal();
+            showToast('Lot ' + row.lotNo + ' Final Submit ho gaya! Admin ko notification bhej di gayi.');
+          });
+        }
+
+        document.getElementById('peiceForm').addEventListener('submit', (e) => {
+          e.preventDefault();
+          if (isView) return;
+          applyPeiceFormData(e.target);
           saveLocalState();
           renderTable();
           closeModal();
@@ -1490,11 +1771,19 @@
         };
         const isWashing = dept === 'washing';
         const isPacking = dept === 'packing';
+        const rc = getRoleConfig();
+        const isOwnStageUser = !rc.isAdmin && rc.category.toLowerCase() === dept;
+        const isWorkerBlocked = !rc.isAdmin && !isOwnStageUser;
+        const isFinalSubmitted = !rc.isAdmin && !!data.finalSubmitted;
         const paid = !!data.paid;
         const unlocked = !!isUnlocked;
-        const isLocked = (paid && !unlocked) || appMode === 'view';
+        const isLocked = (paid && !unlocked) || appMode === 'view' || isWorkerBlocked || isFinalSubmitted;
+        const isFabWorker = isOwnStageUser && dept === 'fabrication';
+        const isPackWorker = isOwnStageUser && dept === 'packing';
         const ro = isLocked ? 'readonly disabled' : '';
         const roClass = isLocked ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-white';
+        const roMeta = (isLocked || isFabWorker || isPackWorker) ? 'readonly disabled' : '';
+        const roMetaClass = (isLocked || isFabWorker || isPackWorker) ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-white';
 
         function renderStageModalBody() {
           const comeList = getStageComeEntries(row, dept);
@@ -1546,12 +1835,15 @@
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-3">
                 <div>
                   <label class="block text-xs font-semibold text-slate-700 mb-1">Name</label>
-                  <input id="stageNameInput" list="dl_stage_${dept}" type="text" ${ro} value="${escapeHtml(data.name || '')}" placeholder="${titles[dept]} Party / Karigar" class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm ${roClass}" />
+                  <input id="stageNameInput" list="dl_stage_${dept}" type="text" ${roMeta} value="${escapeHtml(data.name || '')}" placeholder="${titles[dept]} Party / Karigar" class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm ${roMetaClass}" />
                   ${buildDatalistHtml('dl_stage_' + dept, dept)}
                 </div>
                 <div>
-                  <label class="block text-xs font-semibold text-slate-700 mb-1">Rate (₹)</label>
-                  <input id="stageRateInput" type="number" step="0.01" inputmode="decimal" ${ro} value="${escapeHtml(data.rate || '')}" placeholder="Rate per piece" class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm ${roClass}" />
+                  <div class="flex items-center justify-between mb-1">
+                    <label class="block text-xs font-semibold text-slate-700">Rate (₹)</label>
+                    ${isFabWorker ? '<button id="stageReqRateBtn" type="button" class="text-[10px] font-bold text-amber-400 hover:underline">📩 Request Rate Edit</button>' : ''}
+                  </div>
+                  <input id="stageRateInput" type="number" step="0.01" inputmode="decimal" ${roMeta} value="${escapeHtml(data.rate || '')}" placeholder="Rate per piece" class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm ${roMetaClass}" />
                 </div>
                 ${dept === 'tanki' ? `
                 <div class="sm:col-span-2">
@@ -1608,12 +1900,13 @@
 
               <!-- Action Buttons -->
               <div class="pt-2 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200">
-                <button id="stagePaidBtn" type="button" ${appMode === 'view' ? 'disabled' : ''} class="px-4 py-2 rounded-lg font-bold text-xs sm:text-sm shadow transition ${paid ? 'bg-green-600 hover:bg-green-500 text-white' : (appMode === 'view' ? 'hidden' : 'bg-rose-600 hover:bg-rose-500 text-white')}">
+                <button id="stagePaidBtn" type="button" ${(!rc.isAdmin || appMode === 'view') ? 'disabled' : ''} class="${!rc.isAdmin ? 'hidden' : ''} px-4 py-2 rounded-lg font-bold text-xs sm:text-sm shadow transition ${paid ? 'bg-green-600 hover:bg-green-500 text-white' : (appMode === 'view' ? 'hidden' : 'bg-rose-600 hover:bg-rose-500 text-white')}">
                   ${paid ? '✓ Paid' : 'Unpaid'}
                 </button>
-                <div class="flex gap-2">
+                <div class="flex flex-wrap gap-2 ml-auto">
                   <button type="button" data-close-modal class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold">Close</button>
                   ${!isLocked ? '<button id="stageSaveBtn" type="button" class="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold shadow">Save</button>' : ''}
+                  ${(isOwnStageUser && !isLocked && ['fabrication', 'tanki', 'washing', 'packing'].includes(dept)) ? '<button id="stageFinalSubmitBtn" type="button" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-extrabold shadow">✓ Final Submit</button>' : ''}
                 </div>
               </div>
             </div>
@@ -1687,6 +1980,54 @@
               } else {
                 document.getElementById('stagePinErr').classList.remove('hidden');
               }
+            });
+          }
+
+          const reqRateBtn = document.getElementById('stageReqRateBtn');
+          if (reqRateBtn) {
+            reqRateBtn.addEventListener('click', () => {
+              openRateRequestModal(row.id, 'fabrication', data.rate || '');
+            });
+          }
+
+          const stageFinalBtn = document.getElementById('stageFinalSubmitBtn');
+          if (stageFinalBtn) {
+            stageFinalBtn.addEventListener('click', () => {
+              syncInputsToData();
+              data.finalSubmitted = true;
+              row.updatedBy = state.activeUser;
+              row.updatedAt = Date.now();
+              const stTotals = getStageTotals(row, dept);
+              const commonDetails = `Lot: ${row.lotNo || '-'} | Piece: ${row.peice || '-'} (Come: ${stTotals.come || 0}, Gone/Jama: ${stTotals.gone || 0}) | Size: ${row.size || '-'} | Fabric: ${row.fabric || '-'} | Fabrication: ${row.fabrication?.name || '-'} | Tanki: ${row.tanki?.name || '-'} | Washing: ${row.washing?.name || '-'}${row.washing?.washingType ? ' (' + row.washing.washingType + ')' : ''}${row.packing?.name ? ' | Packing: ' + row.packing.name : ''}`;
+              if (dept === 'fabrication') {
+                addNotification({
+                  targetRole: 'tanki',
+                  targetName: row.tanki?.name || '',
+                  type: 'fab_submit',
+                  title: 'Fabrication Final Submit — Lot ' + (row.lotNo || '-'),
+                  message: `${commonDetails}. Approve karne par Fabrication Clear hokar aapke naam aa jayegi.`,
+                  rowId: row.id,
+                  lotNo: row.lotNo,
+                  dept: 'fabrication',
+                  fromUser: rc.userName
+                });
+                showToast('Final Submit ho gaya! Tanki user ko approval request bhej di gayi.');
+              } else {
+                addNotification({
+                  targetRole: 'admin',
+                  type: dept + '_submit',
+                  title: titles[dept] + ' Final Submit — Lot ' + (row.lotNo || '-'),
+                  message: `${commonDetails}. Approve karne par ${titles[dept]} status Clear ho jayega.`,
+                  rowId: row.id,
+                  lotNo: row.lotNo,
+                  dept: dept,
+                  fromUser: rc.userName
+                });
+                showToast('Final Submit ho gaya! Admin ko notification bhej di gayi.');
+              }
+              saveLocalState();
+              renderTable();
+              closeModal();
             });
           }
 
@@ -1960,11 +2301,12 @@
       }
 
       function openHisabOverlay(type, name) {
-        currentHisab = { type, name, isSavedView: false, sortBy: 'lot' };
+        const rc = getRoleConfig();
+        currentHisab = { type, name, isSavedView: false, sortBy: 'lot', readOnlyUser: !rc.isAdmin };
         const overlay = document.getElementById('hisabOverlay');
         const label = DEPT_CONFIG[type]?.label || type;
-        document.getElementById('hisabTitle').textContent = label + ' Hisab: ' + name;
-        document.getElementById('hisabSaveBtn').classList.toggle('hidden', appMode === 'view');
+        document.getElementById('hisabTitle').textContent = label + ' Hisab: ' + name + (!rc.isAdmin ? ' (Read Only)' : '');
+        document.getElementById('hisabSaveBtn').classList.toggle('hidden', appMode === 'view' || !rc.isAdmin);
         overlay.classList.remove('hidden');
         overlay.classList.add('flex');
         renderHisabContent();
@@ -2009,7 +2351,7 @@
           return da.localeCompare(db);
         });
 
-        let totalPiece = 0;
+        let totalPeice = 0;
         let totalGonePcs = 0;
         let totalAmount = 0;
         let totalPayment = 0;
@@ -2023,7 +2365,7 @@
           const vals = getDeptRowValues(type, r, name, entry);
 
           if (!isIgnored) {
-            totalPiece += vals.pcs;
+            totalPeice += vals.pcs;
             totalGonePcs += vals.gone;
             totalAmount += vals.amount;
           }
@@ -2061,9 +2403,9 @@
             </td>
             <td data-hisab-amount-cell="${r.id}" class="px-2 py-2 text-right font-bold text-slate-900 border-r border-slate-200 whitespace-nowrap">₹${vals.amount.toFixed(0)}</td>
             <td class="px-2 py-2 text-center no-print" data-html2canvas-ignore="true">
-              <button type="button" data-toggle-ignore="${r.id}" class="px-2 py-1 rounded text-[11px] font-bold transition ${isIgnored ? 'bg-amber-500 text-slate-950' : 'bg-slate-200 hover:bg-slate-300 text-slate-700'}">
-                ${isIgnored ? 'Ignored' : 'Ignore This Time'}
-              </button>
+              ${currentHisab.readOnlyUser
+                ? (type === 'fabrication' ? `<button type="button" data-req-rate-lot="${r.id}" data-curr-rate="${escapeHtml(displayRate)}" class="px-2 py-1 rounded text-[11px] font-bold bg-amber-500 hover:bg-amber-400 text-zinc-950">📩 Req Rate</button>` : '<span class="text-[10px] text-zinc-500">Read Only</span>')
+                : `<button type="button" data-toggle-ignore="${r.id}" class="px-2 py-1 rounded text-[11px] font-bold transition ${isIgnored ? 'bg-amber-500 text-slate-950' : 'bg-slate-200 hover:bg-slate-300 text-slate-700'}">${isIgnored ? 'Ignored' : 'Ignore This Time'}</button>`}
             </td>
           </tr>`;
         }).join('');
@@ -2072,7 +2414,7 @@
           const dCome = parseFloat(dr.come || dr.peice) || 0;
           const dRate = parseFloat(dr.rate) || 0;
           const dAmt = dCome * dRate;
-          totalPiece += dCome;
+          totalPeice += dCome;
           totalGonePcs += (parseFloat(dr.gone) || 0);
           totalAmount += dAmt;
 
@@ -2157,7 +2499,7 @@
         }).join('');
 
         const lastBal = parseFloat(meta.lastBalance) || 0;
-        const pcsBal = totalPiece - totalGonePcs;
+        const pcsBal = totalPeice - totalGonePcs;
         const pcsBalAmt = isStageDept ? (parseFloat(meta.pcsBalAmount) || 0) : 0;
         const alterBal = getAlterBalance(name);
         const grandKaam = totalAmount + lastBal;
@@ -2390,155 +2732,19 @@
           });
         });
 
-        area.querySelectorAll('[data-draft-field]').forEach(inp => {
-          inp.addEventListener('input', (e) => {
-            const dIdx = parseInt(e.target.getAttribute('data-draft-idx'), 10);
-            const field = e.target.getAttribute('data-draft-field');
-            if (meta.draftRows[dIdx]) {
-              meta.draftRows[dIdx][field] = e.target.value;
-              saveLocalState();
-              recalcHisabTotalsOnly();
-            }
+        if (currentHisab.readOnlyUser) {
+          area.querySelectorAll('input').forEach(inp => { inp.readOnly = true; inp.disabled = true; });
+          const addLotBtn = document.getElementById('addHisabLotRowBtn');
+          const addPayBtn = document.getElementById('addHisabPayRowBtn');
+          if (addLotBtn) addLotBtn.classList.add('hidden');
+          if (addPayBtn) addPayBtn.classList.add('hidden');
+          area.querySelectorAll('[data-toggle-pay-ignore],[data-remove-pay-row],[data-toggle-db-ignore]').forEach(b => b.classList.add('hidden'));
+          area.querySelectorAll('[data-req-rate-lot]').forEach(btn => {
+            btn.addEventListener('click', () => {
+              openRateRequestModal(btn.getAttribute('data-req-rate-lot'), 'fabrication', btn.getAttribute('data-curr-rate') || '');
+            });
           });
-        });
-
-        area.querySelectorAll('[data-remove-draft]').forEach(btn => {
-          btn.addEventListener('click', () => {
-            const dIdx = parseInt(btn.getAttribute('data-remove-draft'), 10);
-            meta.draftRows.splice(dIdx, 1);
-            saveLocalState();
-            renderHisabContent();
-          });
-        });
-
-        area.querySelectorAll('[data-draft-lot-input]').forEach(inp => {
-          inp.addEventListener('change', (e) => {
-            const dIdx = parseInt(e.target.getAttribute('data-draft-lot-input'), 10);
-            const enteredLot = normalizeLotNo(e.target.value);
-            if (!enteredLot) return;
-            const dr = meta.draftRows[dIdx];
-            if (!dr) return;
-
-            let targetRow = state.rows.find(r => normalizeLotNo(r.lotNo).toLowerCase() === enteredLot.toLowerCase());
-            if (!targetRow) {
-              const targetNum = /^\d+$/.test(enteredLot) ? parseInt(enteredLot, 10) : null;
-              let maxNum = 0;
-              state.rows.forEach(r => {
-                if (/^\d+$/.test((r.lotNo || '').trim())) {
-                  const n = parseInt(r.lotNo.trim(), 10);
-                  if (n > maxNum) maxNum = n;
-                }
-              });
-
-              const sufMatch = enteredLot.match(/^(\d+)([A-Za-z]+)$/);
-              if (sufMatch) {
-                const tNum = parseInt(sufMatch[1], 10);
-                const suf = sufMatch[2];
-                const tKey = suf.toUpperCase();
-                if (!state.tables.includes(tKey)) state.tables.push(tKey);
-                let maxSufNum = 0;
-                state.rows.forEach(r => {
-                  const m = (r.lotNo || '').trim().match(/^(\d+)([A-Za-z]+)$/);
-                  if (m && m[2].toLowerCase() === suf.toLowerCase()) {
-                    const n = parseInt(m[1], 10);
-                    if (n > maxSufNum) maxSufNum = n;
-                  }
-                });
-                if (tNum > maxSufNum && (tNum - maxSufNum) <= 500) {
-                  for (let n = maxSufNum + 1; n <= tNum; n++) {
-                    const created = createRow(String(n) + suf, tKey);
-                    state.rows.push(created);
-                    if (n === tNum) targetRow = created;
-                  }
-                } else {
-                  targetRow = createRow(enteredLot, tKey);
-                  state.rows.push(targetRow);
-                }
-              } else if (targetNum !== null && targetNum > maxNum && maxNum > 0 && (targetNum - maxNum) <= 500) {
-                for (let n = maxNum + 1; n <= targetNum; n++) {
-                  const created = createRow(String(n), 'Main');
-                  state.rows.push(created);
-                  if (n === targetNum) targetRow = created;
-                }
-              } else {
-                targetRow = createRow(enteredLot, state.activeTable);
-                state.rows.push(targetRow);
-              }
-            }
-
-            normalizeRowStages(targetRow);
-
-            const alreadyPaid = (type === 'master' && targetRow.masterPaid) || (type !== 'master' && targetRow[type]?.paid);
-            if (alreadyPaid) {
-              e.target.value = '';
-              dr.lotNo = '';
-              saveLocalState();
-              showToast('Warning: Lot ' + enteredLot + ' pehle se PAID hai! Pehle Unpaid karein.');
-              openModal(`
-                <div class="p-4 sm:p-5">
-                  <div class="flex items-center justify-between border-b border-rose-500/40 pb-3 mb-3">
-                    <h3 class="text-base font-bold text-rose-400">⚠️ Lot Already Paid</h3>
-                    <button type="button" data-close-modal class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 font-bold">✕</button>
-                  </div>
-                  <p class="text-sm leading-relaxed">
-                    <strong>Lot ${escapeHtml(enteredLot)}</strong> ka <strong>${escapeHtml(label)}</strong> status pehle se <span class="text-emerald-400 font-bold">PAID</span> hai.
-                    Jab tak aap Main Table me iska status <strong>Unpaid</strong> nahi karenge, ye Hisab me add nahi hoga.
-                  </p>
-                  <div class="mt-4 flex justify-end">
-                    <button type="button" data-close-modal class="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 text-xs font-extrabold">OK</button>
-                  </div>
-                </div>
-              `);
-              return;
-            }
-
-            if (type === 'master') {
-              targetRow.masterName = name;
-              targetRow.masterPaid = false;
-              if (dr.peice) targetRow.peice = dr.peice;
-            } else if (isStageDept) {
-              targetRow[type].name = name;
-              targetRow[type].paid = false;
-              if (['fabrication', 'washing', 'packing'].includes(type)) {
-                targetRow[type].status = 'Clear';
-              }
-              if (dr.rate) targetRow[type].rate = dr.rate;
-              if (dr.gone) targetRow[type].goneEntries[0].peice = dr.gone;
-              if (type === 'packing') applyJamaAutoClear(targetRow);
-              if (dr.come) {
-                if (type === 'fabrication') targetRow.peice = dr.come;
-                else if (type === 'tanki') targetRow.fabrication.goneEntries[0].peice = dr.come;
-                else if (type === 'washing') targetRow.tanki.goneEntries[0].peice = dr.come;
-                else if (type === 'packing') targetRow.washing.goneEntries[0].peice = dr.come;
-              }
-              if (isTankiHisab && dr.fabricationName) targetRow.fabrication.name = dr.fabricationName;
-              if (isTankiHisab && dr.washingName) targetRow.washing.name = dr.washingName;
-              if (isWashingHisab && dr.washingType) targetRow.washing.washingType = dr.washingType;
-            } else {
-              targetRow[type].name = name;
-              targetRow[type].paid = false;
-              if (type === 'embroidery' || type === 'laser' || type === 'print') targetRow[type].enabled = true;
-              if (dr.peice) targetRow[type].peice = dr.peice;
-              if (dr.rate && DEPT_CONFIG[type]?.hasTableRate) targetRow[type].rate = dr.rate;
-            }
-
-            meta.entries[targetRow.id] = {
-              rate: dr.rate || meta.entries[targetRow.id]?.rate || '',
-              date: '',
-              payment: '',
-              ignored: false
-            };
-
-            targetRow.updatedBy = state.activeUser;
-            targetRow.updatedAt = Date.now();
-            meta.draftRows.splice(dIdx, 1);
-            deduplicateAndSortRows();
-            saveLocalState();
-            renderTable();
-            renderHisabContent();
-            showToast('Lot ' + enteredLot + ' updated in Hisab & Main Table');
-          });
-        });
+        }
 
         area.querySelectorAll('[data-hisab-lot-field]').forEach(inp => {
           inp.addEventListener('input', (e) => {
@@ -2790,7 +2996,13 @@
       }
 
       function openSavedHisabListModal() {
-        const list = [...state.savedHisabs].reverse();
+        const rc = getRoleConfig();
+        let list = [...state.savedHisabs].reverse();
+        if (!rc.isAdmin) {
+          const deptKey = rc.category.toLowerCase();
+          const uname = rc.userName.trim().toLowerCase();
+          list = list.filter(h => (h.dept || '').toLowerCase() === deptKey && (h.name || '').trim().toLowerCase() === uname);
+        }
         openModal(`
           <div class="p-4 sm:p-5">
             <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-3">
@@ -2831,7 +3043,8 @@
       function openSavedHisabDetail(id, isUnlocked) {
         const h = state.savedHisabs.find(x => x.id === id);
         if (!h) return;
-        const unlocked = !!isUnlocked && appMode !== 'view';
+        const rc = getRoleConfig();
+        const unlocked = rc.isAdmin && !!isUnlocked && appMode !== 'view';
         const isLocked = !unlocked;
         const ro = isLocked ? 'readonly disabled' : '';
         currentHisab = { type: h.dept, name: h.name, isSavedView: true, savedId: h.id };
@@ -2854,7 +3067,7 @@
             <div>
               <div class="flex flex-wrap items-center gap-2">
                 <span class="text-xs uppercase tracking-wider font-bold text-amber-400">${escapeHtml(h.title)} • ${escapeHtml(h.deptLabel)} (${unlocked ? 'UNLOCKED' : 'SAVED / READ ONLY'})</span>
-                ${(appMode !== 'view' && !unlocked) ? '<button id="savedUnlockPinBtn" type="button" class="no-print px-2.5 py-0.5 rounded-full bg-amber-500 hover:bg-amber-400 text-zinc-950 text-[11px] font-bold">🔓 Edit with PIN</button>' : ''}
+                ${(rc.isAdmin && appMode !== 'view' && !unlocked) ? '<button id="savedUnlockPinBtn" type="button" class="no-print px-2.5 py-0.5 rounded-full bg-amber-500 hover:bg-amber-400 text-zinc-950 text-[11px] font-bold">🔓 Edit with PIN</button>' : ''}
               </div>
               <h2 class="text-xl sm:text-2xl font-extrabold text-white mt-0.5">${escapeHtml(h.name)}</h2>
             </div>
@@ -4401,34 +4614,438 @@
         }
       }
 
-      function openUserSwitchModal() {
+      function openRateRequestModal(rowId, dept, currentRate) {
+        const row = getRow(rowId);
+        if (!row) return;
+        const rc = getRoleConfig();
         openModal(`
           <div class="p-4 sm:p-5">
-            <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
-              <h3 class="text-base font-bold text-slate-900">Select Active User</h3>
-              <button type="button" data-close-modal class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold">✕</button>
+            <div class="flex items-center justify-between border-b border-zinc-700 pb-3 mb-3">
+              <h3 class="text-base font-bold text-amber-400">Rate Edit Request — Lot ${escapeHtml(row.lotNo)}</h3>
+              <button type="button" data-close-modal class="w-8 h-8 rounded-full bg-zinc-800 text-zinc-300 font-bold">✕</button>
             </div>
-            <div class="grid grid-cols-2 gap-3">
-              ${['Shameem', 'Saleem'].map(u => `
-                <button type="button" data-pick-user="${u}" class="p-4 rounded-xl border-2 text-center transition ${state.activeUser === u ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200 hover:border-slate-300'}">
-                  <div class="w-10 h-10 mx-auto rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-lg mb-2">${u[0]}</div>
-                  <div class="font-bold text-slate-900">${u}</div>
-                  <div class="text-[11px] text-slate-500">${state.activeUser === u ? 'Active Now' : 'Switch to ' + u}</div>
-                </button>
-              `).join('')}
+            <form id="rateReqForm" class="space-y-3">
+              <div class="text-xs text-zinc-400">Current Rate: <strong class="text-white">₹${escapeHtml(currentRate || '0')}</strong></div>
+              <div>
+                <label class="block text-xs font-semibold mb-1">Naya Rate (₹) jo aap chahte hain</label>
+                <input name="reqRate" type="number" step="0.01" required value="${escapeHtml(currentRate)}" class="w-full border rounded-lg px-3 py-2 text-sm" />
+              </div>
+              <div class="flex justify-end gap-2 pt-2">
+                <button type="button" data-close-modal class="px-4 py-2 rounded-lg bg-zinc-800 text-zinc-200 text-xs font-bold">Cancel</button>
+                <button type="submit" class="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 text-xs font-extrabold">Send Request to Admin</button>
+              </div>
+            </form>
+          </div>
+        `);
+        document.getElementById('rateReqForm').addEventListener('submit', (e) => {
+          e.preventDefault();
+          const reqRate = (new FormData(e.target).get('reqRate') || '').trim();
+          if (!reqRate) return;
+          addNotification({
+            targetRole: 'admin',
+            type: 'fab_rate_req',
+            title: 'Fabrication Rate Edit Request',
+            message: `${rc.userName} ne Lot ${row.lotNo} ka Rate ₹${currentRate || 0} se ₹${reqRate} karne ki request bheji hai.`,
+            rowId: row.id,
+            lotNo: row.lotNo,
+            dept: dept || 'fabrication',
+            requestedRate: reqRate,
+            fromUser: rc.userName
+          });
+          saveLocalState();
+          closeModal();
+          showToast('Rate edit request Admin ko bhej di gayi!');
+        });
+      }
+
+      function openNotificationsModal() {
+        const rc = getRoleConfig();
+        const myNotifs = getMyNotifications();
+        const pendingUsers = rc.isAdmin ? (state.users || []).filter(u => u.status === 'pending') : [];
+        const allUsers = rc.isAdmin ? (state.users || []) : [];
+
+        openModal(`
+          <div class="p-4 sm:p-5 space-y-4">
+            <div class="flex items-center justify-between border-b border-zinc-700 pb-3">
+              <div>
+                <h3 class="text-base font-bold text-amber-400">🔔 Notifications &amp; Approvals</h3>
+                <p class="text-xs text-zinc-400">${rc.isAdmin ? 'Admin Approval Panel (Shameem / Saleem)' : rc.userName + ' (' + rc.category + ')'}</p>
+              </div>
+              <button type="button" data-close-modal class="w-8 h-8 rounded-full bg-zinc-800 text-zinc-300 font-bold">✕</button>
             </div>
+
+            ${rc.isAdmin && pendingUsers.length ? `
+              <div class="space-y-2">
+                <div class="text-xs font-bold uppercase tracking-wider text-amber-300">Pending User Registrations (${pendingUsers.length})</div>
+                ${pendingUsers.map(u => `
+                  <div class="p-2.5 rounded-xl bg-zinc-900 border border-amber-500/40 flex items-center justify-between gap-2">
+                    <div>
+                      <div class="text-sm font-bold text-white">${escapeHtml(u.name)} <span class="text-xs text-amber-400">(${escapeHtml(u.category)})</span></div>
+                      <div class="text-[11px] text-zinc-400">PIN: <strong class="text-emerald-300">${escapeHtml(u.pin)}</strong></div>
+                    </div>
+                    <div class="flex gap-1.5">
+                      <button type="button" data-approve-user="${u.id}" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold">✓ Approve</button>
+                      <button type="button" data-reject-user="${u.id}" class="px-2.5 py-1 rounded-lg bg-rose-700 hover:bg-rose-600 text-white text-xs font-bold">✕</button>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>` : ''}
+
+            <div class="space-y-2">
+              <div class="text-xs font-bold uppercase tracking-wider text-zinc-300">Work Notifications (${myNotifs.length})</div>
+              ${myNotifs.length ? myNotifs.slice(0, 40).map(n => `
+                <div class="p-2.5 rounded-xl border ${n.status === 'pending' ? 'bg-zinc-900 border-amber-500/50' : 'bg-zinc-900/50 border-zinc-800 opacity-70'} space-y-1.5">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="text-xs font-bold text-amber-300">${escapeHtml(n.title)}</span>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded-full font-bold ${n.status === 'pending' ? 'bg-amber-500/20 text-amber-300' : (n.status === 'approved' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-zinc-700 text-zinc-300')}">${escapeHtml(n.status.toUpperCase())}</span>
+                  </div>
+                  <div class="text-xs text-zinc-200">${escapeHtml(n.message)}</div>
+                  ${n.status === 'pending' ? `
+                    <div class="flex flex-wrap gap-1.5 pt-1">
+                      ${n.type === 'master_submit' ? `<button type="button" data-notif-action="mark_read" data-notif-id="${n.id}" class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-[11px] font-bold">✓ OK / Mark Seen</button>` : ''}
+                      ${n.type === 'fab_rate_req' ? `
+                        <button type="button" data-notif-action="approve_rate" data-notif-id="${n.id}" class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-[11px] font-bold">✓ Approve Rate ₹${escapeHtml(n.requestedRate)}</button>
+                        <button type="button" data-notif-action="reject" data-notif-id="${n.id}" class="px-2.5 py-1 rounded-lg bg-rose-700 text-white text-[11px] font-bold">✕ Reject</button>` : ''}
+                      ${(n.type === 'fab_submit' || n.type === 'tanki_submit' || n.type === 'washing_submit' || n.type === 'packing_submit') ? `
+                        <button type="button" data-notif-action="approve_clear" data-notif-id="${n.id}" class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-[11px] font-bold">✓ Approve &amp; Clear</button>` : ''}
+                    </div>` : ''}
+                </div>
+              `).join('') : '<div class="text-xs text-zinc-500 py-4 text-center">Koi notification nahi hai</div>'}
+            </div>
+
+            ${rc.isAdmin && allUsers.length ? `
+              <div class="pt-2 border-t border-zinc-800 space-y-1.5">
+                <div class="text-xs font-bold uppercase tracking-wider text-zinc-400">All Registered Users (${allUsers.length})</div>
+                ${allUsers.map(u => `
+                  <div class="px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-between text-xs">
+                    <div><strong>${escapeHtml(u.name)}</strong> <span class="text-zinc-400">(${escapeHtml(u.category)})</span> • PIN: <span class="text-amber-300">${escapeHtml(u.pin)}</span></div>
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-[10px] font-bold ${u.status === 'approved' ? 'text-emerald-400' : (u.status === 'pending' ? 'text-amber-400' : 'text-rose-400')}">${u.status}</span>
+                      <button type="button" data-del-user="${u.id}" class="text-rose-400 hover:text-rose-300 font-bold px-1">✕</button>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>` : ''}
           </div>
         `);
 
-        document.querySelectorAll('[data-pick-user]').forEach(btn => {
+        document.querySelectorAll('[data-approve-user]').forEach(btn => {
           btn.addEventListener('click', () => {
-            state.activeUser = btn.getAttribute('data-pick-user');
-            document.getElementById('activeUserName').textContent = state.activeUser;
-            saveLocalState();
-            closeModal();
-            showToast('Switched to ' + state.activeUser);
+            const u = state.users.find(x => x.id === btn.getAttribute('data-approve-user'));
+            if (u) {
+              u.status = 'approved';
+              state.notifications.forEach(n => { if (n.userId === u.id) n.status = 'approved'; });
+              saveLocalState();
+              openNotificationsModal();
+              showToast(u.name + ' approved!');
+            }
           });
         });
+
+        document.querySelectorAll('[data-reject-user]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const u = state.users.find(x => x.id === btn.getAttribute('data-reject-user'));
+            if (u) {
+              u.status = 'rejected';
+              state.notifications.forEach(n => { if (n.userId === u.id) n.status = 'rejected'; });
+              saveLocalState();
+              openNotificationsModal();
+              showToast(u.name + ' rejected');
+            }
+          });
+        });
+
+        document.querySelectorAll('[data-del-user]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-del-user');
+            state.users = state.users.filter(x => x.id !== id);
+            saveLocalState();
+            openNotificationsModal();
+          });
+        });
+
+        document.querySelectorAll('[data-notif-action]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const act = btn.getAttribute('data-notif-action');
+            const nId = btn.getAttribute('data-notif-id');
+            const n = state.notifications.find(x => x.id === nId);
+            if (!n) return;
+            if (act === 'mark_read') {
+              n.status = 'read';
+            } else if (act === 'reject') {
+              n.status = 'rejected';
+            } else if (act === 'approve_rate') {
+              const row = getRow(n.rowId);
+              if (row && row[n.dept || 'fabrication']) {
+                row[n.dept || 'fabrication'].rate = n.requestedRate;
+                row.updatedAt = Date.now();
+              }
+              n.status = 'approved';
+              showToast('Lot ' + n.lotNo + ' Rate ₹' + n.requestedRate + ' approved!');
+            } else if (act === 'approve_clear') {
+              const row = getRow(n.rowId);
+              if (row && row[n.dept]) {
+                row[n.dept].status = 'Clear';
+                if (n.type === 'fab_submit' && !rc.isAdmin && rc.category === 'Tanki' && row.tanki) {
+                  row.tanki.name = rc.userName;
+                }
+                row.updatedAt = Date.now();
+              }
+              n.status = 'approved';
+              showToast(n.type === 'fab_submit' && !rc.isAdmin ? ('Lot ' + n.lotNo + ' approve hokar aapke naam aa gayi!') : ('Lot ' + n.lotNo + ' ' + n.dept + ' status Clear ho gaya!'));
+            }
+            saveLocalState();
+            renderTable();
+            openNotificationsModal();
+          });
+        });
+      }
+
+      function logoutUser() {
+        activeSession = null;
+        try { localStorage.removeItem(USER_SESSION_KEY); } catch (e) {}
+        setAppMode('view');
+        closeModal();
+        checkAuthGate();
+        showToast('Logged out successfully');
+      }
+
+      function checkAuthGate() {
+        const gate = document.getElementById('authGateOverlay');
+        if (!gate) return;
+        if (!activeSession) {
+          gate.classList.remove('hidden');
+          gate.classList.add('flex');
+          renderAuthGate('login');
+          renderTable();
+        } else {
+          gate.classList.add('hidden');
+          gate.classList.remove('flex');
+          updateRoleUI();
+          renderTable();
+          scrollToLatestLot();
+        }
+      }
+
+      function renderAuthGate(tab) {
+        const gate = document.getElementById('authGateOverlay');
+        if (!gate) return;
+        const activeTab = tab || 'login';
+        const approvedUsers = (state.users || []).filter(u => u.status === 'approved');
+        const logoImg = document.querySelector('header img')?.src || '';
+
+        gate.innerHTML = `
+          <div class="w-full max-w-md bg-[#14171f] border border-zinc-800 rounded-2xl shadow-2xl p-5 space-y-4">
+            <div class="text-center space-y-2">
+              ${logoImg ? `<img src="${logoImg}" alt="Addis Jeans" class="h-12 w-auto mx-auto rounded-lg border border-zinc-800 bg-black object-contain" />` : ''}
+              <h1 class="text-lg font-extrabold text-amber-400">Addis Jeans — Login</h1>
+              <p class="text-xs text-zinc-400">Aage badhne ke liye apne Account &amp; PIN se login karein</p>
+            </div>
+
+            <div class="grid grid-cols-3 gap-1.5 bg-zinc-900 p-1 rounded-xl border border-zinc-800 text-xs font-bold">
+              <button type="button" data-gate-tab="login" class="py-2 rounded-lg transition ${activeTab === 'login' ? 'bg-amber-500 text-zinc-950' : 'text-zinc-300'}">User Login</button>
+              <button type="button" data-gate-tab="admin" class="py-2 rounded-lg transition ${activeTab === 'admin' ? 'bg-amber-500 text-zinc-950' : 'text-zinc-300'}">Admin Login</button>
+              <button type="button" data-gate-tab="register" class="py-2 rounded-lg transition ${activeTab === 'register' ? 'bg-amber-500 text-zinc-950' : 'text-zinc-300'}">Register</button>
+            </div>
+
+            <form id="gateWorkerLoginForm" class="${activeTab === 'login' ? '' : 'hidden'} space-y-3">
+              <div>
+                <label class="block text-xs font-semibold text-zinc-300 mb-1">User Name</label>
+                <input name="loginName" list="dl_gate_approved" type="text" required placeholder="Apna registered naam daalein" class="w-full bg-[#0b0d11] text-white border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-400" />
+                <datalist id="dl_gate_approved">${approvedUsers.map(u => `<option value="${escapeHtml(u.name)}">${escapeHtml(u.category)}</option>`).join('')}</datalist>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-zinc-300 mb-1">Generated PIN</label>
+                <input name="loginPin" type="password" inputmode="numeric" maxlength="6" required placeholder="4-digit PIN" class="w-full bg-[#0b0d11] text-white border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-400" />
+              </div>
+              <div id="gateWorkerLoginMsg" class="hidden text-xs font-semibold text-rose-400"></div>
+              <button type="submit" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-sm shadow">Login with PIN</button>
+            </form>
+
+            <form id="gateAdminLoginForm" class="${activeTab === 'admin' ? '' : 'hidden'} space-y-3">
+              <div>
+                <label class="block text-xs font-semibold text-zinc-300 mb-1">Select Admin</label>
+                <div class="grid grid-cols-2 gap-2.5">
+                  <label class="cursor-pointer">
+                    <input type="radio" name="adminName" value="Shameem" checked class="peer sr-only" />
+                    <div class="p-3 rounded-xl border-2 border-zinc-700 bg-zinc-900 peer-checked:border-amber-500 peer-checked:bg-amber-500/15 text-center transition">
+                      <div class="font-bold text-white text-sm">Shameem</div>
+                      <div class="text-[10px] text-amber-300">Admin</div>
+                    </div>
+                  </label>
+                  <label class="cursor-pointer">
+                    <input type="radio" name="adminName" value="Saleem" class="peer sr-only" />
+                    <div class="p-3 rounded-xl border-2 border-zinc-700 bg-zinc-900 peer-checked:border-amber-500 peer-checked:bg-amber-500/15 text-center transition">
+                      <div class="font-bold text-white text-sm">Saleem</div>
+                      <div class="text-[10px] text-amber-300">Admin</div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-zinc-300 mb-1">Admin PIN</label>
+                <input name="adminPin" type="password" inputmode="numeric" maxlength="6" required placeholder="Admin PIN daalein" class="w-full bg-[#0b0d11] text-white border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-400" />
+              </div>
+              <div id="gateAdminLoginMsg" class="hidden text-xs font-semibold text-rose-400"></div>
+              <button type="submit" class="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold text-sm shadow">Admin Login</button>
+            </form>
+
+            <form id="gateRegForm" class="${activeTab === 'register' ? '' : 'hidden'} space-y-3">
+              <div>
+                <label class="block text-xs font-semibold text-zinc-300 mb-1">Category</label>
+                <select name="regCategory" class="w-full bg-[#0b0d11] text-white border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-400">
+                  ${USER_CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-zinc-300 mb-1">User Name (Lot me jo naam hai)</label>
+                <input name="regName" type="text" required placeholder="Apna naam likhein" class="w-full bg-[#0b0d11] text-white border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-400" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-zinc-300 mb-1">PIN Generate Karein</label>
+                <div class="flex gap-2">
+                  <input id="gateRegPinInput" name="regPin" type="text" inputmode="numeric" maxlength="6" required placeholder="4-digit PIN" class="flex-1 bg-[#0b0d11] text-white border border-zinc-700 rounded-lg px-3 py-2 text-sm font-bold tracking-widest focus:outline-none focus:border-amber-400" />
+                  <button id="gateGenPinBtn" type="button" class="px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 text-xs font-extrabold whitespace-nowrap">🎲 Generate PIN</button>
+                </div>
+              </div>
+              <div id="gateRegMsg" class="hidden text-xs font-semibold"></div>
+              <button type="submit" class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-sm shadow">Register &amp; Send for Admin Approval</button>
+            </form>
+
+            <div class="pt-2 border-t border-zinc-800 flex items-center justify-between text-[11px] text-zinc-400">
+              <span>${getFirebaseEndpoint() ? '🟢 Firebase Sync Connected' : '⚪ Local Mode'}</span>
+              <button id="gateSyncSetupBtn" type="button" class="text-amber-400 hover:underline font-semibold">⚙️ Firebase Sync Setup</button>
+            </div>
+          </div>
+        `;
+
+        gate.querySelectorAll('[data-gate-tab]').forEach(btn => {
+          btn.addEventListener('click', () => renderAuthGate(btn.getAttribute('data-gate-tab')));
+        });
+
+        const syncBtn = document.getElementById('gateSyncSetupBtn');
+        if (syncBtn) syncBtn.addEventListener('click', openSyncSettingsModal);
+
+        const gGenBtn = document.getElementById('gateGenPinBtn');
+        if (gGenBtn) {
+          gGenBtn.addEventListener('click', () => {
+            document.getElementById('gateRegPinInput').value = String(Math.floor(1000 + Math.random() * 9000));
+          });
+        }
+
+        document.getElementById('gateAdminLoginForm').addEventListener('submit', (e) => {
+          e.preventDefault();
+          const fd = new FormData(e.target);
+          const u = fd.get('adminName') || 'Shameem';
+          const pin = (fd.get('adminPin') || '').trim();
+          const msgEl = document.getElementById('gateAdminLoginMsg');
+          if (pin !== (state.editPin || DEFAULT_EDIT_PIN)) {
+            msgEl.textContent = 'Galat Admin PIN!';
+            msgEl.classList.remove('hidden');
+            return;
+          }
+          activeSession = { type: 'admin', name: u, category: 'Admin' };
+          state.activeUser = u;
+          saveLocalState();
+          checkAuthGate();
+          showToast('Welcome Admin: ' + u);
+        });
+
+        document.getElementById('gateWorkerLoginForm').addEventListener('submit', (e) => {
+          e.preventDefault();
+          const fd = new FormData(e.target);
+          const name = (fd.get('loginName') || '').trim().toLowerCase();
+          const pin = (fd.get('loginPin') || '').trim();
+          const msgEl = document.getElementById('gateWorkerLoginMsg');
+          const u = (state.users || []).find(x => x.name.trim().toLowerCase() === name && x.pin === pin);
+          if (!u) {
+            msgEl.textContent = 'Naam ya PIN galat hai!';
+            msgEl.classList.remove('hidden');
+            return;
+          }
+          if (u.status === 'pending') {
+            msgEl.textContent = 'Admin approval pending hai! Shameem ya Saleem se approve karwayein.';
+            msgEl.classList.remove('hidden');
+            return;
+          }
+          if (u.status === 'rejected') {
+            msgEl.textContent = 'Aapka registration reject kar diya gaya hai.';
+            msgEl.classList.remove('hidden');
+            return;
+          }
+          activeSession = { type: 'user', id: u.id, name: u.name, category: u.category };
+          state.activeUser = u.name;
+          saveLocalState();
+          checkAuthGate();
+          showToast(`Welcome ${u.name} (${u.category})`);
+        });
+
+        document.getElementById('gateRegForm').addEventListener('submit', (e) => {
+          e.preventDefault();
+          const fd = new FormData(e.target);
+          const category = fd.get('regCategory');
+          const name = (fd.get('regName') || '').trim();
+          const pin = (fd.get('regPin') || '').trim();
+          const msgEl = document.getElementById('gateRegMsg');
+          if (!name || pin.length < 4) {
+            msgEl.textContent = 'Naam aur kam se kam 4-digit PIN daalein';
+            msgEl.className = 'text-xs font-semibold text-rose-400';
+            msgEl.classList.remove('hidden');
+            return;
+          }
+          if (!Array.isArray(state.users)) state.users = [];
+          const exists = state.users.find(u => u.name.toLowerCase() === name.toLowerCase() && u.category === category && u.status !== 'rejected');
+          if (exists) {
+            msgEl.textContent = 'Ye user pehle se registered hai!';
+            msgEl.className = 'text-xs font-semibold text-amber-400';
+            msgEl.classList.remove('hidden');
+            return;
+          }
+          const newUser = {
+            id: 'usr_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 5),
+            name,
+            category,
+            pin,
+            status: 'pending',
+            createdAt: Date.now()
+          };
+          state.users.push(newUser);
+          addNotification({
+            targetRole: 'admin',
+            type: 'user_reg',
+            title: 'New User Registration',
+            message: `${name} (${category}) ne registration kiya hai (PIN: ${pin}). Approve karein.`,
+            userId: newUser.id,
+            fromUser: name
+          });
+          saveLocalState();
+          msgEl.textContent = `Registration bhej di gayi! PIN: ${pin} — Admin (Shameem/Saleem) ke approve karne ke baad Login karein.`;
+          msgEl.className = 'text-xs font-semibold text-emerald-400';
+          msgEl.classList.remove('hidden');
+          showToast('Registration sent for Admin approval!');
+        });
+      }
+
+      function openUserSwitchModal() {
+        const rc = getRoleConfig();
+        openModal(`
+          <div class="p-4 sm:p-5 space-y-4">
+            <div class="flex items-center justify-between border-b border-zinc-700 pb-3">
+              <div>
+                <h3 class="text-base font-bold text-amber-400">Account Details</h3>
+                <p class="text-xs text-zinc-400">Logged in as <strong class="text-white">${escapeHtml(rc.userName)}</strong></p>
+              </div>
+              <button type="button" data-close-modal class="w-8 h-8 rounded-full bg-zinc-800 text-zinc-300 font-bold">✕</button>
+            </div>
+            <div class="p-3.5 rounded-xl bg-zinc-900 border border-zinc-800 space-y-1 text-xs">
+              <div class="flex justify-between"><span class="text-zinc-400">Name:</span><strong class="text-white">${escapeHtml(rc.userName)}</strong></div>
+              <div class="flex justify-between"><span class="text-zinc-400">Role / Category:</span><strong class="text-amber-300">${escapeHtml(rc.category)}</strong></div>
+              <div class="flex justify-between"><span class="text-zinc-400">Session:</span><strong class="text-emerald-400">Active (Stay Logged In)</strong></div>
+            </div>
+            <button id="modalLogoutBtn" type="button" class="w-full py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-sm shadow">🚪 Logout</button>
+          </div>
+        `);
+        document.getElementById('modalLogoutBtn').addEventListener('click', logoutUser);
       }
 
       let lastBackupFileHandle = null;
@@ -4442,8 +5059,12 @@
           editPin: state.editPin,
           tables: state.tables,
           rows: state.rows,
+          users: state.users,
+          notifications: state.notifications,
           savedHisabs: state.savedHisabs,
           alterData: state.alterData,
+          daybook: state.daybook,
+          settledDaybookKeys: state.settledDaybookKeys,
           hisabMeta: state.hisabMeta
         }, null, 2);
       }
@@ -4457,6 +5078,8 @@
         if (Array.isArray(parsed.tables) && parsed.tables.length) state.tables = parsed.tables;
         state.rows = parsed.rows.map(normalizeRowStages);
         deduplicateAndSortRows();
+        state.users = Array.isArray(parsed.users) ? parsed.users : state.users;
+        state.notifications = Array.isArray(parsed.notifications) ? parsed.notifications : state.notifications;
         state.savedHisabs = Array.isArray(parsed.savedHisabs) ? parsed.savedHisabs : [];
         state.hisabMeta = Object.assign({ master: {}, embroidery: {}, fabrication: {}, washing: {}, tanki: {}, packing: {}, laser: {}, print: {} }, parsed.hisabMeta || {});
         saveLocalState();
@@ -4705,6 +5328,10 @@
         const statusToggle = e.target.closest('[data-toggle-stage-status]');
         if (statusToggle) {
           e.stopPropagation();
+          if (!getRoleConfig().isAdmin) {
+            showToast('Status sirf Admin ya Approval se Clear hota hai');
+            return;
+          }
           if (appMode === 'view') {
             showToast('View Mode me edit nahi kar sakte');
             return;
@@ -4730,6 +5357,14 @@
           }
           const rowId = cell.getAttribute('data-row-id');
           const cellType = cell.getAttribute('data-cell');
+          const rc = getRoleConfig();
+          if (!rc.isAdmin) {
+            const allowedCell = rc.category === 'Master' ? 'peice' : rc.category.toLowerCase();
+            if (cellType !== allowedCell) {
+              showToast('Ye cell aapke liye Read Only hai');
+              return;
+            }
+          }
           if (cellType === 'peice') openPeiceModal(rowId);
           else if (cellType === 'master') openMasterCellModal(rowId);
           else if (['fabrication', 'tanki', 'washing', 'packing'].includes(cellType)) openStageModal(rowId, cellType);
@@ -4808,6 +5443,10 @@
       }
 
       document.getElementById('appModeToggleBtn').addEventListener('click', () => {
+        if (!getRoleConfig().canToggleMode) {
+          showToast('Aapke liye sirf View Mode (Read Only) allowed hai');
+          return;
+        }
         setAppMode(appMode === 'edit' ? 'view' : 'edit');
       });
       document.getElementById('addTableBtn').addEventListener('click', addNewTable);
@@ -4816,6 +5455,11 @@
       const hisabDropdownMenu = document.getElementById('hisabDropdownMenu');
       hisabDropdownBtn.addEventListener('click', (e) => {
         e.stopPropagation();
+        const rc = getRoleConfig();
+        if (!rc.isAdmin) {
+          openHisabOverlay(rc.hisabDept, rc.userName);
+          return;
+        }
         const isHidden = hisabDropdownMenu.classList.contains('hidden');
         if (isHidden) {
           const rect = hisabDropdownBtn.getBoundingClientRect();
@@ -4839,6 +5483,7 @@
         });
       });
       document.getElementById('userSwitchBtn').addEventListener('click', openUserSwitchModal);
+      document.getElementById('notifBellBtn').addEventListener('click', openNotificationsModal);
       document.getElementById('syncSettingsBtn').addEventListener('click', openSyncSettingsModal);
       document.getElementById('backupRestoreBtn').addEventListener('click', openBackupRestoreModal);
 
@@ -4931,7 +5576,10 @@
         const sc = document.getElementById('mainTableScroll');
         if (sc) {
           requestAnimationFrame(() => {
-            sc.scrollTop = sc.scrollHeight;
+            requestAnimationFrame(() => {
+              sc.scrollTop = sc.scrollHeight;
+              sc.scrollLeft = 0;
+            });
           });
         }
       }
@@ -4967,7 +5615,7 @@
       const TOOLBAR_LAYOUT_KEY = 'lot_tracker_v2_toolbar_layout';
       const TOP_ROW_IDS = ['topRow1', 'topRow2', 'topRow3'];
       const MOVABLE_BTN_IDS = [
-        'userSwitchBtn', 'appModeToggleBtn', 'syncSettingsBtn', 'fullscreenToggleBtn',
+        'userSwitchBtn', 'notifBellBtn', 'appModeToggleBtn', 'syncSettingsBtn', 'fullscreenToggleBtn',
         'addRowBtn', 'hisabDropdownBtn', 'alterBtn', 'pendingLotsBtn', 'savedHisabBtn', 'backupRestoreBtn',
         'daybookBtn'
       ];
@@ -5110,10 +5758,8 @@
 
       applySavedToolbarLayout();
       loadLocalState();
-      document.getElementById('activeUserName').textContent = state.activeUser;
-      renderTable();
       applyTableZoom();
-      scrollToLatestLot();
+      checkAuthGate();
       startSyncPolling();
     })();
   </script>
