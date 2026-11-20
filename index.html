@@ -255,7 +255,7 @@
           <thead class="bg-amber-500 text-zinc-950 font-extrabold sticky top-0 z-20 uppercase text-xs tracking-wide">
             <tr>
               <th class="sticky-lot px-3 py-2.5 border-b border-r border-amber-600/40 w-24 text-center">Lot no</th>
-              <th class="px-3 py-2.5 border-b border-r border-amber-600/40 w-24 text-center">peice</th>
+              <th class="px-3 py-2.5 border-b border-r border-amber-600/40 w-24 text-center">piece</th>
               <th class="px-3 py-2.5 border-b border-r border-amber-600/40 w-24 text-center">size</th>
               <th class="px-3 py-2.5 border-b border-r border-amber-600/40 w-28 text-center">fabric</th>
               <th class="px-3 py-2.5 border-b border-r border-amber-600/40 w-28 text-center">Master</th>
@@ -459,13 +459,13 @@
           fabric: '',
           masterName: '',
           masterPaid: false,
-          embroidery: { date: '', peice: '', rate: '', name: '', paid: false },
+          embroidery: { enabled: false, date: '', peice: '', rate: '', name: '', paid: false },
           fabrication: { rate: '', name: '', goneEntries: [{ date: '', peice: '' }], status: 'Pending', paid: false },
           tanki: { rate: '', name: '', goneEntries: [{ date: '', peice: '' }], status: 'Pending', paid: false },
           washing: { washingType: '', rate: '', name: '', goneEntries: [{ date: '', peice: '' }], status: 'Pending', paid: false },
           packing: { rate: '', name: '', goneEntries: [{ date: '', peice: '', ripit: '' }], status: 'Pending', paid: false },
-          laser: { date: '', peice: '', name: '', paid: false },
-          print: { date: '', peice: '', name: '', paid: false },
+          laser: { enabled: false, date: '', peice: '', name: '', paid: false },
+          print: { enabled: false, date: '', peice: '', name: '', paid: false },
           updatedBy: state.activeUser,
           updatedAt: Date.now()
         };
@@ -478,7 +478,7 @@
         r1.size = '28-34';
         r1.fabric = '3/1 Denim';
         r1.masterName = 'Master Akram';
-        r1.embroidery = { date: todayISO(), peice: '120', rate: '12', name: 'Raju Emb', paid: false };
+        r1.embroidery = { enabled: true, date: todayISO(), peice: '120', rate: '12', name: 'Raju Emb', paid: false };
         r1.fabrication = { rate: '45', name: 'Imran Fab', goneEntries: [{ date: todayISO(), peice: '100' }], paid: false };
 
         const r2 = createRow('102');
@@ -494,7 +494,18 @@
 
       function normalizeRowStages(r) {
         if (!r.laser && r.damage) { r.laser = r.damage; delete r.damage; }
-        if (!r.laser) r.laser = { date: '', peice: '', name: '', paid: false };
+        if (!r.laser) r.laser = { enabled: false, date: '', peice: '', name: '', paid: false };
+        if (r.laser.enabled === undefined) {
+          r.laser.enabled = !!(r.laser.name || r.laser.peice || r.laser.paid);
+        }
+        if (!r.embroidery) r.embroidery = { enabled: false, date: '', peice: '', rate: '', name: '', paid: false };
+        if (r.embroidery.enabled === undefined) {
+          r.embroidery.enabled = !!(r.embroidery.name || r.embroidery.peice || r.embroidery.paid);
+        }
+        if (!r.print) r.print = { enabled: false, date: '', peice: '', name: '', paid: false };
+        if (r.print.enabled === undefined) {
+          r.print.enabled = !!(r.print.name || r.print.peice || r.print.paid);
+        }
 
         ['fabrication', 'tanki', 'washing'].forEach(d => {
           if (!r[d]) r[d] = { rate: '', name: '', goneEntries: [{ date: '', peice: '' }], status: 'Pending', paid: false };
@@ -902,6 +913,11 @@
           const packName = getPackingPrimaryName(row);
 
           function renderJobCell(cellType, data, stageStats) {
+            if ((cellType === 'embroidery' || cellType === 'laser' || cellType === 'print') && !data?.enabled) {
+              return `<td data-row-id="${row.id}" data-cell="${cellType}" data-disabled-job="1" class="cell-trigger cursor-not-allowed px-2 py-2 border-r border-blue-500 bg-blue-700 text-white text-center align-middle select-none">
+                <div class="text-2xl font-extrabold leading-none tracking-tight">X</div>
+              </td>`;
+            }
             const hasName = (data?.name || '').trim() !== '';
             const isStage = !!stageStats;
             const isClear = isStage && data?.status === 'Clear';
@@ -937,22 +953,22 @@
               <input type="text" ${appMode === 'view' ? 'readonly disabled' : ''} data-lot-input="${row.id}" value="${escapeHtml(row.lotNo)}" placeholder="${isFirst ? 'Lot #' : ''}" class="lot-bold w-full text-center bg-transparent border border-transparent hover:border-zinc-600 focus:border-amber-400 focus:bg-zinc-900 rounded px-1 py-1 text-amber-400 text-sm focus:outline-none" />
             </td>
 
-            <!-- peice (Click opens entry modal) -->
+            <!-- piece (Click opens entry modal) -->
             <td data-row-id="${row.id}" data-cell="peice" class="cell-trigger cursor-pointer px-2 py-2 border-r border-zinc-800 text-center hover:bg-zinc-800/80 transition">
-              ${row.peice ? `<div class="font-bold text-white">${escapeHtml(row.peice)}</div><div class="text-[10px] text-zinc-400">${escapeHtml(formatDateDMY(row.date))}</div>` : `<span class="text-amber-400 text-xs font-medium">+ Peice</span>`}
+              ${row.peice ? `<div class="font-bold text-white">${escapeHtml(row.peice)}</div><div class="text-[10px] text-zinc-400">${escapeHtml(formatDateDMY(row.date))}</div>` : `<span class="text-amber-400 text-xs font-medium">+ Piece</span>`}
             </td>
 
-            <!-- size (Manual or from peice modal) -->
+            <!-- size (Manual or from piece modal) -->
             <td class="px-1.5 py-2 border-r border-zinc-800 text-center">
               <input type="text" ${appMode === 'view' ? 'readonly disabled' : ''} data-inline-field="size" data-row-id="${row.id}" value="${escapeHtml(row.size)}" placeholder="-" class="w-full text-center bg-transparent border border-transparent hover:border-zinc-600 focus:border-amber-400 focus:bg-zinc-900 rounded px-1 py-1 text-zinc-200 text-xs sm:text-sm focus:outline-none" />
             </td>
 
-            <!-- fabric (Manual or from peice modal) -->
+            <!-- fabric (Manual or from piece modal) -->
             <td class="px-1.5 py-2 border-r border-zinc-800 text-center">
               <input type="text" ${appMode === 'view' ? 'readonly disabled' : ''} data-inline-field="fabric" data-row-id="${row.id}" value="${escapeHtml(row.fabric)}" placeholder="-" class="w-full text-center bg-transparent border border-transparent hover:border-zinc-600 focus:border-amber-400 focus:bg-zinc-900 rounded px-1 py-1 text-zinc-200 text-xs sm:text-sm focus:outline-none" />
             </td>
 
-            <!-- Master (Name from peice modal; click opens Paid toggle; green when paid) -->
+            <!-- Master (Name from piece modal; click opens Paid toggle; green when paid) -->
             <td data-row-id="${row.id}" data-cell="master" class="cell-trigger cursor-pointer px-2 py-2 border-r border-zinc-800 text-center transition ${row.masterPaid ? (row.masterPaidLight ? 'cell-paid-light' : 'cell-paid-bright') : 'hover:bg-zinc-800/80'}">
               ${row.masterName ? `<div class="font-semibold text-xs sm:text-sm">${escapeHtml(row.masterName)}</div><div class="sub-text text-[10px] ${row.masterPaid ? 'text-emerald-100' : 'text-zinc-400'}">${row.masterPaid ? 'PAID' : 'Unpaid'}</div>` : `<span class="text-zinc-600 text-xs">-</span>`}
             </td>
@@ -972,11 +988,15 @@
             <!-- packing (Come - Gone (Balance)) -->
             ${renderJobCell('packing', { name: packName, status: row.packing?.status, paid: row.packing?.paid, paidLight: row.packing?.paidLight }, getStageTotals(row, 'packing'))}
 
-            <!-- Jama (Auto total from packing) -->
-            <td class="px-2 py-2 border-r border-zinc-800 text-center bg-emerald-950/30">
-              <div class="font-extrabold text-emerald-400 text-sm">${jamaTotal || 0}</div>
-              <div class="text-[10px] text-zinc-500">Jama</div>
-            </td>
+            <!-- Jama (Red until >= 90% Jama, then Green) -->
+            ${(() => {
+              const basePcs = parseFloat(row.peice) || getStageTotals(row, 'packing').come || 0;
+              const isJamaDone = basePcs > 0 && jamaTotal >= basePcs * 0.9;
+              return `<td class="px-2 py-2 border-r text-center transition ${isJamaDone ? 'bg-green-700 border-green-500 text-white' : 'bg-rose-700 border-rose-500 text-white'}">
+                <div class="font-extrabold text-sm">${jamaTotal || 0}</div>
+                <div class="text-[10px] font-semibold ${isJamaDone ? 'text-emerald-100' : 'text-rose-100'}">${basePcs > 0 ? Math.round((jamaTotal / basePcs) * 100) + '% Jama' : 'Jama'}</div>
+              </td>`;
+            })()}
 
             <!-- Laser -->
             ${renderJobCell('laser', row.laser)}
@@ -1067,11 +1087,14 @@
         const isView = appMode === 'view';
         const ro = isView ? 'readonly disabled' : '';
         const roClass = isView ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-white';
+        let embOn = !!(row.embroidery?.enabled) || !!(row.embroidery?.name || '').trim();
+        let laserOn = !!(row.laser?.enabled) || !!(row.laser?.name || '').trim();
+        let printOn = !!(row.print?.enabled) || !!(row.print?.name || '').trim();
         openModal(`
           <div class="p-4 sm:p-5">
             <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
               <div>
-                <h3 class="text-base font-bold text-slate-900">Lot <span class="text-indigo-600">${escapeHtml(row.lotNo || 'New')}</span> — Peice Entry</h3>
+                <h3 class="text-base font-bold text-slate-900">Lot <span class="text-indigo-600">${escapeHtml(row.lotNo || 'New')}</span> — Piece Entry</h3>
                 <p class="text-xs text-slate-500">${isView ? 'View Mode (Read Only)' : 'Save karne par respected row me data update hoga'}</p>
               </div>
               <button type="button" data-close-modal class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold">✕</button>
@@ -1082,7 +1105,7 @@
                 <input name="date" type="date" ${ro} value="${escapeHtml(row.date || todayISO())}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none ${roClass}" />
               </div>
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">2. Peice</label>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">2. Piece</label>
                 <input name="peice" type="number" inputmode="numeric" ${ro} value="${escapeHtml(row.peice)}" placeholder="e.g. 120" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none ${roClass}" />
               </div>
               <div>
@@ -1103,6 +1126,40 @@
                 <input name="fabricationName" list="dl_fabrication" type="text" ${ro} value="${escapeHtml(row.fabrication?.name || '')}" placeholder="Fabrication ka naam" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none ${roClass}" />
                 ${buildDatalistHtml('dl_fabrication', 'fabrication')}
               </div>
+
+              <!-- Toggle Buttons: Embroidery, Laser & Print -->
+              <div class="pt-1 border-t border-zinc-700 space-y-2.5">
+                <div class="flex flex-wrap gap-2">
+                  <button id="peiceToggleEmbBtn" type="button" ${isView ? 'disabled' : ''} class="px-3 py-1.5 rounded-lg text-xs font-bold border transition ${embOn ? 'bg-amber-500 border-amber-400 text-zinc-950' : 'bg-zinc-800 border-zinc-600 text-zinc-300'}">
+                    ${embOn ? '✓ Embroidery: ON' : '+ Embroidery'}
+                  </button>
+                  <button id="peiceToggleLaserBtn" type="button" ${isView ? 'disabled' : ''} class="px-3 py-1.5 rounded-lg text-xs font-bold border transition ${laserOn ? 'bg-amber-500 border-amber-400 text-zinc-950' : 'bg-zinc-800 border-zinc-600 text-zinc-300'}">
+                    ${laserOn ? '✓ Laser: ON' : '+ Laser'}
+                  </button>
+                  <button id="peiceTogglePrintBtn" type="button" ${isView ? 'disabled' : ''} class="px-3 py-1.5 rounded-lg text-xs font-bold border transition ${printOn ? 'bg-amber-500 border-amber-400 text-zinc-950' : 'bg-zinc-800 border-zinc-600 text-zinc-300'}">
+                    ${printOn ? '✓ Print: ON' : '+ Print'}
+                  </button>
+                </div>
+
+                <div id="peiceEmbBox" class="${embOn ? '' : 'hidden'}">
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Embroidery Karigar Name</label>
+                  <input name="embName" list="dl_peice_emb" type="text" ${ro} value="${escapeHtml(row.embroidery?.name || '')}" placeholder="Embroidery karne wale ka naam" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none ${roClass}" />
+                  ${buildDatalistHtml('dl_peice_emb', 'embroidery')}
+                </div>
+
+                <div id="peiceLaserBox" class="${laserOn ? '' : 'hidden'}">
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Laser Karigar Name</label>
+                  <input name="laserName" list="dl_peice_laser" type="text" ${ro} value="${escapeHtml(row.laser?.name || '')}" placeholder="Laser karne wale ka naam" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none ${roClass}" />
+                  ${buildDatalistHtml('dl_peice_laser', 'laser')}
+                </div>
+
+                <div id="peicePrintBox" class="${printOn ? '' : 'hidden'}">
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Print Karigar Name</label>
+                  <input name="printName" list="dl_peice_print" type="text" ${ro} value="${escapeHtml(row.print?.name || '')}" placeholder="Print karne wale ka naam" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none ${roClass}" />
+                  ${buildDatalistHtml('dl_peice_print', 'print')}
+                </div>
+              </div>
+
               <div class="pt-2 flex justify-end gap-2">
                 <button type="button" data-close-modal class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold">Close</button>
                 ${!isView ? '<button type="submit" class="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold shadow">Save &amp; Close</button>' : ''}
@@ -1110,6 +1167,39 @@
             </form>
           </div>
         `);
+
+        const tEmbBtn = document.getElementById('peiceToggleEmbBtn');
+        const embBox = document.getElementById('peiceEmbBox');
+        if (tEmbBtn && !isView) {
+          tEmbBtn.addEventListener('click', () => {
+            embOn = !embOn;
+            embBox.classList.toggle('hidden', !embOn);
+            tEmbBtn.textContent = embOn ? '✓ Embroidery: ON' : '+ Embroidery';
+            tEmbBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold border transition ' + (embOn ? 'bg-amber-500 border-amber-400 text-zinc-950' : 'bg-zinc-800 border-zinc-600 text-zinc-300');
+          });
+        }
+
+        const tLaserBtn = document.getElementById('peiceToggleLaserBtn');
+        const tPrintBtn = document.getElementById('peiceTogglePrintBtn');
+        const laserBox = document.getElementById('peiceLaserBox');
+        const printBox = document.getElementById('peicePrintBox');
+
+        if (tLaserBtn && !isView) {
+          tLaserBtn.addEventListener('click', () => {
+            laserOn = !laserOn;
+            laserBox.classList.toggle('hidden', !laserOn);
+            tLaserBtn.textContent = laserOn ? '✓ Laser: ON' : '+ Laser';
+            tLaserBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold border transition ' + (laserOn ? 'bg-amber-500 border-amber-400 text-zinc-950' : 'bg-zinc-800 border-zinc-600 text-zinc-300');
+          });
+        }
+        if (tPrintBtn && !isView) {
+          tPrintBtn.addEventListener('click', () => {
+            printOn = !printOn;
+            printBox.classList.toggle('hidden', !printOn);
+            tPrintBtn.textContent = printOn ? '✓ Print: ON' : '+ Print';
+            tPrintBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold border transition ' + (printOn ? 'bg-amber-500 border-amber-400 text-zinc-950' : 'bg-zinc-800 border-zinc-600 text-zinc-300');
+          });
+        }
 
         document.getElementById('peiceForm').addEventListener('submit', (e) => {
           e.preventDefault();
@@ -1123,6 +1213,33 @@
           const fabName = (fd.get('fabricationName') || '').trim();
           if (fabName || row.fabrication.name) {
             row.fabrication.name = fabName;
+          }
+          if (!row.embroidery) row.embroidery = { enabled: false, date: '', peice: '', rate: '', name: '', paid: false };
+          row.embroidery.enabled = embOn;
+          if (embOn) {
+            row.embroidery.name = (fd.get('embName') || '').trim();
+            if (row.embroidery.name && !row.embroidery.peice && row.peice) row.embroidery.peice = row.peice;
+            if (row.embroidery.name && !row.embroidery.date && row.date) row.embroidery.date = row.date;
+          } else {
+            row.embroidery.name = '';
+          }
+          if (!row.laser) row.laser = { enabled: false, date: '', peice: '', name: '', paid: false };
+          if (!row.print) row.print = { enabled: false, date: '', peice: '', name: '', paid: false };
+          row.laser.enabled = laserOn;
+          if (laserOn) {
+            row.laser.name = (fd.get('laserName') || '').trim();
+            if (row.laser.name && !row.laser.peice && row.peice) row.laser.peice = row.peice;
+            if (row.laser.name && !row.laser.date && row.date) row.laser.date = row.date;
+          } else {
+            row.laser.name = '';
+          }
+          row.print.enabled = printOn;
+          if (printOn) {
+            row.print.name = (fd.get('printName') || '').trim();
+            if (row.print.name && !row.print.peice && row.peice) row.print.peice = row.peice;
+            if (row.print.name && !row.print.date && row.date) row.print.date = row.date;
+          } else {
+            row.print.name = '';
           }
           row.updatedBy = state.activeUser;
           row.updatedAt = Date.now();
@@ -1144,9 +1261,9 @@
             </div>
             <div class="space-y-4">
               <div class="bg-slate-50 rounded-xl p-3 border border-slate-200">
-                <div class="text-xs text-slate-500">Master Name (from Peice entry)</div>
+                <div class="text-xs text-slate-500">Master Name (from Piece entry)</div>
                 <div class="text-base font-bold text-slate-900 mt-0.5">${escapeHtml(row.masterName || 'Not Entered')}</div>
-                <div class="text-xs text-slate-600 mt-1">Peice: <strong>${escapeHtml(row.peice || '0')}</strong></div>
+                <div class="text-xs text-slate-600 mt-1">Piece: <strong>${escapeHtml(row.peice || '0')}</strong></div>
               </div>
               <div class="flex items-center justify-between p-3 rounded-xl border ${row.masterPaid ? 'bg-green-100 border-green-400' : 'bg-amber-50 border-amber-200'}">
                 <div>
@@ -1256,8 +1373,8 @@
                 <input name="date" type="date" ${ro} value="${escapeHtml(data.date || todayISO())}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm ${roClass}" />
               </div>
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">Peice</label>
-                <input name="peice" type="number" inputmode="numeric" ${ro} value="${escapeHtml(data.peice || row.peice || '')}" placeholder="Peice count" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm ${roClass}" />
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Piece</label>
+                <input name="peice" type="number" inputmode="numeric" ${ro} value="${escapeHtml(data.peice || row.peice || '')}" placeholder="Piece count" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm ${roClass}" />
               </div>
               ${isWashing ? `
               <div>
@@ -1267,7 +1384,7 @@
               ${hasRate ? `
               <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">Rate (₹)</label>
-                <input name="rate" type="number" step="0.01" inputmode="decimal" ${ro} value="${escapeHtml(data.rate || '')}" placeholder="Rate per peice" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm ${roClass}" />
+                <input name="rate" type="number" step="0.01" inputmode="decimal" ${ro} value="${escapeHtml(data.rate || '')}" placeholder="Rate per piece" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm ${roClass}" />
               </div>` : ''}
               <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">Name</label>
@@ -1396,7 +1513,7 @@
           const goneRowsHtml = (data.goneEntries || []).map((g, idx) => `
             <div class="flex flex-wrap items-center gap-1.5 py-1.5 border-b border-slate-200 last:border-b-0">
               <input type="date" ${ro} data-gone-field="date" data-gone-idx="${idx}" value="${escapeHtml(g.date || '')}" class="flex-1 min-w-[115px] border border-slate-300 rounded px-2 py-1 text-xs ${roClass}" />
-              <input type="number" inputmode="numeric" ${ro} data-gone-field="peice" data-gone-idx="${idx}" value="${escapeHtml(g.peice || '')}" placeholder="Peice" class="w-20 border border-slate-300 rounded px-2 py-1 text-xs ${roClass}" />
+              <input type="number" inputmode="numeric" ${ro} data-gone-field="peice" data-gone-idx="${idx}" value="${escapeHtml(g.peice || '')}" placeholder="Piece" class="w-20 border border-slate-300 rounded px-2 py-1 text-xs ${roClass}" />
               ${isPacking ? `<input type="text" ${ro} data-gone-field="ripit" data-gone-idx="${idx}" value="${escapeHtml(g.ripit || '')}" placeholder="Ripit" class="w-20 border border-slate-300 rounded px-2 py-1 text-xs ${roClass}" />` : ''}
               ${(!isLocked && data.goneEntries.length > 1) ? `<button type="button" data-remove-gone="${idx}" class="text-rose-500 hover:text-rose-700 font-bold text-xs px-1.5 py-1" title="Remove">✕</button>` : ''}
             </div>
@@ -1434,7 +1551,7 @@
                 </div>
                 <div>
                   <label class="block text-xs font-semibold text-slate-700 mb-1">Rate (₹)</label>
-                  <input id="stageRateInput" type="number" step="0.01" inputmode="decimal" ${ro} value="${escapeHtml(data.rate || '')}" placeholder="Rate per peice" class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm ${roClass}" />
+                  <input id="stageRateInput" type="number" step="0.01" inputmode="decimal" ${ro} value="${escapeHtml(data.rate || '')}" placeholder="Rate per piece" class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm ${roClass}" />
                 </div>
                 ${dept === 'tanki' ? `
                 <div class="sm:col-span-2">
@@ -1639,7 +1756,7 @@
                 <input name="date_${i}" type="date" ${ro} value="${escapeHtml(line.date)}" class="w-full border border-slate-300 rounded px-2 py-1 text-xs ${roClass}" />
               </div>
               <div>
-                <label class="block text-[10px] font-semibold text-slate-600">Peice</label>
+                <label class="block text-[10px] font-semibold text-slate-600">Piece</label>
                 <input name="peice_${i}" type="number" inputmode="numeric" ${ro} value="${escapeHtml(line.peice)}" placeholder="0" class="w-full border border-slate-300 rounded px-2 py-1 text-xs ${roClass}" />
               </div>
               <div>
@@ -1663,7 +1780,7 @@
             <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-3">
               <div>
                 <h3 class="text-base font-bold text-slate-900">Packing (4 Lines) — Lot ${escapeHtml(row.lotNo)}</h3>
-                <p class="text-xs text-slate-500">Total Packing Peice auto Jama column me jayega</p>
+                <p class="text-xs text-slate-500">Total Packing Piece auto Jama column me jayega</p>
               </div>
               <button type="button" data-close-modal class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold">✕</button>
             </div>
@@ -1892,7 +2009,7 @@
           return da.localeCompare(db);
         });
 
-        let totalPeice = 0;
+        let totalPiece = 0;
         let totalGonePcs = 0;
         let totalAmount = 0;
         let totalPayment = 0;
@@ -1906,7 +2023,7 @@
           const vals = getDeptRowValues(type, r, name, entry);
 
           if (!isIgnored) {
-            totalPeice += vals.pcs;
+            totalPiece += vals.pcs;
             totalGonePcs += vals.gone;
             totalAmount += vals.amount;
           }
@@ -1955,7 +2072,7 @@
           const dCome = parseFloat(dr.come || dr.peice) || 0;
           const dRate = parseFloat(dr.rate) || 0;
           const dAmt = dCome * dRate;
-          totalPeice += dCome;
+          totalPiece += dCome;
           totalGonePcs += (parseFloat(dr.gone) || 0);
           totalAmount += dAmt;
 
@@ -2040,7 +2157,7 @@
         }).join('');
 
         const lastBal = parseFloat(meta.lastBalance) || 0;
-        const pcsBal = totalPeice - totalGonePcs;
+        const pcsBal = totalPiece - totalGonePcs;
         const pcsBalAmt = isStageDept ? (parseFloat(meta.pcsBalAmount) || 0) : 0;
         const alterBal = getAlterBalance(name);
         const grandKaam = totalAmount + lastBal;
@@ -2062,7 +2179,7 @@
           <!-- Top Summary Cards -->
           <div class="grid grid-cols-2 sm:grid-cols-${isStageDept ? '7' : '6'} gap-2.5 mb-4">
             <div class="p-2.5 rounded-xl bg-[#181b22] border border-zinc-700">
-              <div class="text-[11px] text-zinc-400 font-semibold">Total Peice</div>
+              <div class="text-[11px] text-zinc-400 font-semibold">Total Piece</div>
               <div id="hisabTotalPeice" class="text-lg font-extrabold text-white">${totalPeice}</div>
             </div>
             <div class="p-2.5 rounded-xl bg-[#181b22] border border-amber-500/40">
@@ -2121,7 +2238,7 @@
                       <th class="px-2.5 py-2 text-right border-r border-slate-700">Gone</th>
                       ${isTankiHisab ? '<th class="px-2.5 py-2 text-left border-r border-slate-700">Fabrication</th><th class="px-2.5 py-2 text-left border-r border-slate-700">Washing</th>' : ''}
                       ${isWashingHisab ? '<th class="px-2.5 py-2 text-left border-r border-slate-700">Washing</th>' : ''}
-                    ` : `<th class="px-2.5 py-2 text-right border-r border-slate-700">Peice</th>`}
+                    ` : `<th class="px-2.5 py-2 text-right border-r border-slate-700">Piece</th>`}
                     <th class="px-2.5 py-2 text-right border-r border-slate-700">Rate</th>
                     <th class="px-2.5 py-2 text-right border-r border-slate-700">Amount (Kaam)</th>
                     <th class="px-2.5 py-2 text-center no-print" data-html2canvas-ignore="true">Action</th>
@@ -2400,6 +2517,7 @@
             } else {
               targetRow[type].name = name;
               targetRow[type].paid = false;
+              if (type === 'embroidery' || type === 'laser' || type === 'print') targetRow[type].enabled = true;
               if (dr.peice) targetRow[type].peice = dr.peice;
               if (dr.rate && DEPT_CONFIG[type]?.hasTableRate) targetRow[type].rate = dr.rate;
             }
@@ -2448,7 +2566,10 @@
               row.washing.washingType = e.target.value;
             } else if (field === 'peice') {
               if (type === 'master') row.peice = e.target.value;
-              else row[type].peice = e.target.value;
+              else {
+                row[type].peice = e.target.value;
+                if (type === 'embroidery' || type === 'laser' || type === 'print') row[type].enabled = true;
+              }
             }
             row.updatedBy = state.activeUser;
             row.updatedAt = Date.now();
@@ -2562,13 +2683,13 @@
           return;
         }
 
-        let totalPeice = 0;
+        let totalPiece = 0;
         let totalGone = 0;
         let totalAmount = 0;
         const snapshotRows = included.map(r => {
           const en = meta.entries[r.id] || {};
           const vals = getDeptRowValues(type, r, name, en);
-          totalPeice += vals.pcs;
+          totalPiece += vals.pcs;
           totalGone += vals.gone;
           totalAmount += vals.amount;
           return {
@@ -2595,7 +2716,7 @@
         const totalPayment = paymentRows.reduce((sum, p) => sum + (parseFloat(p.payment) || 0), 0);
 
         const isStage = ['fabrication', 'tanki', 'washing', 'packing'].includes(type);
-        const pcsBal = totalPeice - totalGone;
+        const pcsBal = totalPiece - totalGone;
         const pcsBalAmount = isStage ? (parseFloat(meta.pcsBalAmount) || 0) : 0;
         const lastBalance = parseFloat(meta.lastBalance) || 0;
         const finalBalance = (totalAmount + lastBalance) - totalPayment - pcsBalAmount;
@@ -2755,7 +2876,7 @@
 
           <div class="grid grid-cols-2 sm:grid-cols-${isStage ? '7' : '6'} gap-2.5 mb-4">
             <div class="p-2.5 rounded-xl bg-[#181b22] border border-zinc-700">
-              <div class="text-[11px] text-zinc-400 font-semibold">Total Peice</div>
+              <div class="text-[11px] text-zinc-400 font-semibold">Total Piece</div>
               <div id="savedHisabTotalPeice" class="text-lg font-extrabold text-white">${h.totalPeice}</div>
             </div>
             <div class="p-2.5 rounded-xl bg-[#181b22] border border-amber-500/40">
@@ -2800,7 +2921,7 @@
                       <th class="px-2.5 py-2 text-right border-r border-slate-700">Gone</th>
                       ${isTanki ? '<th class="px-2.5 py-2 text-left border-r border-slate-700">Fabrication</th><th class="px-2.5 py-2 text-left border-r border-slate-700">Washing</th>' : ''}
                       ${isWash ? '<th class="px-2.5 py-2 text-left border-r border-slate-700">Washing</th>' : ''}
-                    ` : '<th class="px-2.5 py-2 text-right border-r border-slate-700">Peice</th>'}
+                    ` : '<th class="px-2.5 py-2 text-right border-r border-slate-700">Piece</th>'}
                     <th class="px-2.5 py-2 text-right border-r border-slate-700">Rate</th>
                     <th class="px-2.5 py-2 text-right">Amount (Kaam)</th>
                   </tr>
@@ -2913,7 +3034,7 @@
             const cell = area.querySelector(`[data-saved-amt-cell="${idx}"]`);
             if (cell) cell.textContent = '₹' + r.amount.toFixed(0);
           });
-          h.totalPeice = tCome;
+          h.totalPiece = tCome;
           h.totalAmount = tAmt;
           h.pcsBal = tCome - tGone;
           h.totalPayment = h.paymentRows.reduce((sum, item) => sum + (parseFloat(item.payment) || 0), 0);
@@ -3520,7 +3641,7 @@
                     <thead class="bg-zinc-800 text-zinc-300">
                       <tr>
                         <th class="px-2 py-1.5 text-left border-r border-zinc-700">Date</th>
-                        <th class="px-2 py-1.5 text-right">Peice</th>
+                        <th class="px-2 py-1.5 text-right">Piece</th>
                       </tr>
                     </thead>
                     <tbody>${buildSideRows(rec.gaye, 'gaye')}</tbody>
@@ -3537,7 +3658,7 @@
                     <thead class="bg-zinc-800 text-zinc-300">
                       <tr>
                         <th class="px-2 py-1.5 text-left border-r border-zinc-700">Date</th>
-                        <th class="px-2 py-1.5 text-right">Peice</th>
+                        <th class="px-2 py-1.5 text-right">Piece</th>
                       </tr>
                     </thead>
                     <tbody>${buildSideRows(rec.jama, 'jama')}</tbody>
@@ -3782,7 +3903,7 @@
         }
 
         const sumLine = (lbl, val) => pushText(padR(lbl, 28) + padL(val, 20));
-        sumLine('Total Peice:', String(receipt.totalPeice));
+        sumLine('Total Piece:', String(receipt.totalPeice));
         sumLine('Total Kaam:', 'Rs ' + receipt.totalAmount.toFixed(0));
         sumLine('Last Bal (+):', 'Rs ' + receipt.lastBal.toFixed(0));
         if (receipt.isStage) {
@@ -3918,7 +4039,7 @@
         let dateText = formatDateDMY(todayISO());
         let rowsData = [];
         let payData = [];
-        let totalPeice = 0, totalGone = 0, totalAmount = 0, lastBal = 0, pcsBal = 0, pcsBalAmt = 0, totalPayment = 0, finalBalance = 0;
+        let totalPiece = 0, totalGone = 0, totalAmount = 0, lastBal = 0, pcsBal = 0, pcsBalAmt = 0, totalPayment = 0, finalBalance = 0;
 
         if (isSavedView && savedId) {
           const h = state.savedHisabs.find(x => x.id === savedId);
@@ -3933,7 +4054,7 @@
             amount: Number(r.amount || 0)
           }));
           payData = (h.paymentRows || []).map(p => ({ date: formatDateDMY(p.date || ''), payment: Number(p.payment || 0) }));
-          totalPeice = Number(h.totalPeice || 0);
+          totalPiece = Number(h.totalPiece || 0);
           totalGone = rowsData.reduce((s, r) => s + (Number(r.gone) || 0), 0);
           totalAmount = Number(h.totalAmount || 0);
           lastBal = Number(h.lastBalance || 0);
@@ -3947,7 +4068,7 @@
           rowsData = matchingRows.map(r => {
             const en = meta.entries[r.id] || {};
             const vals = getDeptRowValues(type, r, name, en);
-            totalPeice += vals.pcs;
+            totalPiece += vals.pcs;
             totalGone += vals.gone;
             totalAmount += vals.amount;
             return { lotNo: r.lotNo, come: vals.come, gone: vals.gone, rate: vals.rate, amount: vals.amount };
@@ -3962,7 +4083,7 @@
             return { date: formatDateDMY(p.date || ''), payment: amt };
           });
           lastBal = parseFloat(meta.lastBalance) || 0;
-          pcsBal = totalPeice - totalGone;
+          pcsBal = totalPiece - totalGone;
           pcsBalAmt = isStage ? (parseFloat(meta.pcsBalAmount) || 0) : 0;
           finalBalance = (totalAmount + lastBal) - totalPayment - pcsBalAmt;
         }
@@ -4041,7 +4162,7 @@
                 </div>` : ''}
 
                 <div class="border-t-2 border-dashed border-black pt-1.5 space-y-0.5 text-[11px]">
-                  <div class="flex justify-between"><span>Total Peice:</span><strong>${totalPeice}</strong></div>
+                  <div class="flex justify-between"><span>Total Piece:</span><strong>${totalPeice}</strong></div>
                   <div class="flex justify-between"><span>Total Kaam:</span><strong>₹${totalAmount.toFixed(0)}</strong></div>
                   <div class="flex justify-between"><span>Last Bal (+):</span><strong>₹${lastBal.toFixed(0)}</strong></div>
                   ${isStage ? `<div class="flex justify-between"><span>Pcs Bal (${pcsBal}):</span><strong>-₹${pcsBalAmt.toFixed(0)}</strong></div>` : ''}
@@ -4122,7 +4243,7 @@
           const isTanki = type === 'tanki';
           const isWash = type === 'washing';
 
-          let totalPeice = 0, totalGonePdf = 0, pcsBalPdf = 0, pcsBalAmtPdf = 0, totalAmount = 0, lastBalance = 0, totalPayment = 0, finalBalance = 0;
+          let totalPiece = 0, totalGonePdf = 0, pcsBalPdf = 0, pcsBalAmtPdf = 0, totalAmount = 0, lastBalance = 0, totalPayment = 0, finalBalance = 0;
           let head = [];
           let body = [];
           let payBody = [];
@@ -4134,7 +4255,7 @@
             if (!h) return;
             titleText = `${h.title} (${h.deptLabel}) — ${h.name}`;
             dateText = formatDateDMY(h.savedDate);
-            totalPeice = h.totalPeice || 0;
+            totalPiece = h.totalPiece || 0;
             pcsBalPdf = Number(h.pcsBal || 0);
             pcsBalAmtPdf = Number(h.pcsBalAmount || 0);
             totalAmount = Number(h.totalAmount || 0);
@@ -4155,7 +4276,7 @@
                     : [r.lotNo, r.come ?? r.peice, r.gone ?? r.peice, Number(r.rate || 0).toFixed(2), 'Rs ' + Number(r.amount || 0).toFixed(0)])
               );
             } else {
-              head = [['Lot no', 'Peice', 'Rate', 'Amount']];
+              head = [['Lot no', 'Piece', 'Rate', 'Amount']];
               body = h.rows.map(r => [r.lotNo, r.peice, Number(r.rate || 0).toFixed(2), 'Rs ' + Number(r.amount || 0).toFixed(0)]);
             }
             payBody = (h.paymentRows || []).map((pr, idx) => [idx + 1, formatDateDMY(pr.date || '') || '-', 'Rs ' + Number(pr.payment || 0).toFixed(0)]);
@@ -4171,13 +4292,13 @@
                     ? ['Lot no', 'Come', 'Gone', 'Washing', 'Rate', 'Amount']
                     : ['Lot no', 'Come', 'Gone', 'Rate', 'Amount'])];
             } else {
-              head = [['Lot no', 'Peice', 'Rate', 'Amount']];
+              head = [['Lot no', 'Piece', 'Rate', 'Amount']];
             }
 
             matchingRows.forEach(r => {
               const en = meta.entries[r.id] || {};
               const vals = getDeptRowValues(type, r, name, en);
-              totalPeice += vals.pcs;
+              totalPiece += vals.pcs;
               totalGonePdf += vals.gone;
               totalAmount += vals.amount;
               if (isStage) {
@@ -4200,7 +4321,7 @@
               totalPayment += p;
               payBody.push([idx + 1, formatDateDMY(pr.date || '') || '-', 'Rs ' + p.toFixed(0)]);
             });
-            pcsBalPdf = totalPeice - totalGonePdf;
+            pcsBalPdf = totalPiece - totalGonePdf;
             pcsBalAmtPdf = isStage ? (parseFloat(meta.pcsBalAmount) || 0) : 0;
             finalBalance = (totalAmount + lastBalance) - totalPayment - pcsBalAmtPdf;
           }
@@ -4220,7 +4341,7 @@
           const pcsBalLine = isStage ? `   |   Pcs Bal: ${pcsBalPdf} pcs (-Rs ${pcsBalAmtPdf.toFixed(0)})` : '';
           const alterLine = alterBalPdf ? `   |   Alter Bal: ${alterBalPdf} pcs` : '';
           doc.text(
-            `Total Peice: ${totalPeice}   |   Kaam: Rs ${totalAmount.toFixed(0)}   |   Last Bal: Rs ${lastBalance.toFixed(0)}${pcsBalLine}${alterLine}   |   Pay: Rs ${totalPayment.toFixed(0)}   |   Final Bal: Rs ${finalBalance.toFixed(0)}`,
+            `Total Piece: ${totalPeice}   |   Kaam: Rs ${totalAmount.toFixed(0)}   |   Last Bal: Rs ${lastBalance.toFixed(0)}${pcsBalLine}${alterLine}   |   Pay: Rs ${totalPayment.toFixed(0)}   |   Final Bal: Rs ${finalBalance.toFixed(0)}`,
             24,
             76,
             { maxWidth: 547 }
@@ -4603,6 +4724,10 @@
         }
         const cell = e.target.closest('.cell-trigger');
         if (cell) {
+          if (cell.getAttribute('data-disabled-job') === '1') {
+            showToast('Piece cell me jakar Embroidery/Laser/Print toggle ON karein');
+            return;
+          }
           const rowId = cell.getAttribute('data-row-id');
           const cellType = cell.getAttribute('data-cell');
           if (cellType === 'peice') openPeiceModal(rowId);
