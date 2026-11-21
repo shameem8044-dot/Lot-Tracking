@@ -3165,7 +3165,7 @@
           name,
           savedDate: todayISO(),
           savedBy: state.activeUser,
-          totalPeice,
+          totalPeice: totalPiece,
           pcsBal,
           pcsBalAmount,
           alterBal: getAlterBalance(name),
@@ -3472,7 +3472,7 @@
             const cell = area.querySelector(`[data-saved-amt-cell="${idx}"]`);
             if (cell) cell.textContent = '₹' + r.amount.toFixed(0);
           });
-          h.totalPiece = tCome;
+          h.totalPeice = tCome;
           h.totalAmount = tAmt;
           h.pcsBal = tCome - tGone;
           h.totalPayment = h.paymentRows.reduce((sum, item) => sum + (parseFloat(item.payment) || 0), 0);
@@ -4477,7 +4477,7 @@
         let dateText = formatDateDMY(todayISO());
         let rowsData = [];
         let payData = [];
-        let totalPiece = 0, totalGone = 0, totalAmount = 0, lastBal = 0, pcsBal = 0, pcsBalAmt = 0, totalPayment = 0, finalBalance = 0;
+        let totalPeice = 0, totalPiece = 0, totalGone = 0, totalAmount = 0, lastBal = 0, pcsBal = 0, pcsBalAmt = 0, totalPayment = 0, finalBalance = 0;
 
         if (isSavedView && savedId) {
           const h = state.savedHisabs.find(x => x.id === savedId);
@@ -4492,7 +4492,7 @@
             amount: Number(r.amount || 0)
           }));
           payData = (h.paymentRows || []).map(p => ({ date: formatDateDMY(p.date || ''), payment: Number(p.payment || 0) }));
-          totalPiece = Number(h.totalPiece || 0);
+          totalPiece = Number(h.totalPeice ?? h.totalPiece ?? 0);
           totalGone = rowsData.reduce((s, r) => s + (Number(r.gone) || 0), 0);
           totalAmount = Number(h.totalAmount || 0);
           lastBal = Number(h.lastBalance || 0);
@@ -4525,6 +4525,7 @@
           pcsBalAmt = isStage ? (parseFloat(meta.pcsBalAmount) || 0) : 0;
           finalBalance = (totalAmount + lastBal) - totalPayment - pcsBalAmt;
         }
+        totalPeice = totalPiece;
 
         const lotRowsHtml = rowsData.map(r => `
           <tr class="border-b border-dashed border-zinc-400">
@@ -4681,7 +4682,7 @@
           const isTanki = type === 'tanki';
           const isWash = type === 'washing';
 
-          let totalPiece = 0, totalGonePdf = 0, pcsBalPdf = 0, pcsBalAmtPdf = 0, totalAmount = 0, lastBalance = 0, totalPayment = 0, finalBalance = 0;
+          let totalPeice = 0, totalPiece = 0, totalGonePdf = 0, pcsBalPdf = 0, pcsBalAmtPdf = 0, totalAmount = 0, lastBalance = 0, totalPayment = 0, finalBalance = 0;
           let head = [];
           let body = [];
           let payBody = [];
@@ -4693,7 +4694,7 @@
             if (!h) return;
             titleText = `${h.title} (${h.deptLabel}) — ${h.name}`;
             dateText = formatDateDMY(h.savedDate);
-            totalPiece = h.totalPiece || 0;
+            totalPiece = h.totalPeice ?? h.totalPiece ?? 0;
             pcsBalPdf = Number(h.pcsBal || 0);
             pcsBalAmtPdf = Number(h.pcsBalAmount || 0);
             totalAmount = Number(h.totalAmount || 0);
@@ -4763,6 +4764,7 @@
             pcsBalAmtPdf = isStage ? (parseFloat(meta.pcsBalAmount) || 0) : 0;
             finalBalance = (totalAmount + lastBalance) - totalPayment - pcsBalAmtPdf;
           }
+          totalPeice = totalPiece;
 
           doc.setFontSize(15);
           doc.setFont('helvetica', 'bold');
