@@ -1187,13 +1187,15 @@
           });
         }
 
+        const searchTokens = q.split(/[\s,]+/).filter(Boolean);
         const filtered = tableRows.filter(r => {
-          if (!q) return true;
-          return [
+          if (!searchTokens.length) return true;
+          const hay = [
             r.lotNo, r.size, r.fabric, r.masterName,
             r.embroidery?.name, r.fabrication?.name, r.tanki?.name,
-            r.washing?.name, getPackingPrimaryName(r), r.laser?.name, r.print?.name
-          ].some(v => (v || '').toLowerCase().includes(q));
+            r.washing?.name, r.washing?.washingType, getPackingPrimaryName(r), r.laser?.name, r.print?.name
+          ].map(v => (v || '').toLowerCase()).join(' ');
+          return searchTokens.every(tok => hay.includes(tok));
         });
 
         let totalPcs = 0;
@@ -2554,9 +2556,12 @@
               <td class="px-2 py-2 border-r border-slate-200 whitespace-nowrap text-xs font-semibold">${escapeHtml(formatDateDMY(pr.date))} <span class="text-[10px] text-amber-300">(Daybook)</span></td>
               <td class="px-2 py-2 border-r border-slate-200 whitespace-nowrap text-right font-bold text-emerald-400 text-xs">₹${pVal.toFixed(0)}</td>
               <td class="px-2 py-2 text-center no-print" data-html2canvas-ignore="true">
-                <button type="button" data-toggle-db-ignore="${escapeHtml(pr.dbId)}" class="px-2 py-1 rounded text-[10px] font-bold transition ${pr.ignored ? 'bg-amber-500 text-zinc-950' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-200'}">
-                  ${pr.ignored ? 'Ignored' : 'Ignore'}
-                </button>
+                <div class="flex items-center justify-center gap-1">
+                  <button type="button" data-toggle-db-ignore="${escapeHtml(pr.dbId)}" class="px-2 py-1 rounded text-[10px] font-bold transition ${pr.ignored ? 'bg-amber-500 text-zinc-950' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-200'}">
+                    ${pr.ignored ? 'Ignored' : 'Ignore'}
+                  </button>
+                  <button type="button" data-move-db-saved="${escapeHtml(pr.dbId)}" data-db-date="${escapeHtml(pr.date)}" data-db-amt="${pVal}" class="px-2 py-1 rounded text-[10px] font-bold bg-purple-700 hover:bg-purple-600 text-white" title="Saved Hisab me daalein">📑 Saved</button>
+                </div>
               </td>
             </tr>`;
           }
@@ -2796,6 +2801,65 @@
           });
         });
 
+        area.querySelectorAll('[data-move-db-saved]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const dbId = btn.getAttribute('data-move-db-saved');
+            const dbDate = btn.getAttribute('data-db-date') || '';
+            const dbAmt = parseFloat(btn.getAttribute('data-db-amt')) || 0;
+            const partyKey = (name || '').trim().toLowerCase();
+            const matchingSaved = [...(state.savedHisabs || [])].reverse().filter(h => (h.name || '').trim().toLowerCase() === partyKey);
+            const otherSaved = [...(state.savedHisabs || [])].reverse().filter(h => (h.name || '').trim().toLowerCase() !== partyKey);
+            const allOrdered = [...matchingSaved, ...otherSaved];
+            if (!allOrdered.length) {
+              showToast('Abhi koi Saved Hisab nahi hai! Pehle Save Hisab karein.');
+              return;
+            }
+            openModal(`
+              <div class="p-4 sm:p-5 space-y-3">
+                <div class="flex items-center justify-between border-b border-zinc-700 pb-3">
+                  <div>
+                    <h3 class="text-base font-bold text-amber-400">Daybook Payment Saved Hisab me Daalein</h3>
+                    <p class="text-xs text-zinc-400">Date: <strong class="text-white">${escapeHtml(formatDateDMY(dbDate))}</strong> • Amount: <strong class="text-emerald-400">₹${dbAmt.toFixed(0)}</strong></p>
+                  </div>
+                  <button type="button" data-close-modal class="w-8 h-8 rounded-full bg-zinc-800 text-zinc-300 font-bold">✕</button>
+                </div>
+                <div class="text-xs text-zinc-300">Chunein ki yeh payment kis Saved Hisab me jodni hai (Current Hisab se hat jayegi):</div>
+                <div class="space-y-2 max-h-[55vh] overflow-y-auto">
+                  ${allOrdered.map(h => `
+                    <button type="button" data-pick-saved-target="${escapeHtml(h.id)}" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-left transition ${(h.name || '').trim().toLowerCase() === partyKey ? 'bg-amber-500/10 border-amber-500/50 hover:bg-amber-500/20' : 'bg-zinc-900 border-zinc-800 hover:border-zinc-600'}">
+                      <div>
+                        <div class="font-bold text-amber-300 text-xs sm:text-sm">${escapeHtml(h.title)} — ${escapeHtml(h.name)}</div>
+                        <div class="text-[11px] text-zinc-400">${escapeHtml(h.deptLabel || h.dept)} • ${escapeHtml(formatDateDMY(h.savedDate))}</div>
+                      </div>
+                      <div class="text-xs font-bold text-white">Bal: ₹${Number(h.finalBalance || 0).toFixed(0)}</div>
+                    </button>
+                  `).join('')}
+                </div>
+              </div>
+            `);
+            document.querySelectorAll('[data-pick-saved-target]').forEach(pickBtn => {
+              pickBtn.addEventListener('click', () => {
+                const targetId = pickBtn.getAttribute('data-pick-saved-target');
+                const h = state.savedHisabs.find(x => x.id === targetId);
+                if (!h) return;
+                if (!Array.isArray(h.paymentRows)) h.paymentRows = [];
+                h.paymentRows.push({ date: dbDate, payment: dbAmt, fromDaybook: true });
+                h.paymentRows.sort((a, b) => (!a.date && !b.date) ? 0 : (!a.date ? 1 : (!b.date ? -1 : a.date.localeCompare(b.date))));
+                h.totalPayment = h.paymentRows.reduce((s, p) => s + (parseFloat(p.payment) || 0), 0);
+                const kaamTotal = (h.totalAmount || 0) + (parseFloat(h.lastBalance) || 0);
+                h.finalBalance = kaamTotal - h.totalPayment - (parseFloat(h.pcsBalAmount) || 0);
+                if (!Array.isArray(state.settledDaybookKeys)) state.settledDaybookKeys = [];
+                if (!state.settledDaybookKeys.includes(dbId)) state.settledDaybookKeys.push(dbId);
+                if (meta.ignoredDbPayments && meta.ignoredDbPayments[dbId]) delete meta.ignoredDbPayments[dbId];
+                saveLocalState();
+                closeModal();
+                renderHisabContent();
+                showToast('₹' + dbAmt.toFixed(0) + ' ' + h.title + ' me add ho gayi aur Current Hisab se hata di gayi!');
+              });
+            });
+          });
+        });
+
         area.querySelectorAll('[data-toggle-pay-ignore]').forEach(btn => {
           btn.addEventListener('click', () => {
             const pIdx = parseInt(btn.getAttribute('data-toggle-pay-ignore'), 10);
@@ -2822,7 +2886,7 @@
           const addPayBtn = document.getElementById('addHisabPayRowBtn');
           if (addLotBtn) addLotBtn.classList.add('hidden');
           if (addPayBtn) addPayBtn.classList.add('hidden');
-          area.querySelectorAll('[data-toggle-pay-ignore],[data-remove-pay-row],[data-toggle-db-ignore]').forEach(b => b.classList.add('hidden'));
+          area.querySelectorAll('[data-toggle-pay-ignore],[data-remove-pay-row],[data-toggle-db-ignore],[data-move-db-saved]').forEach(b => b.classList.add('hidden'));
           area.querySelectorAll('[data-req-rate-lot]').forEach(btn => {
             btn.addEventListener('click', () => {
               openRateRequestModal(btn.getAttribute('data-req-rate-lot'), 'fabrication', btn.getAttribute('data-curr-rate') || '');
