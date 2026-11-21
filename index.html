@@ -389,6 +389,7 @@
       let isPushPending = false;
       let lastLocalMutationAt = 0;
       let lastCloudUpdatedAt = 0;
+      let lastPushFailed = false;
 
       function todayISO() {
         const d = new Date();
@@ -826,6 +827,7 @@
               state.daybook = (parsed.daybook && typeof parsed.daybook === 'object') ? parsed.daybook : {};
               state.settledDaybookKeys = Array.isArray(parsed.settledDaybookKeys) ? parsed.settledDaybookKeys : [];
               state.hisabMeta = Object.assign({ master: {}, embroidery: {}, fabrication: {}, washing: {}, tanki: {}, packing: {}, laser: {}, print: {} }, parsed.hisabMeta || {});
+              if (parsed.updatedAt) lastLocalMutationAt = Number(parsed.updatedAt) || 0;
               return;
             }
           }
@@ -927,15 +929,21 @@
             });
             if (res.ok) {
               isPushPending = false;
+              lastPushFailed = false;
               lastCloudUpdatedAt = pushTs;
               state.syncConfig.lastSyncedAt = pushTs;
               updateSyncBadge('synced', 'Cloud Synced');
             } else {
               isPushPending = false;
-              updateSyncBadge('error', 'Sync Error');
+              lastPushFailed = true;
+              updateSyncBadge('error', 'Sync Error ' + res.status);
+              if (res.status === 401 || res.status === 403) {
+                showToast('Firebase Permission Denied (' + res.status + ')! Firebase Rules me read/write true karein.');
+              }
             }
           } catch (err) {
             isPushPending = false;
+            lastPushFailed = true;
             updateSyncBadge('error', 'Offline (Saved)');
           }
         }, 600);
@@ -947,28 +955,98 @@
         if (silent && isPushPending) return;
         try {
           const res = await fetch(url);
-          if (!res.ok) return;
+          if (!res.ok) {
+            if (!silent && (res.status === 401 || res.status === 403)) {
+              showToast('Firebase Permission Denied (' + res.status + ')! Rules check karein.');
+            }
+            return;
+          }
           const data = await res.json();
-          if (silent && isPushPending) return;
-          if (data && data.updatedAt && data.updatedAt <= lastLocalMutationAt) return;
+          if (silent && (isPushPending || lastPushFailed)) return;
           if (silent && data && data.updatedAt && data.updatedAt === lastCloudUpdatedAt) return;
           if (data && Array.isArray(data.rows)) {
             if (data.updatedAt) lastCloudUpdatedAt = data.updatedAt;
             if (data.editPin) state.editPin = String(data.editPin);
             if (Array.isArray(data.tables) && data.tables.length) {
-              state.tables = data.tables;
+              const tSet = new Set([...(state.tables || ['Main']), ...data.tables]);
+              state.tables = Array.from(tSet);
               if (!state.tables.includes(state.activeTable)) state.activeTable = state.tables[0] || 'Main';
             }
-            state.rows = data.rows.map(normalizeRowStages);
+
+            // Smart row-level merge: never drop local rows that aren't in cloud yet
+            const rowKeyOf = (r) => {
+              const norm = normalizeLotNo(r.lotNo || '');
+              return norm ? ((r.tableKey || 'Main') + '::' + norm.toLowerCase()) : ('id::' + r.id);
+            };
+            const mergedMap = new Map();
+            let localHadNewer = false;
+            (state.rows || []).forEach(lr => {
+              const nr = normalizeRowStages(lr);
+              mergedMap.set(rowKeyOf(nr), nr);
+            });
+            data.rows.forEach(crRaw => {
+              const cr = normalizeRowStages(crRaw);
+              const k = rowKeyOf(cr);
+              const existing = mergedMap.get(k);
+              if (!existing) {
+                mergedMap.set(k, cr);
+              } else {
+                const lTs = Number(existing.updatedAt) || 0;
+                const cTs = Number(cr.updatedAt) || 0;
+                if (cTs > lTs) {
+                  mergedMap.set(k, cr);
+                } else if (lTs > cTs) {
+                  localHadNewer = true;
+                }
+              }
+            });
+            state.rows = Array.from(mergedMap.values());
             deduplicateAndSortRows();
-            state.users = Array.isArray(data.users) ? data.users : state.users;
-            state.notifications = Array.isArray(data.notifications) ? data.notifications : state.notifications;
-            state.savedHisabs = Array.isArray(data.savedHisabs) ? data.savedHisabs : [];
-            state.alterData = (data.alterData && typeof data.alterData === 'object') ? data.alterData : {};
-            state.daybook = (data.daybook && typeof data.daybook === 'object') ? data.daybook : {};
-            state.settledDaybookKeys = Array.isArray(data.settledDaybookKeys) ? data.settledDaybookKeys : [];
-            state.hisabMeta = Object.assign({ master: {}, embroidery: {}, fabrication: {}, washing: {}, tanki: {}, packing: {}, laser: {}, print: {} }, data.hisabMeta || {});
+
+            // Merge users by id
+            const userMap = new Map();
+            (state.users || []).forEach(u => userMap.set(u.id, u));
+            (Array.isArray(data.users) ? data.users : []).forEach(cu => {
+              const lu = userMap.get(cu.id);
+              if (!lu || (lu.status === 'pending' && cu.status !== 'pending')) userMap.set(cu.id, cu);
+            });
+            state.users = Array.from(userMap.values());
+
+            // Merge notifications by id
+            const notifMap = new Map();
+            (state.notifications || []).forEach(n => notifMap.set(n.id, n));
+            (Array.isArray(data.notifications) ? data.notifications : []).forEach(cn => {
+              const ln = notifMap.get(cn.id);
+              if (!ln || (ln.status === 'pending' && cn.status !== 'pending')) notifMap.set(cn.id, cn);
+            });
+            state.notifications = Array.from(notifMap.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).slice(0, 200);
+
+            // Merge savedHisabs by id
+            const hisabMap = new Map();
+            (state.savedHisabs || []).forEach(h => hisabMap.set(h.id, h));
+            (Array.isArray(data.savedHisabs) ? data.savedHisabs : []).forEach(ch => {
+              if (!hisabMap.has(ch.id)) hisabMap.set(ch.id, ch);
+            });
+            state.savedHisabs = Array.from(hisabMap.values());
+
+            if (data.alterData && typeof data.alterData === 'object') {
+              state.alterData = Object.assign({}, data.alterData, state.alterData);
+            }
+            if (data.daybook && typeof data.daybook === 'object') {
+              state.daybook = Object.assign({}, data.daybook, state.daybook);
+            }
+            if (Array.isArray(data.settledDaybookKeys)) {
+              state.settledDaybookKeys = Array.from(new Set([...(state.settledDaybookKeys || []), ...data.settledDaybookKeys]));
+            }
+            if (data.hisabMeta && typeof data.hisabMeta === 'object') {
+              Object.keys(data.hisabMeta).forEach(dept => {
+                state.hisabMeta[dept] = Object.assign({}, data.hisabMeta[dept] || {}, state.hisabMeta[dept] || {});
+              });
+            }
+
+            if (data.updatedAt) lastLocalMutationAt = Math.max(lastLocalMutationAt, Number(data.updatedAt) || 0);
             saveLocalState(true);
+            if (localHadNewer) scheduleCloudPush();
             updateRoleUI();
             const isTypingInTable = document.activeElement && document.activeElement.closest && document.activeElement.closest('#lotTableBody');
             if (!isTypingInTable) renderTable();
@@ -982,6 +1060,12 @@
 
       function startSyncPolling() {
         clearInterval(pollTimer);
+        if (!state.syncConfig.autoSync) {
+          clearTimeout(syncTimer);
+          isPushPending = false;
+          updateSyncBadge('local', 'Live Sync OFF');
+          return;
+        }
         if (getFirebaseEndpoint() && state.syncConfig.autoSync) {
           pullFromCloud(true);
           pollTimer = setInterval(() => pullFromCloud(true), 4000);
@@ -4913,7 +4997,7 @@
             </form>
 
             <div class="pt-2 border-t border-zinc-800 flex items-center justify-between text-[11px] text-zinc-400">
-              <span>${getFirebaseEndpoint() ? '🟢 Firebase Sync Connected' : '⚪ Local Mode'}</span>
+              <span>${!state.syncConfig.autoSync ? '⚪ Live Sync OFF (Local)' : (getFirebaseEndpoint() ? '🟢 Firebase Sync ON' : '⚪ Local Mode')}</span>
               <button id="gateSyncSetupBtn" type="button" class="text-amber-400 hover:underline font-semibold">⚙️ Firebase Sync Setup</button>
             </div>
           </div>
@@ -5215,9 +5299,23 @@
               <button type="button" data-close-modal class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold">✕</button>
             </div>
             <form id="syncForm" class="space-y-3">
-              <div class="px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-700 flex items-center justify-between text-xs">
-                <span class="text-zinc-400">Sync Status:</span>
-                <strong class="text-sky-400">${getFirebaseEndpoint() ? 'Cloud Sync Active' : 'Local Auto-Sync'}</strong>
+              <div class="px-3 py-2.5 rounded-lg bg-zinc-900 border border-zinc-700 space-y-2 text-xs">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <div class="font-bold text-zinc-100">Live Data Sync (Firebase)</div>
+                    <div class="text-[10px] text-zinc-400">Real-time sync chalu ya band karein</div>
+                  </div>
+                  <button type="button" id="liveSyncToggleBtn" class="px-3 py-1 rounded-full font-extrabold text-xs transition ${state.syncConfig.autoSync ? 'bg-emerald-600 hover:bg-emerald-500 text-white' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-200'}">
+                    ${state.syncConfig.autoSync ? '🟢 ON' : '⚪ OFF'}
+                  </button>
+                </div>
+                <div class="flex items-center justify-between pt-1.5 border-t border-zinc-800">
+                  <span class="text-zinc-400">Sync Status:</span>
+                  <strong id="syncTestResult" class="${state.syncConfig.autoSync && getFirebaseEndpoint() ? 'text-emerald-400' : 'text-sky-400'}">${!state.syncConfig.autoSync ? 'Live Sync OFF (Local Only)' : (getFirebaseEndpoint() ? 'Cloud Sync Active' : 'Local Auto-Sync')}</strong>
+                </div>
+                <div class="flex justify-end">
+                  <button type="button" id="testFirebaseBtn" class="px-2.5 py-1 rounded bg-sky-600 hover:bg-sky-500 text-white text-[11px] font-bold">🧪 Test &amp; Sync Now</button>
+                </div>
               </div>
               <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">Firebase Realtime Database URL</label>
@@ -5249,6 +5347,79 @@
             </form>
           </div>
         `);
+
+        const liveToggleBtn = document.getElementById('liveSyncToggleBtn');
+        if (liveToggleBtn) {
+          liveToggleBtn.addEventListener('click', () => {
+            state.syncConfig.autoSync = !state.syncConfig.autoSync;
+            liveToggleBtn.textContent = state.syncConfig.autoSync ? '🟢 ON' : '⚪ OFF';
+            liveToggleBtn.className = 'px-3 py-1 rounded-full font-extrabold text-xs transition ' + (state.syncConfig.autoSync ? 'bg-emerald-600 hover:bg-emerald-500 text-white' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-200');
+            const resEl = document.getElementById('syncTestResult');
+            if (resEl) {
+              resEl.textContent = !state.syncConfig.autoSync ? 'Live Sync OFF (Local Only)' : (getFirebaseEndpoint() ? 'Cloud Sync Active' : 'Local Auto-Sync');
+              resEl.className = state.syncConfig.autoSync && getFirebaseEndpoint() ? 'text-emerald-400 font-bold' : 'text-sky-400 font-bold';
+            }
+            saveLocalState();
+            if (state.syncConfig.autoSync) {
+              isPushPending = true;
+              setTimeout(() => startSyncPolling(), 900);
+            } else {
+              startSyncPolling();
+            }
+            showToast(state.syncConfig.autoSync ? 'Live Data Sync ON' : 'Live Data Sync OFF (Local Mode)');
+          });
+        }
+
+        const testFbBtn = document.getElementById('testFirebaseBtn');
+        if (testFbBtn) {
+          testFbBtn.addEventListener('click', async () => {
+            const resEl = document.getElementById('syncTestResult');
+            const fd = new FormData(document.getElementById('syncForm'));
+            state.syncConfig.firebaseUrl = (fd.get('firebaseUrl') || '').trim();
+            state.syncConfig.roomCode = (fd.get('roomCode') || 'shameem-saleem-factory').trim();
+            const ep = getFirebaseEndpoint();
+            if (!ep) {
+              resEl.textContent = 'URL empty hai';
+              resEl.className = 'text-rose-400 font-bold';
+              return;
+            }
+            resEl.textContent = 'Testing...';
+            resEl.className = 'text-amber-300 font-bold';
+            try {
+              const gRes = await fetch(ep);
+              if (!gRes.ok) {
+                resEl.textContent = 'Read Error: HTTP ' + gRes.status + (gRes.status === 401 || gRes.status === 403 ? ' (Rules Lock!)' : '');
+                resEl.className = 'text-rose-400 font-bold';
+                return;
+              }
+              const pushTs = Date.now();
+              const pRes = await fetch(ep, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  editPin: state.editPin, tables: state.tables, activeTable: state.activeTable,
+                  rows: state.rows, users: state.users, notifications: state.notifications,
+                  savedHisabs: state.savedHisabs, alterData: state.alterData, daybook: state.daybook,
+                  settledDaybookKeys: state.settledDaybookKeys, hisabMeta: state.hisabMeta,
+                  updatedBy: state.activeUser, updatedAt: pushTs
+                })
+              });
+              if (pRes.ok) {
+                lastPushFailed = false;
+                lastCloudUpdatedAt = pushTs;
+                resEl.textContent = '✅ Read & Write OK (Synced!)';
+                resEl.className = 'text-emerald-400 font-bold';
+                showToast('Firebase Read & Write OK!');
+              } else {
+                resEl.textContent = 'Write Error: HTTP ' + pRes.status + (pRes.status === 401 || pRes.status === 403 ? ' (Rules Lock!)' : '');
+                resEl.className = 'text-rose-400 font-bold';
+              }
+            } catch (err) {
+              resEl.textContent = 'Network / Offline Error';
+              resEl.className = 'text-rose-400 font-bold';
+            }
+          });
+        }
 
         document.getElementById('syncForm').addEventListener('submit', (e) => {
           e.preventDefault();
