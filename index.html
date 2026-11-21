@@ -2894,6 +2894,81 @@
           });
         }
 
+        area.querySelectorAll('[data-draft-field]').forEach(inp => {
+          inp.addEventListener('input', (e) => {
+            const dIdx = parseInt(e.target.getAttribute('data-draft-idx'), 10);
+            const field = e.target.getAttribute('data-draft-field');
+            if (!meta.draftRows[dIdx]) return;
+            meta.draftRows[dIdx][field] = e.target.value;
+            saveLocalState();
+            recalcHisabTotalsOnly();
+          });
+        });
+
+        area.querySelectorAll('[data-remove-draft]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const dIdx = parseInt(btn.getAttribute('data-remove-draft'), 10);
+            meta.draftRows.splice(dIdx, 1);
+            saveLocalState();
+            renderHisabContent();
+          });
+        });
+
+        area.querySelectorAll('[data-draft-lot-input]').forEach(inp => {
+          inp.addEventListener('change', (e) => {
+            const dIdx = parseInt(e.target.getAttribute('data-draft-lot-input'), 10);
+            const dr = meta.draftRows[dIdx];
+            const enteredLot = normalizeLotNo(e.target.value);
+            if (!dr || !enteredLot) return;
+            const sufMatch = enteredLot.match(/^\d+([A-Za-z]+)$/);
+            const tKey = sufMatch ? sufMatch[1].toUpperCase() : (/^\d+$/.test(enteredLot) ? 'Main' : (state.activeTable || 'Main'));
+            let targetRow = state.rows.find(r => (r.tableKey || 'Main') === tKey && normalizeLotNo(r.lotNo) === enteredLot);
+            if (!targetRow) {
+              targetRow = createRow(enteredLot, tKey);
+              state.rows.push(targetRow);
+              fillMissingLotsUpTo(enteredLot, targetRow.id);
+            }
+            normalizeRowStages(targetRow);
+            if (type === 'master') {
+              targetRow.masterName = name;
+              if (dr.peice) targetRow.peice = dr.peice;
+            } else {
+              if (!targetRow[type]) targetRow[type] = {};
+              targetRow[type].name = name;
+              if (isStageDept) {
+                targetRow[type].status = 'Clear';
+                if (dr.come) {
+                  if (type === 'fabrication') targetRow.peice = dr.come;
+                  else if (type === 'tanki') targetRow.fabrication.goneEntries[0].peice = dr.come;
+                  else if (type === 'washing') targetRow.tanki.goneEntries[0].peice = dr.come;
+                  else if (type === 'packing') targetRow.washing.goneEntries[0].peice = dr.come;
+                }
+                if (dr.gone) targetRow[type].goneEntries[0].peice = dr.gone;
+                if (dr.fabricationName) targetRow.fabrication.name = dr.fabricationName;
+                if (dr.washingName) targetRow.washing.name = dr.washingName;
+                if (dr.washingType) targetRow.washing.washingType = dr.washingType;
+                if (dr.rate) targetRow[type].rate = dr.rate;
+                if (type === 'packing') applyJamaAutoClear(targetRow);
+              } else {
+                targetRow[type].enabled = true;
+                if (dr.peice) targetRow[type].peice = dr.peice;
+              }
+            }
+            if (dr.rate) {
+              if (!meta.entries[targetRow.id]) meta.entries[targetRow.id] = { rate: '', date: '', payment: '', ignored: false };
+              meta.entries[targetRow.id].rate = dr.rate;
+            }
+            targetRow.updatedBy = state.activeUser;
+            targetRow.updatedAt = Date.now();
+            meta.draftRows.splice(dIdx, 1);
+            deduplicateAndSortRows();
+            saveLocalState();
+            renderTable();
+            renderHisabContent();
+            showToast('Lot ' + enteredLot + ' Hisab me add ho gayi' + (isStageDept ? ' (Status: Clear)' : ''));
+          });
+        });
+
         area.querySelectorAll('[data-hisab-lot-field]').forEach(inp => {
           inp.addEventListener('input', (e) => {
             const lotId = e.target.getAttribute('data-lot-id');
@@ -2911,6 +2986,7 @@
             } else if (field === 'gone') {
               normalizeRowStages(row);
               row[type].goneEntries[0].peice = e.target.value;
+              if (isStageDept && row[type]) row[type].status = 'Clear';
               if (type === 'packing') applyJamaAutoClear(row);
             } else if (field === 'fabricationName') {
               row.fabrication.name = e.target.value;
@@ -2943,6 +3019,7 @@
             const row = getRow(lotId);
             if (row && field === 'rate' && DEPT_CONFIG[type]?.hasTableRate) {
               row[type].rate = e.target.value;
+              if (isStageDept && row[type]) row[type].status = 'Clear';
               row.updatedBy = state.activeUser;
               row.updatedAt = Date.now();
               renderTable();
