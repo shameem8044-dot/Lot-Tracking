@@ -3177,24 +3177,14 @@
           paymentRows
         };
 
-        // Mark ONLY non-ignored included lots Paid & green; keep ignored lots strictly Unpaid for future Hisab
-        matchingRows.forEach(r => {
-          if (ignoredIds.has(r.id)) {
-            if (type === 'master') {
-              r.masterPaid = false;
-              r.masterPaidLight = false;
-            } else {
-              r[type].paid = false;
-              r[type].paidLight = false;
-            }
+        // Mark ONLY non-ignored included lots Paid & green; leave ignored lots completely untouched
+        included.forEach(r => {
+          if (type === 'master') {
+            r.masterPaid = true;
+            r.masterPaidLight = true;
           } else {
-            if (type === 'master') {
-              r.masterPaid = true;
-              r.masterPaidLight = true;
-            } else {
-              r[type].paid = true;
-              r[type].paidLight = true;
-            }
+            r[type].paid = true;
+            r[type].paidLight = true;
           }
           r.updatedBy = state.activeUser;
           r.updatedAt = Date.now();
