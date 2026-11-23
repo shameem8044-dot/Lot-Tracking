@@ -244,6 +244,9 @@
         </div>
       </div>
       <div id="topRow3" class="flex items-center gap-1.5">
+        <button id="liveWidgetBtn" type="button" class="px-2.5 py-0.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow transition">
+          📊 Widget
+        </button>
         <button id="daybookBtn" type="button" class="px-3 py-0.5 rounded-md bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold text-xs shadow transition">
           📒 Daybook
         </button>
@@ -252,7 +255,8 @@
   </header>
 
   <!-- Main Table Container (Obsidian Dark Surface & Amber-Gold Header) -->
-  <main class="flex-1 min-h-0 p-2 sm:p-3 overflow-hidden flex flex-col">
+  <main class="flex-1 min-h-0 p-2 sm:p-3 overflow-hidden flex flex-col gap-2">
+    <section id="liveBalanceWidget" class="hidden shrink-0 bg-[#14171f] rounded-xl border border-amber-500/40 shadow-xl p-2.5 space-y-2"></section>
     <div class="bg-[#14171f] rounded-xl shadow-xl border border-zinc-800 flex-1 min-h-0 flex flex-col overflow-hidden">
       <div id="mainTableScroll" class="table-scroll overflow-x-auto overflow-y-auto flex-1 min-h-[200px]">
         <table id="mainTableElement" class="w-full border-collapse text-left text-xs sm:text-sm min-w-[1250px]">
@@ -384,6 +388,8 @@
       };
 
       let currentSearch = '';
+      let widgetOpen = false;
+      let widgetFilter = 'all';
       let syncTimer = null;
       let pollTimer = null;
       let isPushPending = false;
@@ -1155,6 +1161,7 @@
 
       function renderTable() {
         renderTableTabs();
+        renderLiveWidget();
         const rc = getRoleConfig();
         if (!rc.isLoggedIn) {
           const tbody = document.getElementById('lotTableBody');
@@ -3919,6 +3926,178 @@
         renderDaybook();
       }
 
+      function getLiveDeptBalance(dept, name) {
+        const meta = state.hisabMeta?.[dept]?.[name] || { lastBalance: '', entries: {}, paymentRows: [], draftRows: [], ignoredDbPayments: {} };
+        const matchingRows = getUnpaidDeptRows(dept, name);
+        let lotCount = 0;
+        let totalAmount = 0;
+        matchingRows.forEach(r => {
+          const en = meta.entries?.[r.id] || {};
+          if (!en.ignored) {
+            lotCount += 1;
+            totalAmount += getDeptRowValues(dept, r, name, en).amount;
+          }
+        });
+        (meta.draftRows || []).forEach(dr => {
+          const dCome = parseFloat(dr.come || dr.peice) || 0;
+          const dRate = parseFloat(dr.rate) || 0;
+          totalAmount += dCome * dRate;
+        });
+        let totalPayment = 0;
+        getDaybookPaymentsForName(name).forEach(d => {
+          if (!meta.ignoredDbPayments?.[d.dbId]) totalPayment += parseFloat(d.payment) || 0;
+        });
+        (meta.paymentRows || []).forEach(pr => {
+          if (!pr.ignored) totalPayment += parseFloat(pr.payment) || 0;
+        });
+        const lastBal = parseFloat(meta.lastBalance) || 0;
+        const pcsBalAmt = parseFloat(meta.pcsBalAmount) || 0;
+        const balance = (totalAmount + lastBal) - totalPayment - pcsBalAmt;
+        return { lotCount, totalAmount, lastBal, totalPayment, pcsBalAmt, balance };
+      }
+
+      function renderLiveWidget() {
+        const box = document.getElementById('liveBalanceWidget');
+        const toggleBtn = document.getElementById('liveWidgetBtn');
+        if (!box) return;
+        const rc = getRoleConfig();
+        if (!rc.isLoggedIn || !widgetOpen) {
+          box.classList.add('hidden');
+          if (toggleBtn) toggleBtn.className = 'px-2.5 py-0.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow transition';
+          return;
+        }
+        box.classList.remove('hidden');
+        if (toggleBtn) toggleBtn.className = 'px-2.5 py-0.5 rounded-md bg-amber-400 text-zinc-950 font-extrabold text-xs shadow ring-2 ring-amber-300 transition';
+
+        const depts = ['fabrication', 'washing', 'packing'];
+        const deptMeta = {
+          fabrication: { label: 'Fabrication', badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' },
+          washing: { label: 'Washing', badge: 'bg-sky-500/20 text-sky-300 border-sky-500/40' },
+          packing: { label: 'Packing', badge: 'bg-orange-500/20 text-orange-300 border-orange-500/40' }
+        };
+
+        let cards = [];
+        depts.forEach(dept => {
+          if (!rc.isAdmin) {
+            if (rc.category.toLowerCase() !== dept) return;
+          } else if (widgetFilter !== 'all' && widgetFilter !== dept) {
+            return;
+          }
+          const nameSet = new Set(getUnpaidDeptNames(dept).map(x => x.name));
+          Object.keys(state.hisabMeta?.[dept] || {}).forEach(n => {
+            const lb = parseFloat(state.hisabMeta[dept][n]?.lastBalance) || 0;
+            if (lb !== 0) nameSet.add(n);
+          });
+          Array.from(nameSet).sort((a, b) => a.localeCompare(b)).forEach(partyName => {
+            if (!rc.isAdmin && partyName.trim().toLowerCase() !== rc.userName.trim().toLowerCase()) return;
+            const stats = getLiveDeptBalance(dept, partyName);
+            cards.push({ dept, partyName, ...stats });
+          });
+        });
+
+        const grandBal = cards.reduce((s, c) => s + c.balance, 0);
+        const canPay = rc.isAdmin && appMode === 'edit';
+
+        box.innerHTML = `
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-extrabold text-amber-400 uppercase tracking-wider">📊 Live Balance Widget</span>
+              <span class="px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[11px] font-extrabold">Total: ₹${grandBal.toFixed(0)}</span>
+            </div>
+            <div class="flex items-center gap-1 flex-wrap">
+              ${rc.isAdmin ? ['all', 'fabrication', 'washing', 'packing'].map(f => `
+                <button type="button" data-widget-filter="${f}" class="px-2 py-0.5 rounded-md text-[11px] font-bold border transition ${widgetFilter === f ? 'bg-amber-500 text-zinc-950 border-amber-400' : 'bg-zinc-900 text-zinc-300 border-zinc-700 hover:bg-zinc-800'}">
+                  ${f === 'all' ? 'All' : deptMeta[f].label}
+                </button>
+              `).join('') : ''}
+              <button id="closeWidgetBtn" type="button" class="ml-1 px-2 py-0.5 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold">✕</button>
+            </div>
+          </div>
+          ${cards.length ? `
+            <div class="flex gap-2.5 overflow-x-auto pb-1 no-scrollbar">
+              ${cards.map((c, idx) => `
+                <div class="min-w-[235px] max-w-[260px] shrink-0 rounded-xl bg-[#0b0d11] border border-zinc-800 p-2.5 space-y-2">
+                  <div class="flex items-start justify-between gap-2">
+                    <div class="min-w-0">
+                      <span class="inline-block px-1.5 py-0.5 rounded border text-[9px] font-bold uppercase ${deptMeta[c.dept].badge}">${deptMeta[c.dept].label}</span>
+                      <button type="button" data-widget-open-hisab="${c.dept}" data-widget-party="${escapeHtml(c.partyName)}" class="block mt-1 font-extrabold text-sm text-white hover:text-amber-400 truncate text-left" title="Full Hisab kholein">
+                        ${escapeHtml(c.partyName)} ↗
+                      </button>
+                    </div>
+                    <div class="text-right shrink-0">
+                      <div class="text-[10px] text-zinc-400">Balance</div>
+                      <div class="text-base font-extrabold ${c.balance >= 0 ? 'text-amber-400' : 'text-emerald-400'}">₹${c.balance.toFixed(0)}</div>
+                    </div>
+                  </div>
+                  <div class="flex items-center justify-between text-[10px] text-zinc-400 border-t border-zinc-800/80 pt-1.5">
+                    <span>Lots: <strong class="text-zinc-200">${c.lotCount}</strong></span>
+                    <span>Kaam: <strong class="text-zinc-200">₹${(c.totalAmount + c.lastBal).toFixed(0)}</strong></span>
+                    <span>Paid: <strong class="text-emerald-400">₹${c.totalPayment.toFixed(0)}</strong></span>
+                  </div>
+                  ${rc.isAdmin ? `
+                    <form data-widget-pay-form="${idx}" data-w-dept="${c.dept}" data-w-name="${escapeHtml(c.partyName)}" class="flex items-center gap-1 pt-1">
+                      <input type="date" name="wDate" value="${todayISO()}" ${canPay ? '' : 'disabled'} class="w-[102px] bg-zinc-900 text-zinc-200 border border-zinc-700 rounded px-1.5 py-1 text-[10px] focus:outline-none focus:border-amber-400" />
+                      <input type="number" step="0.01" inputmode="decimal" name="wAmt" placeholder="₹ Pay" ${canPay ? '' : 'disabled'} class="w-16 flex-1 bg-zinc-900 text-white border border-zinc-700 rounded px-1.5 py-1 text-xs font-bold focus:outline-none focus:border-emerald-400" />
+                      <button type="submit" class="px-2 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-extrabold shrink-0">Pay</button>
+                    </form>
+                  ` : ''}
+                </div>
+              `).join('')}
+            </div>
+          ` : `<div class="text-xs text-zinc-400 py-2 text-center">Abhi koi unpaid balance nahi hai.</div>`}
+        `;
+
+        const closeW = document.getElementById('closeWidgetBtn');
+        if (closeW) {
+          closeW.addEventListener('click', () => {
+            widgetOpen = false;
+            renderLiveWidget();
+          });
+        }
+
+        box.querySelectorAll('[data-widget-filter]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            widgetFilter = btn.getAttribute('data-widget-filter');
+            renderLiveWidget();
+          });
+        });
+
+        box.querySelectorAll('[data-widget-open-hisab]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            openHisabOverlay(btn.getAttribute('data-widget-open-hisab'), btn.getAttribute('data-widget-party'));
+          });
+        });
+
+        box.querySelectorAll('[data-widget-pay-form]').forEach(form => {
+          form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (!rc.isAdmin) return;
+            if (appMode === 'view') {
+              showToast('Payment entry ke liye Edit Mode ON karein');
+              return;
+            }
+            const dept = form.getAttribute('data-w-dept');
+            const pName = form.getAttribute('data-w-name');
+            const fd = new FormData(form);
+            const dt = fd.get('wDate') || todayISO();
+            const amt = parseFloat(fd.get('wAmt'));
+            if (!amt || amt <= 0) {
+              showToast('Valid payment amount daalein');
+              return;
+            }
+            if (!state.hisabMeta[dept]) state.hisabMeta[dept] = {};
+            if (!state.hisabMeta[dept][pName]) {
+              state.hisabMeta[dept][pName] = { lastBalance: '', entries: {}, paymentRows: [], draftRows: [] };
+            }
+            if (!Array.isArray(state.hisabMeta[dept][pName].paymentRows)) state.hisabMeta[dept][pName].paymentRows = [];
+            state.hisabMeta[dept][pName].paymentRows.push({ date: dt, payment: String(amt), fromWidget: true });
+            saveLocalState();
+            renderLiveWidget();
+            showToast(`₹${amt} payment ${pName} (${deptMeta[dept].label}) me add ho gayi!`);
+          });
+        });
+      }
+
       function getAlterBalance(name) {
         if (!name) return 0;
         const target = name.trim().toLowerCase();
@@ -5796,6 +5975,10 @@
         document.getElementById('hisabOverlay').classList.remove('flex');
       });
       document.getElementById('hisabSaveBtn').addEventListener('click', saveCurrentHisab);
+      document.getElementById('liveWidgetBtn').addEventListener('click', () => {
+        widgetOpen = !widgetOpen;
+        renderLiveWidget();
+      });
       document.getElementById('daybookBtn').addEventListener('click', () => openDaybookModal(todayISO()));
       document.getElementById('alterBtn').addEventListener('click', openAlterListModal);
       document.getElementById('pendingLotsBtn').addEventListener('click', openPendingLotsModal);
@@ -5921,7 +6104,7 @@
       const MOVABLE_BTN_IDS = [
         'userSwitchBtn', 'notifBellBtn', 'appModeToggleBtn', 'syncSettingsBtn', 'fullscreenToggleBtn',
         'addRowBtn', 'hisabDropdownBtn', 'alterBtn', 'pendingLotsBtn', 'savedHisabBtn', 'backupRestoreBtn',
-        'daybookBtn'
+        'liveWidgetBtn', 'daybookBtn'
       ];
       let activeMoveBtn = null;
 
