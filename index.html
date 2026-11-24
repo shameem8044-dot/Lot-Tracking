@@ -234,20 +234,20 @@
     </div>
 
     <!-- Dedicated Table Zoom & Daybook Row -->
-    <div class="bg-[#0b0d11] border-t border-zinc-800 px-2.5 py-1 flex items-center justify-between gap-2">
-      <div class="flex items-center gap-2">
+    <div class="bg-[#0b0d11] border-t border-zinc-800 px-2.5 py-1 flex items-center justify-between gap-2 overflow-x-auto flex-nowrap no-scrollbar">
+      <div class="flex items-center gap-2 shrink-0">
         <span class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider hidden sm:inline">Zoom:</span>
-        <div class="inline-flex items-center rounded-md bg-zinc-800 border border-zinc-700 overflow-hidden text-xs font-bold">
+        <div class="inline-flex items-center rounded-md bg-zinc-800 border border-zinc-700 overflow-hidden text-xs font-bold shrink-0">
           <button id="zoomOutBtn" type="button" title="Zoom Out" class="px-2.5 py-0.5 hover:bg-zinc-700 text-zinc-200 transition">−</button>
           <button id="zoomResetBtn" type="button" title="Reset Zoom" class="px-2 py-0.5 border-x border-zinc-700 hover:bg-zinc-700 text-amber-300 min-w-[42px] text-center transition">100%</button>
           <button id="zoomInBtn" type="button" title="Zoom In" class="px-2.5 py-0.5 hover:bg-zinc-700 text-zinc-200 transition">+</button>
         </div>
       </div>
-      <div id="topRow3" class="flex items-center gap-1.5">
-        <button id="liveWidgetBtn" type="button" class="px-2.5 py-0.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow transition">
+      <div id="topRow3" class="flex items-center gap-1.5 shrink-0 flex-nowrap">
+        <button id="liveWidgetBtn" type="button" class="px-2.5 py-0.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow shrink-0 whitespace-nowrap transition">
           📊 Widget
         </button>
-        <button id="daybookBtn" type="button" class="px-3 py-0.5 rounded-md bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold text-xs shadow transition">
+        <button id="daybookBtn" type="button" class="px-3 py-0.5 rounded-md bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold text-xs shadow shrink-0 whitespace-nowrap transition">
           📒 Daybook
         </button>
       </div>
