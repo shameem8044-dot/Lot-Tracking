@@ -116,6 +116,70 @@
     .table-scroll::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
     .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
     .no-scrollbar::-webkit-scrollbar { display: none; height: 0; width: 0; }
+
+    /* Smart Daybook & Khata Overlay Styles */
+    #smartDaybookOverlay {
+      --sd-bg: #1c1e26;
+      --sd-surface: #262934;
+      --sd-surface-2: #2f3340;
+      --sd-border: #383d4d;
+      --sd-text: #f8fafc;
+      --sd-muted: #9ca3af;
+      --sd-nav: #171920;
+      --sd-yellow: #fde047;
+      --sd-lime: #a3e635;
+      --sd-orange: #fb923c;
+      --sd-purple: #c4b5fd;
+      --sd-cyan: #7dd3fc;
+      --sd-green: #22c55e;
+      --sd-green-bg: rgba(34, 197, 94, 0.14);
+      --sd-green-border: rgba(34, 197, 94, 0.45);
+      --sd-danger: #f87171;
+      --sd-danger-bg: rgba(248, 113, 113, 0.16);
+      background: var(--sd-bg);
+      color: var(--sd-text);
+    }
+    #smartDaybookOverlay .sd-topbar { background: var(--sd-nav); border-bottom: 1px solid var(--sd-border); padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-shrink: 0; }
+    #smartDaybookOverlay .sd-brand-icon { width: 30px; height: 30px; border-radius: 10px; background: linear-gradient(135deg, var(--sd-yellow), var(--sd-orange)); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 15px; color: #111827; flex-shrink: 0; }
+    #smartDaybookOverlay .sd-icon-btn { background: var(--sd-surface-2); color: var(--sd-text); border: 1px solid var(--sd-border); border-radius: 10px; height: 34px; padding: 0 10px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 4px; cursor: pointer; }
+    #smartDaybookOverlay .sd-date-bar { background: var(--sd-surface); border-bottom: 1px solid var(--sd-border); padding: 6px 10px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; flex-shrink: 0; }
+    #smartDaybookOverlay .sd-nav-arrow { width: 34px; height: 34px; border: 1px solid var(--sd-border); background: var(--sd-surface-2); border-radius: 10px; font-size: 14px; font-weight: 700; color: var(--sd-text); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    #smartDaybookOverlay .sd-date-wrap { position: relative; height: 34px; border: 1px solid var(--sd-border); border-radius: 10px; background: var(--sd-surface-2); min-width: 112px; flex: 1; max-width: 150px; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; gap: 6px; cursor: pointer; }
+    #smartDaybookOverlay .sd-today-btn { height: 34px; padding: 0 11px; border: 1px solid var(--sd-border); background: var(--sd-surface-2); border-radius: 10px; font-size: 12px; font-weight: 800; color: var(--sd-cyan); cursor: pointer; flex-shrink: 0; }
+    #smartDaybookOverlay .sd-today-btn.is-today { background: var(--sd-cyan); color: #111827; border-color: var(--sd-cyan); }
+    #smartDaybookOverlay .sd-view-tabs { display: flex; gap: 6px; width: 100%; }
+    #smartDaybookOverlay .sd-vtab-btn { flex: 1; height: 34px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--sd-border); background: var(--sd-surface-2); color: var(--sd-muted); font-weight: 800; font-size: 13px; cursor: pointer; }
+    #smartDaybookOverlay .sd-vtab-btn.active { background: var(--sd-purple); color: #111827; border-color: var(--sd-purple); }
+    #smartDaybookOverlay .sd-total-pill { background: var(--sd-yellow); border-radius: 14px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 12px rgba(0,0,0,0.28); }
+    #smartDaybookOverlay .sd-entry-card { background: var(--sd-surface); border: 1px solid var(--sd-border); border-radius: 16px; padding: 10px; display: flex; flex-direction: column; gap: 7px; }
+    #smartDaybookOverlay .sd-field { width: 100%; min-width: 0; height: 38px; border: 1px solid var(--sd-border); border-radius: 10px; padding: 0 11px; font-size: 13px; background: var(--sd-surface-2); color: var(--sd-text); }
+    #smartDaybookOverlay .sd-field:focus { outline: none; border-color: var(--sd-purple); }
+    #smartDaybookOverlay .sd-pay-chip { min-width: 96px; flex: 1; max-width: 150px; height: 38px; border: 1.5px solid var(--sd-border); border-radius: 10px; padding: 0 10px; font-size: 14px; font-weight: 800; color: var(--sd-cyan); background: var(--sd-surface-2); cursor: pointer; display: flex; align-items: center; justify-content: space-between; }
+    #smartDaybookOverlay .sd-pay-chip.active-box { border-color: var(--sd-cyan); background: rgba(125,211,252,0.12); }
+    #smartDaybookOverlay .sd-party-card { background: var(--sd-surface); border: 1px solid var(--sd-border); border-radius: 16px; overflow: hidden; }
+    #smartDaybookOverlay .sd-party-row { padding: 11px 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; background: var(--sd-surface); }
+    #smartDaybookOverlay .sd-plus-btn { width: 36px; height: 36px; border: none; border-radius: 10px; background: var(--sd-orange); color: #111827; font-size: 20px; font-weight: 900; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    #smartDaybookOverlay .sd-tot-btn { background: var(--sd-lime); color: #111827; border: none; border-radius: 10px; height: 36px; padding: 0 11px; font-size: 14px; font-weight: 900; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; }
+    #smartDaybookOverlay .sd-drawer { display: none; border-top: 1px solid var(--sd-border); background: #1f222c; padding: 8px 10px; flex-direction: column; gap: 8px; }
+    #smartDaybookOverlay .sd-party-card.expanded .sd-drawer { display: flex; }
+    #smartDaybookOverlay .sd-table { width: 100%; border-collapse: collapse; background: var(--sd-surface); border: 1px solid var(--sd-border); border-radius: 10px; overflow: hidden; font-size: 12px; }
+    #smartDaybookOverlay .sd-table th { text-align: left; padding: 7px 8px; font-size: 10px; text-transform: uppercase; color: var(--sd-muted); background: var(--sd-surface-2); border-bottom: 1px solid var(--sd-border); }
+    #smartDaybookOverlay .sd-table td { padding: 7px 8px; border-bottom: 1px solid var(--sd-border); vertical-align: middle; color: var(--sd-text); }
+    #smartDaybookOverlay .sd-table tr:last-child td { border-bottom: none; }
+    #smartDaybookOverlay .sd-khata-group { border-radius: 12px; border: 1px solid var(--sd-border); overflow: hidden; }
+    #smartDaybookOverlay .sd-khata-group.alt-0 { background: rgba(125,211,252,0.08); border-color: rgba(125,211,252,0.25); }
+    #smartDaybookOverlay .sd-khata-group.alt-1 { background: rgba(196,181,253,0.08); border-color: rgba(196,181,253,0.25); }
+    #smartDaybookOverlay .sd-khata-group.alt-2 { background: rgba(251,146,60,0.08); border-color: rgba(251,146,60,0.25); }
+    #smartDaybookOverlay .sd-cleared-row td { background: var(--sd-green-bg); color: #86efac; }
+    #smartDaybookOverlay .sd-keypad { position: fixed; left: 0; right: 0; bottom: 0; background: #171920; color: #fff; z-index: 75; border-top: 1px solid var(--sd-border); border-radius: 18px 18px 0 0; box-shadow: 0 -10px 30px rgba(0,0,0,0.55); padding: 10px; display: none; flex-direction: column; gap: 8px; }
+    #smartDaybookOverlay .sd-keypad.open { display: flex; }
+    #smartDaybookOverlay .sd-kp-box { min-width: 84px; height: 38px; border-radius: 10px; border: 1.5px solid var(--sd-border); background: var(--sd-surface); color: var(--sd-text); padding: 0 10px; display: flex; align-items: center; justify-content: space-between; gap: 6px; font-weight: 800; font-size: 14px; cursor: pointer; flex-shrink: 0; }
+    #smartDaybookOverlay .sd-kp-box.active { border-color: var(--sd-cyan); background: rgba(125,211,252,0.14); color: var(--sd-cyan); }
+    #smartDaybookOverlay .sd-kp-key { height: 46px; border: 1px solid var(--sd-border); border-radius: 12px; background: var(--sd-surface); color: var(--sd-text); font-size: 18px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    #smartDaybookOverlay .sd-kp-key.kp-plus { background: var(--sd-orange); color: #111827; border: none; font-size: 14px; font-weight: 900; }
+    #smartDaybookOverlay .sd-kp-key.kp-enter { background: var(--sd-lime); color: #111827; border: none; font-size: 14px; font-weight: 900; }
+    #smartDaybookOverlay .sd-kp-key.kp-fn { background: var(--sd-surface-2); color: var(--sd-purple); font-size: 15px; font-weight: 800; }
+
     @media print {
       body * { visibility: hidden !important; }
       #hisabPrintArea, #hisabPrintArea * { visibility: visible !important; }
@@ -207,6 +271,9 @@
       </button>
       <button id="alterBtn" type="button" class="px-2.5 py-1 rounded-lg bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs shrink-0 whitespace-nowrap shadow transition">
         🔧 Alter
+      </button>
+      <button id="supplyBtn" type="button" class="px-2.5 py-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs shrink-0 whitespace-nowrap shadow transition">
+        📦 Supply
       </button>
       <button id="pendingLotsBtn" type="button" class="px-2.5 py-1 rounded-lg bg-rose-950/80 hover:bg-rose-900 border border-rose-700/70 text-rose-200 font-bold text-xs shrink-0 whitespace-nowrap transition">
         ⏳ Pending Lots
@@ -314,6 +381,103 @@
   <!-- Toast Notification -->
   <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-amber-500 text-zinc-950 px-4 py-2 rounded-full text-xs sm:text-sm font-bold shadow-xl opacity-0 pointer-events-none transition-opacity duration-200 z-[60]"></div>
 
+
+  <!-- Smart Daybook & Khata Fullscreen Overlay -->
+  <div id="smartDaybookOverlay" class="fixed inset-0 hidden flex-col z-40 overflow-y-auto">
+    <div class="sd-topbar sticky top-0 z-20">
+      <div class="flex items-center gap-2 min-w-0">
+        <button id="sdBackBtn" type="button" class="sd-icon-btn">← Back</button>
+        <div class="sd-brand-icon">₹</div>
+        <div class="font-extrabold text-sm sm:text-base truncate">Smart Daybook &amp; Khata</div>
+      </div>
+      <div class="flex items-center gap-1.5 shrink-0">
+        <button id="sdShareBtn" type="button" class="sd-icon-btn">Share</button>
+        <button id="sdCsvBtn" type="button" class="sd-icon-btn">CSV</button>
+      </div>
+    </div>
+
+    <div class="sd-date-bar">
+      <div class="flex items-center gap-1.5 flex-1 min-w-0">
+        <button type="button" class="sd-nav-arrow" id="sdPrevDayBtn">&lt;</button>
+        <div class="sd-date-wrap">
+          <span class="text-xs font-bold text-white whitespace-nowrap" id="sdDateDisplayText"></span>
+          <span class="text-xs text-zinc-400">📅</span>
+          <input type="date" id="sdDatePicker" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer border-0" />
+        </div>
+        <button type="button" class="sd-nav-arrow" id="sdNextDayBtn">&gt;</button>
+        <button type="button" class="sd-today-btn" id="sdTodayBtn">Today</button>
+      </div>
+      <div class="sd-view-tabs md:w-auto">
+        <button type="button" class="sd-vtab-btn active" data-sd-view="daybook">Daybook</button>
+        <button type="button" class="sd-vtab-btn" data-sd-view="khata">Khata Book</button>
+        <button type="button" class="sd-vtab-btn" data-sd-view="cleared">Cleared</button>
+      </div>
+    </div>
+
+    <div class="p-2.5">
+      <div class="sd-total-pill">
+        <span class="text-[11px] font-black uppercase tracking-wider text-zinc-900/80" id="sdSummaryLabel">Today's Total Payment</span>
+        <span class="text-xl font-black text-zinc-950" id="sdSummaryTotal">₹0</span>
+      </div>
+    </div>
+
+    <div id="sdSwipeArea" class="flex-1 px-2.5 pb-20 space-y-2">
+      <!-- DAYBOOK VIEW -->
+      <div id="sdDaybookPane" class="space-y-2.5">
+        <form id="sdEntryForm" class="sd-entry-card" autocomplete="off">
+          <div class="flex gap-1.5 items-center">
+            <input type="text" id="sdPartyInput" list="sdPartyDatalist" placeholder="Party name..." required class="sd-field flex-1" />
+            <input type="text" id="sdNoteInput" placeholder="Note (optional)" class="sd-field max-w-[130px]" />
+          </div>
+          <div id="sdTopPayBoxes" class="flex flex-wrap gap-1.5 items-center"></div>
+        </form>
+        <div id="sdDaybookList" class="space-y-2"></div>
+      </div>
+
+      <!-- KHATA BOOK VIEW -->
+      <div id="sdKhataPane" class="hidden space-y-2.5">
+        <input type="search" id="sdKhataSearch" placeholder="Search party name in Khata..." class="sd-field" />
+        <div id="sdKhataList" class="space-y-2"></div>
+      </div>
+
+      <!-- CLEARED VIEW -->
+      <div id="sdClearedPane" class="hidden space-y-2.5">
+        <input type="search" id="sdClearedSearch" placeholder="Search cleared hisab (e.g. Saleem 01)..." class="sd-field" />
+        <div id="sdClearedList" class="space-y-2"></div>
+      </div>
+    </div>
+
+    <datalist id="sdPartyDatalist"></datalist>
+
+    <!-- Smart Payment Keypad Sheet -->
+    <div id="sdKeypadSheet" class="sd-keypad">
+      <div class="flex items-center justify-between gap-2 px-1">
+        <div id="sdKpPartyLabel" class="font-extrabold text-sm text-white truncate">Party</div>
+        <div id="sdKpSumPill" class="px-2.5 py-0.5 rounded-full bg-yellow-300 text-zinc-950 text-xs font-black shrink-0">Sum: ₹0</div>
+        <button type="button" id="sdKpCloseBtn" class="px-2.5 py-1 rounded-lg bg-zinc-700 text-white text-xs font-bold shrink-0">Done</button>
+      </div>
+      <div id="sdKpBoxesStrip" class="flex gap-1.5 overflow-x-auto pb-0.5 no-scrollbar"></div>
+      <div id="sdKeypadGrid" class="grid grid-cols-4 gap-1.5">
+        <button type="button" class="sd-kp-key" data-sd-key="7">7</button>
+        <button type="button" class="sd-kp-key" data-sd-key="8">8</button>
+        <button type="button" class="sd-kp-key" data-sd-key="9">9</button>
+        <button type="button" class="sd-kp-key kp-fn" data-sd-key="BACK">⌫</button>
+        <button type="button" class="sd-kp-key" data-sd-key="4">4</button>
+        <button type="button" class="sd-kp-key" data-sd-key="5">5</button>
+        <button type="button" class="sd-kp-key" data-sd-key="6">6</button>
+        <button type="button" class="sd-kp-key kp-plus" data-sd-key="NEW_BOX">+ Box</button>
+        <button type="button" class="sd-kp-key" data-sd-key="1">1</button>
+        <button type="button" class="sd-kp-key" data-sd-key="2">2</button>
+        <button type="button" class="sd-kp-key" data-sd-key="3">3</button>
+        <button type="button" class="sd-kp-key kp-fn" data-sd-key="CLEAR">C</button>
+        <button type="button" class="sd-kp-key" data-sd-key="00">00</button>
+        <button type="button" class="sd-kp-key" data-sd-key="0">0</button>
+        <button type="button" class="sd-kp-key" data-sd-key=".">.</button>
+        <button type="button" class="sd-kp-key kp-enter" data-sd-key="ENTER">Enter</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Generic Modal Backdrop -->
   <div id="modalBackdrop" class="fixed inset-0 bg-black/75 backdrop-blur-xs hidden items-center justify-center p-3 z-[50]">
     <div id="modalContent" class="bg-[#181b22] text-zinc-100 rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto border border-zinc-700">
@@ -367,7 +531,9 @@
         notifications: [],
         savedHisabs: [],
         alterData: {},
+        supplyData: {},
         daybook: {},
+        daybookClearedBatches: [],
         settledDaybookKeys: [],
         hisabMeta: {
           master: {},
@@ -522,7 +688,7 @@
           uDot.className = 'w-1.5 h-1.5 rounded-full ' + (rc.isAdmin ? 'bg-emerald-400' : 'bg-amber-400');
         }
 
-        const adminOnlyIds = ['alterBtn', 'pendingLotsBtn', 'backupRestoreBtn', 'daybookBtn', 'addTableBtn'];
+        const adminOnlyIds = ['alterBtn', 'supplyBtn', 'pendingLotsBtn', 'backupRestoreBtn', 'daybookBtn', 'addTableBtn'];
         adminOnlyIds.forEach(id => {
           const el = document.getElementById(id);
           if (!el) return;
@@ -830,7 +996,9 @@
               state.notifications = Array.isArray(parsed.notifications) ? parsed.notifications : [];
               state.savedHisabs = Array.isArray(parsed.savedHisabs) ? parsed.savedHisabs : [];
               state.alterData = (parsed.alterData && typeof parsed.alterData === 'object') ? parsed.alterData : {};
+              state.supplyData = (parsed.supplyData && typeof parsed.supplyData === 'object') ? parsed.supplyData : {};
               state.daybook = (parsed.daybook && typeof parsed.daybook === 'object') ? parsed.daybook : {};
+              state.daybookClearedBatches = Array.isArray(parsed.daybookClearedBatches) ? parsed.daybookClearedBatches : [];
               state.settledDaybookKeys = Array.isArray(parsed.settledDaybookKeys) ? parsed.settledDaybookKeys : [];
               state.hisabMeta = Object.assign({ master: {}, embroidery: {}, fabrication: {}, washing: {}, tanki: {}, packing: {}, laser: {}, print: {} }, parsed.hisabMeta || {});
               if (parsed.updatedAt) lastLocalMutationAt = Number(parsed.updatedAt) || 0;
@@ -857,7 +1025,9 @@
             notifications: state.notifications,
             savedHisabs: state.savedHisabs,
             alterData: state.alterData,
+            supplyData: state.supplyData,
             daybook: state.daybook,
+            daybookClearedBatches: state.daybookClearedBatches,
             settledDaybookKeys: state.settledDaybookKeys,
             hisabMeta: state.hisabMeta,
             updatedAt: Date.now()
@@ -926,7 +1096,9 @@
                 notifications: state.notifications,
                 savedHisabs: state.savedHisabs,
                 alterData: state.alterData,
+                supplyData: state.supplyData,
                 daybook: state.daybook,
+                daybookClearedBatches: state.daybookClearedBatches,
                 settledDaybookKeys: state.settledDaybookKeys,
                 hisabMeta: state.hisabMeta,
                 updatedBy: state.activeUser,
@@ -1038,8 +1210,17 @@
             if (data.alterData && typeof data.alterData === 'object') {
               state.alterData = Object.assign({}, data.alterData, state.alterData);
             }
+            if (data.supplyData && typeof data.supplyData === 'object') {
+              state.supplyData = Object.assign({}, data.supplyData, state.supplyData);
+            }
             if (data.daybook && typeof data.daybook === 'object') {
               state.daybook = Object.assign({}, data.daybook, state.daybook);
+            }
+            if (Array.isArray(data.daybookClearedBatches)) {
+              const bMap = new Map();
+              (state.daybookClearedBatches || []).forEach(b => bMap.set(b.id, b));
+              data.daybookClearedBatches.forEach(b => { if (!bMap.has(b.id)) bMap.set(b.id, b); });
+              state.daybookClearedBatches = Array.from(bMap.values());
             }
             if (Array.isArray(data.settledDaybookKeys)) {
               state.settledDaybookKeys = Array.from(new Set([...(state.settledDaybookKeys || []), ...data.settledDaybookKeys]));
@@ -3634,9 +3815,13 @@
           });
         });
         Object.keys(state.alterData || {}).forEach(n => { if (n.trim()) set.add(n.trim()); });
+        Object.keys(state.supplyData || {}).forEach(n => { if (n.trim()) set.add(n.trim()); });
         Object.values(state.daybook || {}).forEach(dayVal => {
           if (Array.isArray(dayVal)) {
-            dayVal.forEach(item => { if ((item.name || '').trim()) set.add(item.name.trim()); });
+            dayVal.forEach(item => {
+              const nm = (item.party || item.name || '').trim();
+              if (nm) set.add(nm);
+            });
           } else if (dayVal && Array.isArray(dayVal.columns)) {
             dayVal.columns.forEach(col => { if ((col.name || '').trim()) set.add(col.name.trim()); });
           }
@@ -3645,36 +3830,39 @@
       }
 
       function normalizeDaybookDay(dayVal, dtKey) {
-        let cols = [];
+        if (Array.isArray(dayVal)) {
+          return dayVal.map((item, idx) => {
+            if (item && item.party !== undefined) {
+              if (!item.id) item.id = 'db_' + (dtKey || 'd') + '_' + idx + '_' + Math.random().toString(36).slice(2, 5);
+              return item;
+            }
+            return {
+              id: item.id || ('db_' + (dtKey || 'd') + '_' + idx),
+              party: (item.name || item.party || '').trim(),
+              amount: Number(item.payment ?? item.amount) || 0,
+              note: item.note || ''
+            };
+          }).filter(x => x.party || x.amount > 0 || x.note);
+        }
+        const list = [];
         if (dayVal && Array.isArray(dayVal.columns)) {
-          cols = dayVal.columns;
-        } else if (Array.isArray(dayVal)) {
-          const byName = new Map();
-          dayVal.forEach(item => {
-            const nm = (item.name || '').trim();
+          dayVal.columns.forEach((col, cIdx) => {
+            const nm = (col.name || '').trim();
             if (!nm) return;
-            const key = nm.toLowerCase();
-            if (!byName.has(key)) {
-              const col = { name: nm, payments: [] };
-              byName.set(key, col);
-              cols.push(col);
-            }
-            if (item.payment !== undefined && item.payment !== '') {
-              byName.get(key).payments.push({ id: 'db_' + dtKey + '_' + cols.length + '_' + byName.get(key).payments.length, val: String(item.payment) });
-            }
+            (col.payments || []).forEach((p, pIdx) => {
+              const amt = Number(p && typeof p === 'object' ? p.val : p) || 0;
+              if (amt > 0) {
+                list.push({
+                  id: (p && p.id) ? p.id : ('db_' + (dtKey || 'd') + '_' + cIdx + '_' + pIdx),
+                  party: nm,
+                  amount: amt,
+                  note: ''
+                });
+              }
+            });
           });
         }
-        cols.forEach((col, cIdx) => {
-          if (!Array.isArray(col.payments)) col.payments = [];
-          col.payments = col.payments.map((p, pIdx) => {
-            if (p && typeof p === 'object') {
-              if (!p.id) p.id = 'db_' + (dtKey || 'd') + '_' + cIdx + '_' + pIdx + '_' + Math.random().toString(36).slice(2, 5);
-              return p;
-            }
-            return { id: 'db_' + (dtKey || 'd') + '_' + cIdx + '_' + pIdx, val: String(p ?? '') };
-          });
-        });
-        return { columns: cols };
+        return list;
       }
 
       function getDaybookPaymentsForName(name) {
@@ -3683,21 +3871,20 @@
         const settled = new Set(state.settledDaybookKeys || []);
         const list = [];
         Object.keys(state.daybook || {}).sort().forEach(dt => {
-          const dayObj = normalizeDaybookDay(state.daybook[dt], dt);
-          state.daybook[dt] = dayObj;
-          dayObj.columns.forEach(col => {
-            if ((col.name || '').trim().toLowerCase() === target) {
-              (col.payments || []).forEach(pObj => {
-                const p = parseFloat(pObj.val) || 0;
-                if (p > 0 && !settled.has(pObj.id)) {
-                  list.push({
-                    dbId: pObj.id,
-                    date: dt,
-                    payment: p,
-                    isDaybook: true
-                  });
-                }
-              });
+          const entries = normalizeDaybookDay(state.daybook[dt], dt);
+          state.daybook[dt] = entries;
+          entries.forEach(entry => {
+            if ((entry.party || '').trim().toLowerCase() === target) {
+              const p = parseFloat(entry.amount) || 0;
+              if (p > 0 && !settled.has(entry.id) && !entry.cleared) {
+                list.push({
+                  dbId: entry.id,
+                  date: dt,
+                  payment: p,
+                  note: entry.note || '',
+                  isDaybook: true
+                });
+              }
             }
           });
         });
@@ -3705,225 +3892,918 @@
       }
 
       function openDaybookModal(selectedDate) {
+        const overlay = document.getElementById('smartDaybookOverlay');
+        if (!overlay) return;
+        overlay.classList.remove('hidden');
+        overlay.classList.add('flex');
+
         let curDate = selectedDate || todayISO();
+        let activeView = 'daybook';
+        const expandedDaybook = {};
+        const expandedKhata = {};
+        const expandedCleared = {};
+        let kpOpen = false;
+        let kpTargetParty = null;
+        let kpBoxes = [''];
+        let kpActiveIdx = 0;
+
+        const datePicker = document.getElementById('sdDatePicker');
+        const dateDisplayText = document.getElementById('sdDateDisplayText');
+        const todayBtn = document.getElementById('sdTodayBtn');
+        const summaryLabel = document.getElementById('sdSummaryLabel');
+        const summaryTotal = document.getElementById('sdSummaryTotal');
+        const daybookList = document.getElementById('sdDaybookList');
+        const khataList = document.getElementById('sdKhataList');
+        const clearedList = document.getElementById('sdClearedList');
+        const daybookPane = document.getElementById('sdDaybookPane');
+        const khataPane = document.getElementById('sdKhataPane');
+        const clearedPane = document.getElementById('sdClearedPane');
+        const partyDatalist = document.getElementById('sdPartyDatalist');
+        const khataSearch = document.getElementById('sdKhataSearch');
+        const clearedSearch = document.getElementById('sdClearedSearch');
+        const partyInput = document.getElementById('sdPartyInput');
+        const noteInput = document.getElementById('sdNoteInput');
+        const topPayBoxes = document.getElementById('sdTopPayBoxes');
+        const keypadSheet = document.getElementById('sdKeypadSheet');
+        const kpPartyLabel = document.getElementById('sdKpPartyLabel');
+        const kpSumPill = document.getElementById('sdKpSumPill');
+        const kpBoxesStrip = document.getElementById('sdKpBoxesStrip');
+
+        function formatINR(num) {
+          return '₹' + (Number(num) || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+        }
+        function shiftDate(dateStr, deltaDays) {
+          const p = dateStr.split('-');
+          const d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+          d.setDate(d.getDate() + deltaDays);
+          const off = d.getTimezoneOffset();
+          return new Date(d.getTime() - off * 60000).toISOString().slice(0, 10);
+        }
+        function ensureDay(dt) {
+          state.daybook[dt] = normalizeDaybookDay(state.daybook[dt], dt);
+          return state.daybook[dt];
+        }
+        function requireDbPin(onSuccess) {
+          openModal(`
+            <div class="p-4 sm:p-5 space-y-3">
+              <div class="flex items-center justify-between border-b border-zinc-700 pb-2.5">
+                <h3 class="text-base font-bold text-amber-400">Enter PIN to Unlock</h3>
+                <button type="button" data-close-modal class="w-8 h-8 rounded-full bg-zinc-800 text-zinc-300 font-bold">✕</button>
+              </div>
+              <p class="text-xs text-zinc-400">Cleared / Purani entry edit ya unlock karne ke liye PIN daalein.</p>
+              <input id="sdPinCheckInp" type="password" inputmode="numeric" maxlength="8" placeholder="Enter PIN" class="w-full border rounded-lg px-3 py-2 text-sm" />
+              <div id="sdPinErr" class="hidden text-xs text-rose-400 font-bold">Galat PIN!</div>
+              <div class="flex justify-end gap-2">
+                <button type="button" data-close-modal class="px-3.5 py-1.5 rounded-lg bg-zinc-800 text-zinc-200 text-xs font-bold">Cancel</button>
+                <button id="sdPinOkBtn" type="button" class="px-4 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-extrabold">Unlock</button>
+              </div>
+            </div>
+          `);
+          const inp = document.getElementById('sdPinCheckInp');
+          setTimeout(() => inp && inp.focus(), 50);
+          document.getElementById('sdPinOkBtn').addEventListener('click', () => {
+            if ((inp.value || '').trim() === (state.editPin || DEFAULT_EDIT_PIN)) {
+              closeModal();
+              onSuccess();
+            } else {
+              document.getElementById('sdPinErr').classList.remove('hidden');
+              inp.value = '';
+              inp.focus();
+            }
+          });
+        }
+        function openDbEditModal(entry, dateStr) {
+          const runEdit = () => {
+            const suggestions = getAllPartyNameSuggestions();
+            openModal(`
+              <div class="p-4 sm:p-5 space-y-3">
+                <div class="flex items-center justify-between border-b border-zinc-700 pb-2.5">
+                  <h3 class="text-base font-bold text-amber-400">Edit Entry (${escapeHtml(formatDateDMY(dateStr))})</h3>
+                  <button type="button" data-close-modal class="w-8 h-8 rounded-full bg-zinc-800 text-zinc-300 font-bold">✕</button>
+                </div>
+                <form id="sdEditForm" class="space-y-2.5">
+                  <div>
+                    <label class="block text-xs font-semibold mb-1">Party Name</label>
+                    <input name="party" list="dl_sd_edit_parties" type="text" required value="${escapeHtml(entry.party || '')}" class="w-full border rounded-lg px-3 py-2 text-sm" />
+                    <datalist id="dl_sd_edit_parties">${suggestions.map(n => `<option value="${escapeHtml(n)}"></option>`).join('')}</datalist>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold mb-1">Payment Amount (₹)</label>
+                    <input name="amount" type="number" step="0.01" required value="${escapeHtml(String(entry.amount || 0))}" class="w-full border rounded-lg px-3 py-2 text-sm font-bold" />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold mb-1">Note (optional)</label>
+                    <input name="note" type="text" value="${escapeHtml(entry.note || '')}" class="w-full border rounded-lg px-3 py-2 text-sm" />
+                  </div>
+                  <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" data-close-modal class="px-3.5 py-1.5 rounded-lg bg-zinc-800 text-zinc-200 text-xs font-bold">Cancel</button>
+                    <button type="submit" class="px-4 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-extrabold">Save Changes</button>
+                  </div>
+                </form>
+              </div>
+            `);
+            document.getElementById('sdEditForm').addEventListener('submit', (e) => {
+              e.preventDefault();
+              const fd = new FormData(e.target);
+              const np = (fd.get('party') || '').trim();
+              const na = parseFloat(fd.get('amount'));
+              if (!np || isNaN(na) || na <= 0) { showToast('Valid party & amount daalein'); return; }
+              entry.party = np;
+              entry.amount = na;
+              entry.note = (fd.get('note') || '').trim();
+              if (entry.cleared && entry.clearedBatchId) {
+                const batch = (state.daybookClearedBatches || []).find(b => b.id === entry.clearedBatchId);
+                if (batch) {
+                  batch.total = (state.daybook[dateStr] || []).filter(x => x.clearedBatchId === batch.id).reduce((s, x) => s + (Number(x.amount) || 0), 0);
+                }
+              }
+              saveLocalState();
+              closeModal();
+              renderAllSd();
+              showToast('Entry updated!');
+            });
+          };
+          if (dateStr !== todayISO() || entry.cleared) requireDbPin(runEdit);
+          else runEdit();
+        }
+        function clearDateForParty(partyName, dateStr) {
+          const entries = ensureDay(dateStr);
+          const targets = entries.filter(e => (e.party || '').trim() === partyName && !e.cleared);
+          if (!targets.length) return;
+          if (!Array.isArray(state.daybookClearedBatches)) state.daybookClearedBatches = [];
+          const count = state.daybookClearedBatches.filter(b => b.party === partyName).length;
+          const label = partyName + ' ' + String(count + 1).padStart(2, '0');
+          const batchId = 'dbbatch_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 5);
+          let total = 0;
+          targets.forEach(e => {
+            total += Number(e.amount) || 0;
+            e.cleared = true;
+            e.clearedBatchId = batchId;
+            e.clearedLabel = label;
+          });
+          state.daybookClearedBatches.push({ id: batchId, label, party: partyName, date: dateStr, total });
+          saveLocalState();
+          renderAllSd();
+          showToast('Saved to Cleared as ' + label);
+        }
+        function getKpSum() {
+          return kpBoxes.reduce((s, v) => s + (parseFloat(v) || 0), 0);
+        }
+        function renderTopPayBoxes() {
+          topPayBoxes.innerHTML = '';
+          const boxes = kpTargetParty === null ? kpBoxes : [''];
+          boxes.forEach((val, idx) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'sd-pay-chip' + (kpOpen && kpTargetParty === null && kpActiveIdx === idx ? ' active-box' : '');
+            b.innerHTML = `<span class="text-[10px] font-bold text-zinc-400">#${idx + 1}</span><span>${val ? '₹' + val : '₹ Payment'}</span>`;
+            b.addEventListener('click', () => {
+              if (kpTargetParty !== null) { kpTargetParty = null; kpBoxes = ['']; }
+              kpActiveIdx = idx;
+              openKeypad(null, idx);
+            });
+            topPayBoxes.appendChild(b);
+          });
+          const saveBtn = document.createElement('button');
+          saveBtn.type = 'submit';
+          saveBtn.className = 'px-4 h-[38px] rounded-[10px] bg-lime-400 hover:bg-lime-300 text-zinc-950 font-extrabold text-xs shrink-0';
+          saveBtn.textContent = 'Save';
+          topPayBoxes.appendChild(saveBtn);
+        }
+        function renderKeypad() {
+          keypadSheet.classList.toggle('open', kpOpen);
+          if (!kpOpen) return;
+          kpPartyLabel.textContent = kpTargetParty ? kpTargetParty : (partyInput.value.trim() || 'New Payment');
+          kpSumPill.textContent = 'Sum: ' + formatINR(getKpSum());
+          kpBoxesStrip.innerHTML = '';
+          kpBoxes.forEach((val, idx) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'sd-kp-box' + (idx === kpActiveIdx ? ' active' : '');
+            b.innerHTML = `<span class="text-[10px] text-zinc-400">#${idx + 1}</span><span>${val ? '₹' + val : '0'}</span>`;
+            b.addEventListener('click', () => {
+              kpActiveIdx = idx;
+              renderKeypad();
+              if (kpTargetParty === null) renderTopPayBoxes();
+            });
+            kpBoxesStrip.appendChild(b);
+          });
+        }
+        function openKeypad(targetParty, activeIdx) {
+          if (targetParty !== kpTargetParty) {
+            kpTargetParty = targetParty;
+            kpBoxes = [''];
+            kpActiveIdx = 0;
+          } else if (typeof activeIdx === 'number') {
+            kpActiveIdx = activeIdx;
+          }
+          kpOpen = true;
+          partyInput.blur();
+          noteInput.blur();
+          renderKeypad();
+          renderTopPayBoxes();
+        }
+        function closeKeypad() {
+          kpOpen = false;
+          renderKeypad();
+          renderTopPayBoxes();
+        }
+        function saveKeypadEntries() {
+          const party = kpTargetParty ? kpTargetParty : partyInput.value.trim();
+          if (!party) {
+            showToast('Pehle Party Name daalein');
+            closeKeypad();
+            partyInput.focus();
+            return;
+          }
+          const valid = kpBoxes.map(v => parseFloat(v)).filter(n => !isNaN(n) && n > 0);
+          if (!valid.length) { showToast('Payment amount daalein'); return; }
+          const list = ensureDay(curDate);
+          const note = kpTargetParty === null ? noteInput.value.trim() : '';
+          valid.forEach(amt => {
+            list.push({
+              id: 'db_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6),
+              party,
+              amount: amt,
+              note
+            });
+          });
+          saveLocalState();
+          if (kpTargetParty === null) { partyInput.value = ''; noteInput.value = ''; }
+          kpBoxes = [''];
+          kpActiveIdx = 0;
+          kpTargetParty = null;
+          kpOpen = false;
+          renderAllSd();
+          showToast('Saved ' + valid.length + ' payment(s) for ' + party);
+        }
+        function handleKeypadAction(key) {
+          let cur = kpBoxes[kpActiveIdx] || '';
+          if (key === 'BACK') kpBoxes[kpActiveIdx] = cur.slice(0, -1);
+          else if (key === 'CLEAR') kpBoxes[kpActiveIdx] = '';
+          else if (key === 'NEW_BOX') { kpBoxes.push(''); kpActiveIdx = kpBoxes.length - 1; }
+          else if (key === 'ENTER') { saveKeypadEntries(); return; }
+          else if (key === '.') { if (!cur.includes('.')) kpBoxes[kpActiveIdx] = (cur || '0') + '.'; }
+          else {
+            if (cur === '0' && key !== '.') cur = '';
+            if (cur.length < 10) kpBoxes[kpActiveIdx] = cur + key;
+          }
+          renderKeypad();
+          if (kpTargetParty === null) renderTopPayBoxes();
+        }
+        function renderDaybookView() {
+          const entries = ensureDay(curDate);
+          let dayTotal = 0;
+          const groups = {};
+          const order = [];
+          entries.forEach(item => {
+            const nm = (item.party || '').trim();
+            if (!nm) return;
+            const amt = Number(item.amount) || 0;
+            dayTotal += amt;
+            if (!groups[nm]) { groups[nm] = { total: 0, items: [], allCleared: true }; order.push(nm); }
+            groups[nm].total += amt;
+            groups[nm].items.push(item);
+            if (!item.cleared) groups[nm].allCleared = false;
+          });
+          if (activeView === 'daybook') {
+            summaryLabel.textContent = curDate === todayISO() ? "Today's Total Payment" : `Total Payment (${formatDateDMY(curDate)})`;
+            summaryTotal.textContent = formatINR(dayTotal);
+          }
+          daybookList.innerHTML = '';
+          if (!order.length) {
+            daybookList.innerHTML = `<div class="text-center py-7 text-zinc-400 text-xs bg-[#262934] border border-dashed border-[#383d4d] rounded-2xl">No payments for ${escapeHtml(formatDateDMY(curDate))}. Party Name aur Payment daalein.</div>`;
+            return;
+          }
+          order.forEach(nm => {
+            const g = groups[nm];
+            const isExp = !!expandedDaybook[nm];
+            const card = document.createElement('div');
+            card.className = 'sd-party-card' + (isExp ? ' expanded' : '');
+            if (g.allCleared) card.style.borderColor = 'var(--sd-green-border)';
+            card.innerHTML = `
+              <div class="sd-party-row" style="${g.allCleared ? 'background:var(--sd-green-bg);' : ''}">
+                <div class="min-w-0 flex-1 cursor-pointer" data-sd-toggle="${escapeHtml(nm)}">
+                  <div class="font-extrabold text-[15px] truncate ${g.allCleared ? 'text-green-300' : 'text-white'}">${escapeHtml(nm)}</div>
+                  <div class="text-[11px] text-zinc-400 mt-0.5">${g.items.length} entr${g.items.length === 1 ? 'y' : 'ies'}${g.allCleared ? ' · Cleared (Read-Only)' : ' · + to add or tap total'}</div>
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <button type="button" data-sd-plus="${escapeHtml(nm)}" class="sd-plus-btn" title="Add payment">+</button>
+                  <button type="button" data-sd-toggle="${escapeHtml(nm)}" class="sd-tot-btn" style="${g.allCleared ? 'background:var(--sd-green);' : ''}">
+                    <span>${formatINR(g.total)}</span><span class="text-[10px] opacity-80">${isExp ? '▲' : '▼'}</span>
+                  </button>
+                </div>
+              </div>
+              <div class="sd-drawer">
+                <table class="sd-table">
+                  <thead><tr><th style="width:28px;">#</th><th>Amount</th><th>Note</th><th style="text-align:right;">Action</th></tr></thead>
+                  <tbody>
+                    ${g.items.map((en, idx) => `
+                      <tr class="${en.cleared ? 'sd-cleared-row' : ''}">
+                        <td>${idx + 1}</td>
+                        <td class="font-extrabold ${en.cleared ? 'text-green-300' : 'text-lime-400'}">${formatINR(en.amount)}</td>
+                        <td>${en.cleared ? `<span class="px-1.5 py-0.5 rounded bg-green-500 text-zinc-950 text-[10px] font-black">${escapeHtml(en.clearedLabel || 'CLEARED')}</span> ${escapeHtml(en.note || '')}` : escapeHtml(en.note || '—')}</td>
+                        <td style="text-align:right;white-space:nowrap;">
+                          <button type="button" data-sd-edit="${en.id}" class="px-2 py-1 rounded bg-sky-500/15 border border-sky-400/40 text-sky-300 text-[11px] font-bold mr-1">Edit</button>
+                          ${en.cleared
+                            ? `<button type="button" data-sd-unlock="${en.id}" class="px-2 py-1 rounded bg-green-500/20 border border-green-400/40 text-green-300 text-[11px] font-bold">PIN Unlock</button>`
+                            : `<button type="button" data-sd-rm="${en.id}" class="px-2 py-1 rounded bg-rose-500/15 border border-rose-400/40 text-rose-300 text-[11px] font-bold">Remove</button>`}
+                        </td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            `;
+            card.querySelectorAll('[data-sd-plus]').forEach(b => b.addEventListener('click', () => openKeypad(nm, 0)));
+            card.querySelectorAll('[data-sd-toggle]').forEach(b => b.addEventListener('click', () => { expandedDaybook[nm] = !expandedDaybook[nm]; renderDaybookView(); }));
+            card.querySelectorAll('[data-sd-edit]').forEach(b => b.addEventListener('click', () => {
+              const en = entries.find(x => x.id === b.getAttribute('data-sd-edit'));
+              if (en) openDbEditModal(en, curDate);
+            }));
+            card.querySelectorAll('[data-sd-rm]').forEach(b => b.addEventListener('click', () => {
+              const id = b.getAttribute('data-sd-rm');
+              state.daybook[curDate] = entries.filter(x => x.id !== id);
+              saveLocalState();
+              renderAllSd();
+              showToast('Entry removed');
+            }));
+            card.querySelectorAll('[data-sd-unlock]').forEach(b => b.addEventListener('click', () => {
+              const id = b.getAttribute('data-sd-unlock');
+              requireDbPin(() => {
+                state.daybook[curDate] = entries.filter(x => x.id !== id);
+                saveLocalState();
+                renderAllSd();
+                showToast('Cleared entry removed');
+              });
+            }));
+            daybookList.appendChild(card);
+          });
+        }
+        function renderKhataView() {
+          const q = (khataSearch.value || '').trim().toLowerCase();
+          const partyMap = {};
+          Object.keys(state.daybook || {}).sort().forEach(dt => {
+            ensureDay(dt).forEach(item => {
+              if (item.cleared) return;
+              const nm = (item.party || '').trim();
+              if (!nm) return;
+              const amt = Number(item.amount) || 0;
+              if (!partyMap[nm]) partyMap[nm] = { total: 0, byDate: {}, dateOrder: [] };
+              partyMap[nm].total += amt;
+              if (!partyMap[nm].byDate[dt]) { partyMap[nm].byDate[dt] = { total: 0, items: [] }; partyMap[nm].dateOrder.push(dt); }
+              partyMap[nm].byDate[dt].total += amt;
+              partyMap[nm].byDate[dt].items.push({ date: dt, id: item.id, amount: amt, note: item.note || '', checked: !!item.checked, ref: item });
+            });
+          });
+          const names = Object.keys(partyMap).filter(n => !q || n.toLowerCase().includes(q)).sort();
+          const grand = names.reduce((s, n) => s + partyMap[n].total, 0);
+          if (activeView === 'khata') {
+            summaryLabel.textContent = 'Khata Total Payment';
+            summaryTotal.textContent = formatINR(grand);
+          }
+          khataList.innerHTML = '';
+          if (!names.length) {
+            khataList.innerHTML = '<div class="text-center py-7 text-zinc-400 text-xs bg-[#262934] border border-dashed border-[#383d4d] rounded-2xl">No active Khata records found.</div>';
+            return;
+          }
+          names.forEach(nm => {
+            const info = partyMap[nm];
+            const isExp = !!expandedKhata[nm];
+            const totalCount = info.dateOrder.reduce((s, dt) => s + info.byDate[dt].items.length, 0);
+            const card = document.createElement('div');
+            card.className = 'sd-party-card' + (isExp ? ' expanded' : '');
+            card.innerHTML = `
+              <div class="sd-party-row">
+                <div class="min-w-0 flex-1 cursor-pointer" data-kh-toggle="1">
+                  <div class="font-extrabold text-[15px] text-white truncate">${escapeHtml(nm)}</div>
+                  <div class="text-[11px] text-zinc-400 mt-0.5">${totalCount} payment${totalCount === 1 ? '' : 's'} · + to add or tap total</div>
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <button type="button" data-kh-plus="1" class="sd-plus-btn">+</button>
+                  <button type="button" data-kh-toggle="1" class="sd-tot-btn"><span>${formatINR(info.total)}</span><span class="text-[10px] opacity-80">${isExp ? '▲' : '▼'}</span></button>
+                </div>
+              </div>
+              <div class="sd-drawer"></div>
+            `;
+            card.querySelector('[data-kh-plus]').addEventListener('click', () => openKeypad(nm, 0));
+            card.querySelectorAll('[data-kh-toggle]').forEach(b => b.addEventListener('click', () => { expandedKhata[nm] = !expandedKhata[nm]; renderKhataView(); }));
+            const drawer = card.querySelector('.sd-drawer');
+            info.dateOrder.forEach((dt, dIdx) => {
+              const dg = info.byDate[dt];
+              const gBox = document.createElement('div');
+              gBox.className = 'sd-khata-group alt-' + (dIdx % 3);
+              const sorted = dg.items.slice().sort((a, b) => (a.checked ? 1 : 0) - (b.checked ? 1 : 0));
+              gBox.innerHTML = `
+                <table class="sd-table" style="background:transparent;border:none;">
+                  <thead><tr><th style="width:28px;text-align:center;">✓</th><th>Date</th><th>Amount</th><th>Note</th><th style="text-align:right;">Action</th></tr></thead>
+                  <tbody>
+                    ${sorted.map(e => `
+                      <tr class="${e.checked ? 'opacity-55 line-through text-zinc-400' : ''}">
+                        <td style="text-align:center;"><input type="checkbox" data-kh-chk="${e.date}::${e.id}" ${e.checked ? 'checked' : ''} class="w-4 h-4 accent-lime-400 cursor-pointer" /></td>
+                        <td>${escapeHtml(formatDateDMY(e.date))}</td>
+                        <td class="font-extrabold text-lime-400">${formatINR(e.amount)}</td>
+                        <td>${escapeHtml(e.note || '—')}</td>
+                        <td style="text-align:right;white-space:nowrap;">
+                          <button type="button" data-kh-edit="${e.date}::${e.id}" class="px-2 py-1 rounded bg-sky-500/15 border border-sky-400/40 text-sky-300 text-[11px] font-bold mr-1">Edit</button>
+                          <button type="button" data-kh-rm="${e.date}::${e.id}" class="px-2 py-1 rounded bg-rose-500/15 border border-rose-400/40 text-rose-300 text-[11px] font-bold">Remove</button>
+                        </td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+                <div class="flex items-center justify-end gap-2.5 px-2.5 py-1.5 bg-zinc-950/45 border-t border-[#383d4d]">
+                  <span class="text-xs font-black text-yellow-300">${escapeHtml(formatDateDMY(dt))} Total: ${formatINR(dg.total)}</span>
+                  <button type="button" data-kh-clear="${dt}" class="px-2.5 py-1 rounded-lg bg-green-500 text-zinc-950 text-[11px] font-black">Clear Hisab</button>
+                </div>
+              `;
+              gBox.querySelectorAll('[data-kh-chk]').forEach(chk => chk.addEventListener('change', () => {
+                const [d, id] = chk.getAttribute('data-kh-chk').split('::');
+                const found = (state.daybook[d] || []).find(x => x.id === id);
+                if (found) { found.checked = chk.checked; saveLocalState(); renderKhataView(); }
+              }));
+              gBox.querySelectorAll('[data-kh-edit]').forEach(btn => btn.addEventListener('click', () => {
+                const [d, id] = btn.getAttribute('data-kh-edit').split('::');
+                const found = (state.daybook[d] || []).find(x => x.id === id);
+                if (found) openDbEditModal(found, d);
+              }));
+              gBox.querySelectorAll('[data-kh-rm]').forEach(btn => btn.addEventListener('click', () => {
+                const [d, id] = btn.getAttribute('data-kh-rm').split('::');
+                state.daybook[d] = (state.daybook[d] || []).filter(x => x.id !== id);
+                saveLocalState();
+                renderAllSd();
+                showToast('Entry removed');
+              }));
+              gBox.querySelector('[data-kh-clear]').addEventListener('click', () => clearDateForParty(nm, dt));
+              drawer.appendChild(gBox);
+            });
+            khataList.appendChild(card);
+          });
+        }
+        function renderClearedView() {
+          const q = (clearedSearch.value || '').trim().toLowerCase();
+          const batches = (state.daybookClearedBatches || []).filter(b => !q || (b.label || '').toLowerCase().includes(q) || (b.party || '').toLowerCase().includes(q));
+          const grand = batches.reduce((s, b) => s + (Number(b.total) || 0), 0);
+          if (activeView === 'cleared') {
+            summaryLabel.textContent = 'Total Cleared Hisab';
+            summaryTotal.textContent = formatINR(grand);
+          }
+          clearedList.innerHTML = '';
+          if (!batches.length) {
+            clearedList.innerHTML = '<div class="text-center py-7 text-zinc-400 text-xs bg-[#262934] border border-dashed border-[#383d4d] rounded-2xl">No cleared hisab yet. Khata Book me Clear Hisab dabayein.</div>';
+            return;
+          }
+          batches.forEach(batch => {
+            const isExp = !!expandedCleared[batch.id];
+            const items = ensureDay(batch.date).filter(e => e.clearedBatchId === batch.id);
+            const card = document.createElement('div');
+            card.className = 'sd-party-card' + (isExp ? ' expanded' : '');
+            card.style.borderColor = 'var(--sd-green-border)';
+            card.innerHTML = `
+              <div class="sd-party-row" style="background:var(--sd-green-bg);">
+                <div class="min-w-0 flex-1 cursor-pointer" data-cl-toggle="1">
+                  <div class="font-extrabold text-[15px] text-green-300 truncate">${escapeHtml(batch.label)}</div>
+                  <div class="text-[11px] text-zinc-400 mt-0.5">${escapeHtml(formatDateDMY(batch.date))} · ${items.length} payment(s) · Read-Only</div>
+                </div>
+                <button type="button" data-cl-toggle="1" class="sd-tot-btn" style="background:var(--sd-green);"><span>${formatINR(batch.total)}</span><span class="text-[10px] opacity-80">${isExp ? '▲' : '▼'}</span></button>
+              </div>
+              <div class="sd-drawer">
+                <table class="sd-table">
+                  <thead><tr><th>#</th><th>Date</th><th>Amount</th><th>Note</th></tr></thead>
+                  <tbody>
+                    ${items.map((e, i) => `<tr class="sd-cleared-row"><td>${i + 1}</td><td>${escapeHtml(formatDateDMY(batch.date))}</td><td class="font-extrabold text-green-300">${formatINR(e.amount)}</td><td>${escapeHtml(e.note || '—')}</td></tr>`).join('')}
+                  </tbody>
+                </table>
+                <div class="flex justify-end">
+                  <button type="button" data-cl-restore="1" class="px-2.5 py-1 rounded bg-green-500/20 border border-green-400/40 text-green-300 text-[11px] font-bold">PIN Unlock / Restore to Khata</button>
+                </div>
+              </div>
+            `;
+            card.querySelectorAll('[data-cl-toggle]').forEach(b => b.addEventListener('click', () => { expandedCleared[batch.id] = !expandedCleared[batch.id]; renderClearedView(); }));
+            card.querySelector('[data-cl-restore]').addEventListener('click', () => {
+              requireDbPin(() => {
+                items.forEach(e => { e.cleared = false; delete e.clearedBatchId; delete e.clearedLabel; });
+                state.daybookClearedBatches = (state.daybookClearedBatches || []).filter(b => b.id !== batch.id);
+                saveLocalState();
+                renderAllSd();
+                showToast(batch.label + ' restored to Khata');
+              });
+            });
+            clearedList.appendChild(card);
+          });
+        }
+        function renderAllSd() {
+          datePicker.value = curDate;
+          dateDisplayText.textContent = formatDateDMY(curDate);
+          todayBtn.classList.toggle('is-today', curDate === todayISO());
+          daybookPane.classList.toggle('hidden', activeView !== 'daybook');
+          khataPane.classList.toggle('hidden', activeView !== 'khata');
+          clearedPane.classList.toggle('hidden', activeView !== 'cleared');
+          overlay.querySelectorAll('[data-sd-view]').forEach(b => b.classList.toggle('active', b.getAttribute('data-sd-view') === activeView));
+          partyDatalist.innerHTML = getAllPartyNameSuggestions().map(n => `<option value="${escapeHtml(n)}"></option>`).join('');
+          renderTopPayBoxes();
+          renderKeypad();
+          renderDaybookView();
+          renderKhataView();
+          renderClearedView();
+        }
+
+        // Bind clean one-time listeners using .onclick / .oninput / .onchange
+        document.getElementById('sdBackBtn').onclick = () => {
+          closeKeypad();
+          overlay.classList.add('hidden');
+          overlay.classList.remove('flex');
+        };
+        document.getElementById('sdPrevDayBtn').onclick = () => { curDate = shiftDate(curDate, -1); renderAllSd(); };
+        document.getElementById('sdNextDayBtn').onclick = () => { curDate = shiftDate(curDate, 1); renderAllSd(); };
+        todayBtn.onclick = () => { curDate = todayISO(); renderAllSd(); };
+        datePicker.onchange = () => { if (datePicker.value) { curDate = datePicker.value; renderAllSd(); } };
+        overlay.querySelectorAll('[data-sd-view]').forEach(btn => {
+          btn.onclick = () => { activeView = btn.getAttribute('data-sd-view'); renderAllSd(); };
+        });
+        document.getElementById('sdEntryForm').onsubmit = (e) => {
+          e.preventDefault();
+          if (kpTargetParty !== null) { kpTargetParty = null; kpBoxes = ['']; }
+          saveKeypadEntries();
+        };
+        khataSearch.oninput = renderKhataView;
+        clearedSearch.oninput = renderClearedView;
+        document.getElementById('sdKpCloseBtn').onclick = closeKeypad;
+        document.getElementById('sdKeypadGrid').onclick = (ev) => {
+          const b = ev.target.closest('[data-sd-key]');
+          if (b) handleKeypadAction(b.getAttribute('data-sd-key'));
+        };
+        document.getElementById('sdShareBtn').onclick = () => {
+          const entries = ensureDay(curDate);
+          const totals = {};
+          let dayTotal = 0;
+          entries.forEach(e => { const a = Number(e.amount) || 0; dayTotal += a; totals[e.party] = (totals[e.party] || 0) + a; });
+          const txt = ['Smart Daybook (' + formatDateDMY(curDate) + ')', 'Total Payment: ' + formatINR(dayTotal), ...Object.keys(totals).map(n => '• ' + n + ': ' + formatINR(totals[n]))].join('\n');
+          if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(() => showToast('Summary copied!')).catch(() => {});
+          else showToast('Summary ready');
+        };
+        document.getElementById('sdCsvBtn').onclick = () => {
+          const rows = [['Date', 'Party', 'Amount', 'Note', 'Status']];
+          Object.keys(state.daybook || {}).sort().forEach(dt => {
+            ensureDay(dt).forEach(e => {
+              rows.push([formatDateDMY(dt), '"' + String(e.party || '').replace(/"/g, '""') + '"', Number(e.amount) || 0, '"' + String(e.note || '').replace(/"/g, '""') + '"', e.cleared ? (e.clearedLabel || 'CLEARED') : 'ACTIVE']);
+            });
+          });
+          const blob = new Blob([rows.map(r => r.join(',')).join('\n')], { type: 'text/csv' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'daybook-export-' + todayISO() + '.csv';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+          showToast('CSV downloaded');
+        };
+
+        const swipeArea = document.getElementById('sdSwipeArea');
+        let swX = 0, swY = 0;
+        swipeArea.ontouchstart = (e) => { if (e.touches && e.touches.length === 1) { swX = e.touches[0].clientX; swY = e.touches[0].clientY; } };
+        swipeArea.ontouchend = (e) => {
+          if (activeView !== 'daybook' || !e.changedTouches || !e.changedTouches.length) return;
+          const dx = e.changedTouches[0].clientX - swX;
+          const dy = e.changedTouches[0].clientY - swY;
+          if (Math.abs(dx) > 65 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+            curDate = shiftDate(curDate, dx < 0 ? 1 : -1);
+            renderAllSd();
+          }
+        };
+
+        renderAllSd();
+      }
+
+      function getSupplyTotals(name) {
+        const s = state.supplyData?.[name] || { items: [], payments: [], ignoredDbPayments: {} };
+        const totalAmount = (s.items || []).reduce((sum, it) => sum + (parseFloat(it.amount) || 0), 0);
+        let totalPayment = 0;
+        getDaybookPaymentsForName(name).forEach(d => {
+          if (!s.ignoredDbPayments?.[d.dbId]) totalPayment += parseFloat(d.payment) || 0;
+        });
+        (s.payments || []).forEach(pr => {
+          if (!pr.ignored) totalPayment += parseFloat(pr.payment) || 0;
+        });
+        return { totalAmount, totalPayment, balance: totalAmount - totalPayment };
+      }
+
+      function openSupplyListModal() {
+        if (!state.supplyData || typeof state.supplyData !== 'object') state.supplyData = {};
+        const names = Object.keys(state.supplyData).sort((a, b) => a.localeCompare(b));
+        const suggestions = getAllPartyNameSuggestions();
+        const isView = appMode === 'view';
+
+        openModal(`
+          <div class="p-4 sm:p-5 space-y-3">
+            <div class="flex items-center justify-between border-b border-zinc-700 pb-3">
+              <div>
+                <h3 class="text-base font-bold text-amber-400">📦 Inward Supply Hisab</h3>
+                <p class="text-xs text-zinc-400">Supplier chunein ya naya supplier add karein</p>
+              </div>
+              <button type="button" data-close-modal class="w-8 h-8 rounded-full bg-zinc-800 text-zinc-300 font-bold">✕</button>
+            </div>
+
+            ${!isView ? `
+              <form id="addSupplyPartyForm" class="flex gap-2">
+                <input id="newSupplyPartyInput" list="dl_supply_parties" type="text" required placeholder="Supplier ka naam likhein..." class="flex-1 border rounded-lg px-3 py-1.5 text-sm" />
+                <datalist id="dl_supply_parties">${suggestions.map(n => `<option value="${escapeHtml(n)}"></option>`).join('')}</datalist>
+                <button type="submit" class="px-3.5 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-xs font-extrabold whitespace-nowrap">+ Add</button>
+              </form>` : ''}
+
+            <div class="space-y-2 max-h-[60vh] overflow-y-auto">
+              ${names.length ? names.map(n => {
+                const st = getSupplyTotals(n);
+                return `
+                  <button type="button" data-open-supply="${escapeHtml(n)}" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-teal-500/60 text-left transition">
+                    <div>
+                      <div class="font-bold text-white text-sm">${escapeHtml(n)}</div>
+                      <div class="text-[11px] text-zinc-400">Supply: ₹${st.totalAmount.toFixed(0)} • Paid: ₹${st.totalPayment.toFixed(0)}</div>
+                    </div>
+                    <div class="text-right">
+                      <div class="text-[10px] text-zinc-400">Balance</div>
+                      <div class="text-sm font-extrabold ${st.balance >= 0 ? 'text-amber-400' : 'text-emerald-400'}">₹${st.balance.toFixed(0)}</div>
+                    </div>
+                  </button>
+                `;
+              }).join('') : '<div class="text-xs text-zinc-400 py-6 text-center">Abhi koi Supplier add nahi hai. Upar naam daalkar + Add karein.</div>'}
+            </div>
+          </div>
+        `);
+
+        const addForm = document.getElementById('addSupplyPartyForm');
+        if (addForm) {
+          addForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const val = (document.getElementById('newSupplyPartyInput')?.value || '').trim();
+            if (!val) return;
+            if (!state.supplyData[val]) {
+              state.supplyData[val] = { items: [{ date: todayISO(), detail: '', amount: '' }], payments: [], ignoredDbPayments: {}, dbDetails: {} };
+              saveLocalState();
+            }
+            openSupplyDetailModal(val);
+          });
+        }
+
+        document.querySelectorAll('[data-open-supply]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            openSupplyDetailModal(btn.getAttribute('data-open-supply'));
+          });
+        });
+      }
+
+      function openSupplyDetailModal(partyName) {
+        if (!state.supplyData) state.supplyData = {};
+        if (!state.supplyData[partyName]) {
+          state.supplyData[partyName] = { items: [{ date: todayISO(), detail: '', amount: '' }], payments: [], ignoredDbPayments: {}, dbDetails: {} };
+        }
+        const sup = state.supplyData[partyName];
+        if (!Array.isArray(sup.items)) sup.items = [];
+        if (!Array.isArray(sup.payments)) sup.payments = [];
+        if (!sup.ignoredDbPayments) sup.ignoredDbPayments = {};
+        if (!sup.dbDetails) sup.dbDetails = {};
+
         const isView = appMode === 'view';
         const ro = isView ? 'readonly disabled' : '';
 
-        function renderDaybook() {
-          state.daybook[curDate] = normalizeDaybookDay(state.daybook[curDate], curDate);
-          const dayObj = state.daybook[curDate];
-          const cols = dayObj.columns;
+        function renderSupplyDetail() {
+          const dbPays = getDaybookPaymentsForName(partyName);
+          const combinedPays = [
+            ...dbPays.map(d => ({ dbId: d.dbId, date: d.date, payment: d.payment, detail: sup.dbDetails[d.dbId] || '', isDaybook: true, ignored: !!sup.ignoredDbPayments[d.dbId] })),
+            ...sup.payments.map((pr, pIdx) => ({ date: pr.date || '', payment: pr.payment || '', detail: pr.detail || '', isDaybook: false, pIdx, ignored: !!pr.ignored }))
+          ].sort((a, b) => (!a.date && !b.date) ? 0 : (!a.date ? 1 : (!b.date ? -1 : a.date.localeCompare(b.date))));
 
-          const colTotals = cols.map(c => (c.payments || []).reduce((sum, p) => sum + (parseFloat(p?.val ?? p) || 0), 0));
-          const dayTotal = colTotals.reduce((a, b) => a + b, 0);
-
-          const allNames = getAllPartyNameSuggestions();
-          const dlHtml = `<datalist id="dl_daybook_names">${allNames.map(n => `<option value="${escapeHtml(n)}"></option>`).join('')}</datalist>`;
-
-          const maxRows = Math.max(1, ...cols.map(c => (c.payments || []).length));
-
-          const tableHtml = cols.length ? `
-            <div class="overflow-x-auto border border-zinc-700 rounded-xl bg-[#14171f]">
-              <table class="w-full border-collapse text-xs">
-                <thead>
-                  <tr class="bg-amber-500 text-zinc-950">
-                    ${cols.map((col, cIdx) => `
-                      <th class="px-2.5 py-2 border-r border-amber-600/40 min-w-[130px] align-top">
-                        <div class="flex items-center justify-between gap-1">
-                          <span class="font-extrabold text-xs truncate">${escapeHtml(col.name)}</span>
-                          ${!isView ? `<button type="button" data-db-del-col="${cIdx}" class="text-zinc-900 hover:text-rose-800 font-extrabold text-xs px-1" title="Remove Column">✕</button>` : ''}
-                        </div>
-                        <div id="dbColTot_${cIdx}" class="text-[11px] font-extrabold bg-zinc-950/90 text-emerald-400 rounded px-1.5 py-0.5 mt-1 text-center">
-                          Total: ₹${colTotals[cIdx].toFixed(0)}
-                        </div>
-                      </th>
-                    `).join('')}
-                  </tr>
-                </thead>
-                <tbody>
-                  ${Array.from({ length: maxRows }).map((_, rIdx) => `
-                    <tr class="border-b border-zinc-800">
-                      ${cols.map((col, cIdx) => {
-                        const hasVal = rIdx < (col.payments || []).length;
-                        return `<td class="p-1.5 border-r border-zinc-800 align-middle">
-                          ${hasVal ? `
-                            <div class="flex items-center gap-1">
-                              <input type="number" step="0.01" inputmode="decimal" ${ro} data-db-col="${cIdx}" data-db-row="${rIdx}" value="${escapeHtml(col.payments[rIdx]?.val || '')}" placeholder="₹ 0" class="w-full text-right font-bold border border-zinc-700 rounded px-2 py-1 text-xs focus:outline-none focus:border-amber-400" />
-                              ${(!isView && col.payments.length > 1) ? `<button type="button" data-db-del-pay="${cIdx}_${rIdx}" class="text-rose-400 hover:text-rose-300 text-[11px] font-bold px-0.5">✕</button>` : ''}
-                            </div>
-                          ` : '<div class="text-center text-zinc-700 text-[10px]">—</div>'}
-                        </td>`;
-                      }).join('')}
-                    </tr>
-                  `).join('')}
-                </tbody>
-                ${!isView ? `
-                <tfoot>
-                  <tr class="bg-zinc-900/80">
-                    ${cols.map((_, cIdx) => `
-                      <td class="p-1.5 border-r border-zinc-800 text-center">
-                        <button type="button" data-db-add-pay="${cIdx}" class="w-full py-1 rounded bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/50 text-emerald-300 font-bold text-[11px] transition">
-                          + Payment
-                        </button>
-                      </td>
-                    `).join('')}
-                  </tr>
-                </tfoot>` : ''}
-              </table>
-            </div>
-          ` : '<div class="text-center py-8 text-xs text-zinc-400 border border-dashed border-zinc-700 rounded-xl">Upar Name daal kar pehla column add karein</div>';
+          const st = getSupplyTotals(partyName);
 
           openModal(`
-            <div id="daybookSwipeArea" class="p-4 sm:p-5">
-              <div class="flex items-center justify-between border-b border-zinc-700 pb-3 mb-3">
-                <div>
-                  <h3 class="text-base font-bold">📒 Daybook</h3>
-                  <p class="text-xs text-zinc-400">Swipe ◀ ▶ ya Date chunein • <strong class="text-amber-300">${escapeHtml(formatDateDMY(curDate))}</strong> ${isView ? '• View Mode' : ''}</p>
-                </div>
-                <button type="button" data-close-modal class="w-8 h-8 rounded-full bg-zinc-800 hover:bg-zinc-700 font-bold">✕</button>
-              </div>
-
-              ${dlHtml}
-
-              <div class="flex flex-wrap items-center justify-between gap-2 mb-3 p-2.5 rounded-xl bg-zinc-900 border border-zinc-700">
-                <div class="flex items-center gap-1">
-                  <button id="daybookPrevBtn" type="button" title="Previous Day" class="w-8 h-8 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-amber-300 font-bold text-xs">◀</button>
-                  <div class="relative w-32 h-8 border border-zinc-600 rounded-lg bg-[#0b0d11] flex items-center justify-between px-2.5 text-xs">
-                    <span class="font-bold text-amber-300">${escapeHtml(formatDateDMY(curDate))}</span>
-                    <span class="text-xs">📅</span>
-                    <input id="daybookDatePicker" type="date" value="${escapeHtml(curDate)}" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+            <div class="p-4 sm:p-5 space-y-4">
+              <div class="flex items-center justify-between border-b border-zinc-700 pb-3">
+                <div class="flex items-center gap-2">
+                  <button id="supplyBackBtn" type="button" class="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-bold text-zinc-200">← Back</button>
+                  <div>
+                    <h3 class="text-base font-bold text-amber-400">📦 ${escapeHtml(partyName)}</h3>
+                    <p class="text-[11px] text-zinc-400">Inward Supply &amp; Payment Hisab</p>
                   </div>
-                  <button id="daybookNextBtn" type="button" title="Next Day" class="w-8 h-8 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-amber-300 font-bold text-xs">▶</button>
                 </div>
-                <div class="text-right">
-                  <div class="text-[10px] text-zinc-400 uppercase font-semibold">Day Total Payment</div>
-                  <div id="daybookTotalBox" class="text-base font-extrabold text-emerald-400">₹${dayTotal.toFixed(0)}</div>
+                <button type="button" data-close-modal class="w-8 h-8 rounded-full bg-zinc-800 text-zinc-300 font-bold">✕</button>
+              </div>
+
+              <!-- Summary Strip: Total Amount, Total Payment, Balance -->
+              <div class="grid grid-cols-3 gap-2">
+                <div class="p-2.5 rounded-xl bg-zinc-900 border border-amber-500/40">
+                  <div class="text-[10px] text-amber-300 font-semibold uppercase">Total Amount</div>
+                  <div id="supTotalAmtEl" class="text-base sm:text-lg font-extrabold text-amber-400">₹${st.totalAmount.toFixed(0)}</div>
+                </div>
+                <div class="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-700/60">
+                  <div class="text-[10px] text-emerald-300 font-semibold uppercase">Total Payment</div>
+                  <div id="supTotalPayEl" class="text-base sm:text-lg font-extrabold text-emerald-400">₹${st.totalPayment.toFixed(0)}</div>
+                </div>
+                <div class="p-2.5 rounded-xl bg-amber-500 text-zinc-950">
+                  <div class="text-[10px] text-zinc-900 font-bold uppercase">Balance</div>
+                  <div id="supBalanceEl" class="text-base sm:text-lg font-extrabold text-zinc-950">₹${st.balance.toFixed(0)}</div>
                 </div>
               </div>
 
-              ${!isView ? `
-              <form id="daybookAddColForm" class="flex gap-2 mb-3">
-                <input id="dbNewColName" type="text" list="dl_daybook_names" placeholder="Name daalein (suggestions ke saath)..." class="flex-1 border border-zinc-600 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm font-semibold focus:outline-none" />
-                <button type="submit" class="px-3.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold text-xs shrink-0 shadow">+ Add Name</button>
-              </form>` : ''}
+              <!-- Table 1: Inward Supply (Date, Detail, Amount) -->
+              <div class="space-y-1.5">
+                <div class="flex items-center justify-between">
+                  <h4 class="text-xs font-bold uppercase tracking-wider text-amber-400">1. Inward Supply (Date, Detail, Amount)</h4>
+                  ${!isView ? '<button id="addSupItemBtn" type="button" class="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 text-[11px] font-extrabold">+ Add Entry</button>' : ''}
+                </div>
+                <div class="overflow-x-auto border border-zinc-700 rounded-xl">
+                  <table class="w-full border-collapse text-xs">
+                    <thead class="bg-zinc-800 text-amber-300">
+                      <tr>
+                        <th class="px-2 py-1.5 text-left border-r border-zinc-700 w-8">#</th>
+                        <th class="px-2 py-1.5 text-left border-r border-zinc-700">Date</th>
+                        <th class="px-2 py-1.5 text-left border-r border-zinc-700">Detail</th>
+                        <th class="px-2 py-1.5 text-right border-r border-zinc-700">Amount (₹)</th>
+                        ${!isView ? '<th class="px-1.5 py-1.5 text-center w-8">✕</th>' : ''}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${sup.items.length ? sup.items.map((it, idx) => `
+                        <tr class="border-t border-zinc-800">
+                          <td class="px-2 py-1.5 text-zinc-400 font-bold border-r border-zinc-800">${idx + 1}</td>
+                          <td class="px-1.5 py-1 border-r border-zinc-800">
+                            <input type="date" ${ro} data-sup-item-field="date" data-sup-idx="${idx}" value="${escapeHtml(it.date || '')}" class="w-28 border rounded px-1.5 py-1 text-xs" />
+                          </td>
+                          <td class="px-1.5 py-1 border-r border-zinc-800">
+                            <input type="text" ${ro} data-sup-item-field="detail" data-sup-idx="${idx}" value="${escapeHtml(it.detail || '')}" placeholder="Maal / Bill detail" class="w-full min-w-[110px] border rounded px-2 py-1 text-xs" />
+                          </td>
+                          <td class="px-1.5 py-1 border-r border-zinc-800">
+                            <input type="number" step="0.01" inputmode="decimal" ${ro} data-sup-item-field="amount" data-sup-idx="${idx}" value="${escapeHtml(it.amount || '')}" placeholder="0" class="w-24 text-right font-bold border rounded px-2 py-1 text-xs" />
+                          </td>
+                          ${!isView ? `<td class="px-1.5 py-1 text-center"><button type="button" data-del-sup-item="${idx}" class="text-rose-400 hover:text-rose-300 font-bold">✕</button></td>` : ''}
+                        </tr>
+                      `).join('') : `<tr><td colspan="${isView ? 4 : 5}" class="text-center py-4 text-zinc-500">Koi supply entry nahi — + Add Entry par tap karein</td></tr>`}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
 
-              <div class="max-h-[52vh] overflow-y-auto">
-                ${tableHtml}
+              <!-- Table 2: Date & Payment Table (Daybook Auto + Manual + Detail) -->
+              <div class="space-y-1.5">
+                <div class="flex items-center justify-between">
+                  <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-400">2. Date &amp; Payment Table (Daybook Auto + Manual)</h4>
+                  ${!isView ? '<button id="addSupPayBtn" type="button" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-extrabold">+ Add Payment</button>' : ''}
+                </div>
+                <div class="overflow-x-auto border border-zinc-700 rounded-xl">
+                  <table class="w-full border-collapse text-xs">
+                    <thead class="bg-zinc-800 text-emerald-300">
+                      <tr>
+                        <th class="px-2 py-1.5 text-left border-r border-zinc-700 w-8">#</th>
+                        <th class="px-2 py-1.5 text-left border-r border-zinc-700">Date</th>
+                        <th class="px-2 py-1.5 text-right border-r border-zinc-700">Payment (₹)</th>
+                        <th class="px-2 py-1.5 text-left border-r border-zinc-700">Detail</th>
+                        ${!isView ? '<th class="px-1.5 py-1.5 text-center">Action</th>' : ''}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${combinedPays.length ? combinedPays.map((pr, dispIdx) => {
+                        const pVal = parseFloat(pr.payment) || 0;
+                        if (pr.isDaybook) {
+                          return `<tr class="border-t border-zinc-800 ${pr.ignored ? 'opacity-45 bg-zinc-900' : 'bg-amber-500/10'}">
+                            <td class="px-2 py-1.5 text-amber-300 font-bold border-r border-zinc-800">${dispIdx + 1}</td>
+                            <td class="px-2 py-1.5 border-r border-zinc-800 whitespace-nowrap font-semibold">${escapeHtml(formatDateDMY(pr.date))} <span class="text-[9px] text-amber-300">(Daybook)</span></td>
+                            <td class="px-2 py-1.5 border-r border-zinc-800 text-right font-bold text-emerald-400">₹${pVal.toFixed(0)}</td>
+                            <td class="px-1.5 py-1 border-r border-zinc-800">
+                              <input type="text" ${ro} data-sup-db-detail="${escapeHtml(pr.dbId)}" value="${escapeHtml(pr.detail || '')}" placeholder="Payment detail" class="w-full min-w-[90px] border rounded px-2 py-1 text-xs" />
+                            </td>
+                            ${!isView ? `<td class="px-1.5 py-1 text-center"><button type="button" data-sup-db-ignore="${escapeHtml(pr.dbId)}" class="px-1.5 py-0.5 rounded text-[10px] font-bold ${pr.ignored ? 'bg-amber-500 text-zinc-950' : 'bg-zinc-700 text-zinc-200'}">${pr.ignored ? 'Ignored' : 'Ignore'}</button></td>` : ''}
+                          </tr>`;
+                        }
+                        const pIdx = pr.pIdx;
+                        return `<tr class="border-t border-zinc-800 ${pr.ignored ? 'opacity-45 bg-zinc-900' : ''}">
+                          <td class="px-2 py-1.5 text-zinc-400 font-bold border-r border-zinc-800">${dispIdx + 1}</td>
+                          <td class="px-1.5 py-1 border-r border-zinc-800">
+                            <input type="date" ${ro} data-sup-pay-field="date" data-sup-pidx="${pIdx}" value="${escapeHtml(pr.date || '')}" class="w-28 border rounded px-1.5 py-1 text-xs" />
+                          </td>
+                          <td class="px-1.5 py-1 border-r border-zinc-800">
+                            <input type="number" step="0.01" inputmode="decimal" ${ro} data-sup-pay-field="payment" data-sup-pidx="${pIdx}" value="${escapeHtml(pr.payment || '')}" placeholder="0" class="w-24 text-right font-bold border rounded px-2 py-1 text-xs" />
+                          </td>
+                          <td class="px-1.5 py-1 border-r border-zinc-800">
+                            <input type="text" ${ro} data-sup-pay-field="detail" data-sup-pidx="${pIdx}" value="${escapeHtml(pr.detail || '')}" placeholder="Payment detail" class="w-full min-w-[90px] border rounded px-2 py-1 text-xs" />
+                          </td>
+                          ${!isView ? `<td class="px-1.5 py-1 text-center">
+                            <div class="flex items-center justify-center gap-1">
+                              <button type="button" data-sup-pay-ignore="${pIdx}" class="px-1.5 py-0.5 rounded text-[10px] font-bold ${pr.ignored ? 'bg-amber-500 text-zinc-950' : 'bg-zinc-700 text-zinc-200'}">${pr.ignored ? 'Ignored' : 'Ignore'}</button>
+                              <button type="button" data-del-sup-pay="${pIdx}" class="text-rose-400 hover:text-rose-300 font-bold px-1">✕</button>
+                            </div>
+                          </td>` : ''}
+                        </tr>`;
+                      }).join('') : `<tr><td colspan="${isView ? 4 : 5}" class="text-center py-4 text-zinc-500">Koi payment entry nahi — + Add Payment par tap karein ya Daybook me entry karein</td></tr>`}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           `);
 
-          function shiftDaybookDate(deltaDays) {
-            const parts = curDate.split('-').map(Number);
-            const dt = new Date(parts[0], parts[1] - 1, parts[2] + deltaDays);
-            const y = dt.getFullYear();
-            const m = String(dt.getMonth() + 1).padStart(2, '0');
-            const d = String(dt.getDate()).padStart(2, '0');
-            curDate = `${y}-${m}-${d}`;
-            renderDaybook();
+          function recalcSupplyTotals() {
+            const cur = getSupplyTotals(partyName);
+            const aEl = document.getElementById('supTotalAmtEl');
+            const pEl = document.getElementById('supTotalPayEl');
+            const bEl = document.getElementById('supBalanceEl');
+            if (aEl) aEl.textContent = '₹' + cur.totalAmount.toFixed(0);
+            if (pEl) pEl.textContent = '₹' + cur.totalPayment.toFixed(0);
+            if (bEl) bEl.textContent = '₹' + cur.balance.toFixed(0);
           }
 
-          document.getElementById('daybookPrevBtn').addEventListener('click', () => shiftDaybookDate(-1));
-          document.getElementById('daybookNextBtn').addEventListener('click', () => shiftDaybookDate(1));
+          document.getElementById('supplyBackBtn').addEventListener('click', openSupplyListModal);
 
-          const swipeArea = document.getElementById('daybookSwipeArea');
-          if (swipeArea) {
-            let swX = 0, swY = 0;
-            swipeArea.addEventListener('touchstart', (e) => {
-              if (e.target.closest('table')) return;
-              swX = e.touches[0].clientX;
-              swY = e.touches[0].clientY;
-            }, { passive: true });
-            swipeArea.addEventListener('touchend', (e) => {
-              if (!swX || e.target.closest('table')) return;
-              const dx = e.changedTouches[0].clientX - swX;
-              const dy = e.changedTouches[0].clientY - swY;
-              swX = 0; swY = 0;
-              if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.4) {
-                if (dx > 0) shiftDaybookDate(-1);
-                else shiftDaybookDate(1);
+          const addItemBtn = document.getElementById('addSupItemBtn');
+          if (addItemBtn) {
+            addItemBtn.addEventListener('click', () => {
+              sup.items.push({ date: todayISO(), detail: '', amount: '' });
+              saveLocalState();
+              renderSupplyDetail();
+            });
+          }
+
+          const addPayBtn = document.getElementById('addSupPayBtn');
+          if (addPayBtn) {
+            addPayBtn.addEventListener('click', () => {
+              sup.payments.push({ date: todayISO(), payment: '', detail: '', ignored: false });
+              saveLocalState();
+              renderSupplyDetail();
+            });
+          }
+
+          document.querySelectorAll('[data-sup-item-field]').forEach(inp => {
+            inp.addEventListener('input', (e) => {
+              const idx = parseInt(e.target.getAttribute('data-sup-idx'), 10);
+              const f = e.target.getAttribute('data-sup-item-field');
+              if (sup.items[idx]) {
+                sup.items[idx][f] = e.target.value;
+                saveLocalState();
+                recalcSupplyTotals();
               }
-            }, { passive: true });
-          }
-
-          document.getElementById('daybookDatePicker').addEventListener('change', (e) => {
-            if (e.target.value) {
-              curDate = e.target.value;
-              renderDaybook();
-            }
+            });
           });
 
-          const addColForm = document.getElementById('daybookAddColForm');
-          if (addColForm) {
-            addColForm.addEventListener('submit', (e) => {
-              e.preventDefault();
-              const nm = (document.getElementById('dbNewColName').value || '').trim();
-              if (!nm) return;
-              const existingIdx = cols.findIndex(c => c.name.trim().toLowerCase() === nm.toLowerCase());
-              const newPayObj = { id: 'db_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6), val: '' };
-              if (existingIdx >= 0) {
-                cols[existingIdx].payments.push(newPayObj);
-              } else {
-                cols.push({ name: nm, payments: [newPayObj] });
-              }
+          document.querySelectorAll('[data-del-sup-item]').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const idx = parseInt(btn.getAttribute('data-del-sup-item'), 10);
+              sup.items.splice(idx, 1);
               saveLocalState();
-              renderDaybook();
+              renderSupplyDetail();
             });
-          }
+          });
 
-          if (!isView) {
-            document.querySelectorAll('[data-db-col]').forEach(inp => {
-              inp.addEventListener('input', (e) => {
-                const cIdx = parseInt(e.target.getAttribute('data-db-col'), 10);
-                const rIdx = parseInt(e.target.getAttribute('data-db-row'), 10);
-                if (!cols[cIdx]) return;
-                cols[cIdx].payments[rIdx].val = e.target.value;
+          document.querySelectorAll('[data-sup-pay-field]').forEach(inp => {
+            inp.addEventListener('input', (e) => {
+              const pIdx = parseInt(e.target.getAttribute('data-sup-pidx'), 10);
+              const f = e.target.getAttribute('data-sup-pay-field');
+              if (sup.payments[pIdx]) {
+                sup.payments[pIdx][f] = e.target.value;
                 saveLocalState();
-                const cTot = cols[cIdx].payments.reduce((s, p) => s + (parseFloat(p?.val ?? p) || 0), 0);
-                const cEl = document.getElementById('dbColTot_' + cIdx);
-                if (cEl) cEl.textContent = 'Total: ₹' + cTot.toFixed(0);
-                const dTot = cols.reduce((s, col) => s + col.payments.reduce((a, b) => a + (parseFloat(b?.val ?? b) || 0), 0), 0);
-                const dEl = document.getElementById('daybookTotalBox');
-                if (dEl) dEl.textContent = '₹' + dTot.toFixed(0);
-              });
+                recalcSupplyTotals();
+              }
             });
+          });
 
-            document.querySelectorAll('[data-db-add-pay]').forEach(btn => {
-              btn.addEventListener('click', () => {
-                const cIdx = parseInt(btn.getAttribute('data-db-add-pay'), 10);
-                if (cols[cIdx]) {
-                  cols[cIdx].payments.push({ id: 'db_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6), val: '' });
-                  saveLocalState();
-                  renderDaybook();
-                }
-              });
+          document.querySelectorAll('[data-sup-db-detail]').forEach(inp => {
+            inp.addEventListener('input', (e) => {
+              const dbId = e.target.getAttribute('data-sup-db-detail');
+              sup.dbDetails[dbId] = e.target.value;
+              saveLocalState();
             });
+          });
 
-            document.querySelectorAll('[data-db-del-pay]').forEach(btn => {
-              btn.addEventListener('click', () => {
-                const [cStr, rStr] = btn.getAttribute('data-db-del-pay').split('_');
-                const cIdx = parseInt(cStr, 10);
-                const rIdx = parseInt(rStr, 10);
-                if (cols[cIdx]) {
-                  cols[cIdx].payments.splice(rIdx, 1);
-                  saveLocalState();
-                  renderDaybook();
-                }
-              });
+          document.querySelectorAll('[data-sup-db-ignore]').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const dbId = btn.getAttribute('data-sup-db-ignore');
+              sup.ignoredDbPayments[dbId] = !sup.ignoredDbPayments[dbId];
+              saveLocalState();
+              renderSupplyDetail();
             });
+          });
 
-            document.querySelectorAll('[data-db-del-col]').forEach(btn => {
-              btn.addEventListener('click', () => {
-                const cIdx = parseInt(btn.getAttribute('data-db-del-col'), 10);
-                cols.splice(cIdx, 1);
+          document.querySelectorAll('[data-sup-pay-ignore]').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const pIdx = parseInt(btn.getAttribute('data-sup-pay-ignore'), 10);
+              if (sup.payments[pIdx]) {
+                sup.payments[pIdx].ignored = !sup.payments[pIdx].ignored;
                 saveLocalState();
-                renderDaybook();
-              });
+                renderSupplyDetail();
+              }
             });
-          }
+          });
+
+          document.querySelectorAll('[data-del-sup-pay]').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const pIdx = parseInt(btn.getAttribute('data-del-sup-pay'), 10);
+              sup.payments.splice(pIdx, 1);
+              saveLocalState();
+              renderSupplyDetail();
+            });
+          });
         }
 
-        renderDaybook();
+        renderSupplyDetail();
       }
 
       function getLiveDeptBalance(dept, name) {
@@ -5459,7 +6339,9 @@
           notifications: state.notifications,
           savedHisabs: state.savedHisabs,
           alterData: state.alterData,
+          supplyData: state.supplyData,
           daybook: state.daybook,
+          daybookClearedBatches: state.daybookClearedBatches,
           settledDaybookKeys: state.settledDaybookKeys,
           hisabMeta: state.hisabMeta
         }, null, 2);
@@ -5981,6 +6863,7 @@
       });
       document.getElementById('daybookBtn').addEventListener('click', () => openDaybookModal(todayISO()));
       document.getElementById('alterBtn').addEventListener('click', openAlterListModal);
+      document.getElementById('supplyBtn').addEventListener('click', openSupplyListModal);
       document.getElementById('pendingLotsBtn').addEventListener('click', openPendingLotsModal);
       document.getElementById('savedHisabBtn').addEventListener('click', openSavedHisabListModal);
       document.getElementById('hisabThermalBtn').addEventListener('click', openThermalPreviewModal);
@@ -6103,7 +6986,7 @@
       const TOP_ROW_IDS = ['topRow1', 'topRow2', 'topRow3'];
       const MOVABLE_BTN_IDS = [
         'userSwitchBtn', 'notifBellBtn', 'appModeToggleBtn', 'syncSettingsBtn', 'fullscreenToggleBtn',
-        'addRowBtn', 'hisabDropdownBtn', 'alterBtn', 'pendingLotsBtn', 'savedHisabBtn', 'backupRestoreBtn',
+        'addRowBtn', 'hisabDropdownBtn', 'alterBtn', 'supplyBtn', 'pendingLotsBtn', 'savedHisabBtn', 'backupRestoreBtn',
         'liveWidgetBtn', 'daybookBtn'
       ];
       let activeMoveBtn = null;
