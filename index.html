@@ -272,6 +272,9 @@
       <button id="alterBtn" type="button" class="px-2.5 py-1 rounded-lg bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs shrink-0 whitespace-nowrap shadow transition">
         🔧 Alter
       </button>
+      <button id="alterStockBtn" type="button" class="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-500 text-zinc-950 font-extrabold text-xs shrink-0 whitespace-nowrap shadow transition">
+        📦 Alter Stock
+      </button>
       <button id="supplyBtn" type="button" class="px-2.5 py-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs shrink-0 whitespace-nowrap shadow transition">
         📦 Supply
       </button>
@@ -314,6 +317,9 @@
         <button id="liveWidgetBtn" type="button" class="px-2.5 py-0.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow shrink-0 whitespace-nowrap transition">
           📊 Widget
         </button>
+        <button id="alterWidgetBtn" type="button" class="px-2.5 py-0.5 rounded-md bg-orange-600 hover:bg-orange-500 text-white font-extrabold text-xs shadow shrink-0 whitespace-nowrap transition">
+          📦 Alter Widget
+        </button>
         <button id="daybookBtn" type="button" class="px-3 py-0.5 rounded-md bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold text-xs shadow shrink-0 whitespace-nowrap transition">
           📒 Daybook
         </button>
@@ -324,6 +330,7 @@
   <!-- Main Table Container (Obsidian Dark Surface & Amber-Gold Header) -->
   <main class="flex-1 min-h-0 p-2 sm:p-3 overflow-hidden flex flex-col gap-2">
     <section id="liveBalanceWidget" class="hidden shrink-0 bg-[#14171f] rounded-xl border border-amber-500/40 shadow-xl p-2.5 space-y-2"></section>
+    <section id="alterStockWidget" class="hidden shrink-0 bg-[#14171f] rounded-xl border border-orange-500/40 shadow-xl p-2.5 space-y-2"></section>
     <div class="bg-[#14171f] rounded-xl shadow-xl border border-zinc-800 flex-1 min-h-0 flex flex-col overflow-hidden">
       <div id="mainTableScroll" class="table-scroll overflow-x-auto overflow-y-auto flex-1 min-h-[200px]">
         <table id="mainTableElement" class="w-full border-collapse text-left text-xs sm:text-sm min-w-[1250px]">
@@ -531,6 +538,7 @@
         notifications: [],
         savedHisabs: [],
         alterData: {},
+        alterStock: { customDepts: [], entries: {} },
         supplyData: {},
         daybook: {},
         daybookClearedBatches: [],
@@ -556,6 +564,8 @@
       let currentSearch = '';
       let widgetOpen = false;
       let widgetFilter = 'all';
+      let alterWidgetOpen = false;
+      let alterWidgetDept = 'all';
       let syncTimer = null;
       let pollTimer = null;
       let isPushPending = false;
@@ -688,7 +698,7 @@
           uDot.className = 'w-1.5 h-1.5 rounded-full ' + (rc.isAdmin ? 'bg-emerald-400' : 'bg-amber-400');
         }
 
-        const adminOnlyIds = ['alterBtn', 'supplyBtn', 'pendingLotsBtn', 'backupRestoreBtn', 'daybookBtn', 'addTableBtn'];
+        const adminOnlyIds = ['alterBtn', 'alterStockBtn', 'supplyBtn', 'pendingLotsBtn', 'backupRestoreBtn', 'daybookBtn', 'addTableBtn'];
         adminOnlyIds.forEach(id => {
           const el = document.getElementById(id);
           if (!el) return;
@@ -996,6 +1006,7 @@
               state.notifications = Array.isArray(parsed.notifications) ? parsed.notifications : [];
               state.savedHisabs = Array.isArray(parsed.savedHisabs) ? parsed.savedHisabs : [];
               state.alterData = (parsed.alterData && typeof parsed.alterData === 'object') ? parsed.alterData : {};
+              state.alterStock = (parsed.alterStock && typeof parsed.alterStock === 'object') ? Object.assign({ customDepts: [], entries: {} }, parsed.alterStock) : { customDepts: [], entries: {} };
               state.supplyData = (parsed.supplyData && typeof parsed.supplyData === 'object') ? parsed.supplyData : {};
               state.daybook = (parsed.daybook && typeof parsed.daybook === 'object') ? parsed.daybook : {};
               state.daybookClearedBatches = Array.isArray(parsed.daybookClearedBatches) ? parsed.daybookClearedBatches : [];
@@ -1025,6 +1036,7 @@
             notifications: state.notifications,
             savedHisabs: state.savedHisabs,
             alterData: state.alterData,
+            alterStock: state.alterStock,
             supplyData: state.supplyData,
             daybook: state.daybook,
             daybookClearedBatches: state.daybookClearedBatches,
@@ -1096,6 +1108,7 @@
                 notifications: state.notifications,
                 savedHisabs: state.savedHisabs,
                 alterData: state.alterData,
+                alterStock: state.alterStock,
                 supplyData: state.supplyData,
                 daybook: state.daybook,
                 daybookClearedBatches: state.daybookClearedBatches,
@@ -1209,6 +1222,11 @@
 
             if (data.alterData && typeof data.alterData === 'object') {
               state.alterData = Object.assign({}, data.alterData, state.alterData);
+            }
+            if (data.alterStock && typeof data.alterStock === 'object') {
+              const cDepts = Array.from(new Set([...(data.alterStock.customDepts || []), ...(state.alterStock?.customDepts || [])]));
+              const mEntries = Object.assign({}, data.alterStock.entries || {}, state.alterStock?.entries || {});
+              state.alterStock = { customDepts: cDepts, entries: mEntries };
             }
             if (data.supplyData && typeof data.supplyData === 'object') {
               state.supplyData = Object.assign({}, data.supplyData, state.supplyData);
@@ -1343,6 +1361,7 @@
       function renderTable() {
         renderTableTabs();
         renderLiveWidget();
+        renderAlterStockWidget();
         const rc = getRoleConfig();
         if (!rc.isLoggedIn) {
           const tbody = document.getElementById('lotTableBody');
@@ -4978,6 +4997,279 @@
         });
       }
 
+      const BASE_ALTER_DEPTS = ['Fabrication', 'Tanki', 'Washing', 'Packing', 'Master', 'Embroidery', 'Laser', 'Print'];
+
+      function ensureAlterStockState() {
+        if (!state.alterStock || typeof state.alterStock !== 'object') {
+          state.alterStock = { customDepts: [], entries: {} };
+        }
+        if (!Array.isArray(state.alterStock.customDepts)) state.alterStock.customDepts = [];
+        if (!state.alterStock.entries || typeof state.alterStock.entries !== 'object') state.alterStock.entries = {};
+      }
+
+      function getAllAlterStockDepts() {
+        ensureAlterStockState();
+        const set = new Set([...BASE_ALTER_DEPTS, ...state.alterStock.customDepts]);
+        return Array.from(set);
+      }
+
+      function getAlterStockItems(deptFilter, searchQuery) {
+        ensureAlterStockState();
+        const depts = getAllAlterStockDepts();
+        const q = (searchQuery || '').trim().toLowerCase();
+        const items = [];
+        depts.forEach(dept => {
+          if (deptFilter && deptFilter !== 'all' && dept !== deptFilter) return;
+          const deptKey = dept.toLowerCase();
+          const nameSet = new Set();
+          if (BASE_ALTER_DEPTS.includes(dept)) {
+            getColumnNameSuggestions(deptKey).forEach(n => nameSet.add(n));
+          }
+          const deptEntries = state.alterStock.entries[dept] || {};
+          Object.keys(deptEntries).forEach(n => { if (n.trim()) nameSet.add(n.trim()); });
+          Array.from(nameSet).sort((a, b) => a.localeCompare(b)).forEach(name => {
+            const en = deptEntries[name] || { pcs: '', note: '' };
+            const pcs = parseFloat(en.pcs) || 0;
+            if (q && !dept.toLowerCase().includes(q) && !name.toLowerCase().includes(q) && !(en.note || '').toLowerCase().includes(q)) {
+              return;
+            }
+            items.push({
+              dept,
+              name,
+              pcsRaw: en.pcs || '',
+              pcs,
+              note: en.note || '',
+              isCustomDept: !BASE_ALTER_DEPTS.includes(dept)
+            });
+          });
+        });
+        return items;
+      }
+
+      function renderAlterStockWidget() {
+        const box = document.getElementById('alterStockWidget');
+        const btn = document.getElementById('alterWidgetBtn');
+        if (!box) return;
+        const rc = getRoleConfig();
+        if (!rc.isLoggedIn || !rc.isAdmin || !alterWidgetOpen) {
+          box.classList.add('hidden');
+          if (btn) btn.className = 'px-2.5 py-0.5 rounded-md bg-orange-600 hover:bg-orange-500 text-white font-extrabold text-xs shadow shrink-0 whitespace-nowrap transition';
+          return;
+        }
+        box.classList.remove('hidden');
+        if (btn) btn.className = 'px-2.5 py-0.5 rounded-md bg-amber-400 text-zinc-950 font-extrabold text-xs shadow ring-2 ring-amber-300 shrink-0 whitespace-nowrap transition';
+
+        const depts = getAllAlterStockDepts();
+        const items = getAlterStockItems(alterWidgetDept, '');
+        const totalPcs = items.reduce((s, it) => s + it.pcs, 0);
+        const canEdit = appMode === 'edit';
+
+        box.innerHTML = `
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-extrabold text-orange-400 uppercase tracking-wider">📦 Alter Stock Widget</span>
+              <span class="px-2 py-0.5 rounded-full bg-orange-500/20 border border-orange-500/40 text-orange-300 text-[11px] font-extrabold">Total: ${totalPcs} pcs</span>
+            </div>
+            <div class="flex items-center gap-1 overflow-x-auto no-scrollbar max-w-full">
+              <button type="button" data-aw-dept="all" class="px-2 py-0.5 rounded-md text-[11px] font-bold border shrink-0 transition ${alterWidgetDept === 'all' ? 'bg-orange-500 text-zinc-950 border-orange-400' : 'bg-zinc-900 text-zinc-300 border-zinc-700'}">All</button>
+              ${depts.map(d => `
+                <button type="button" data-aw-dept="${escapeHtml(d)}" class="px-2 py-0.5 rounded-md text-[11px] font-bold border shrink-0 transition ${alterWidgetDept === d ? 'bg-orange-500 text-zinc-950 border-orange-400' : 'bg-zinc-900 text-zinc-300 border-zinc-700'}">${escapeHtml(d)}</button>
+              `).join('')}
+              <button id="openAlterFromWidgetBtn" type="button" class="px-2 py-0.5 rounded-md bg-zinc-800 hover:bg-zinc-700 text-amber-300 text-[11px] font-bold shrink-0">Open ↗</button>
+              <button id="closeAlterWidgetBtn" type="button" class="px-2 py-0.5 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold shrink-0">✕</button>
+            </div>
+          </div>
+          ${items.length ? `
+            <div class="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+              ${items.map((it, idx) => `
+                <div class="min-w-[175px] max-w-[205px] shrink-0 rounded-xl bg-[#0b0d11] border border-zinc-800 p-2 space-y-1.5">
+                  <div class="flex items-center justify-between gap-1">
+                    <span class="px-1.5 py-0.5 rounded bg-orange-500/20 border border-orange-500/40 text-orange-300 text-[9px] font-bold uppercase">${escapeHtml(it.dept)}</span>
+                    <strong class="text-xs font-extrabold ${it.pcs > 0 ? 'text-amber-400' : 'text-zinc-500'}">${it.pcs} pcs</strong>
+                  </div>
+                  <div class="font-bold text-xs text-white truncate">${escapeHtml(it.name)}</div>
+                  ${canEdit ? `
+                    <div class="flex items-center gap-1">
+                      <input type="number" inputmode="numeric" data-aw-pcs="${idx}" data-aw-d="${escapeHtml(it.dept)}" data-aw-n="${escapeHtml(it.name)}" value="${escapeHtml(it.pcsRaw)}" placeholder="Pcs" class="w-full bg-zinc-900 text-white border border-zinc-700 rounded px-2 py-0.5 text-xs font-bold text-right focus:outline-none focus:border-orange-400" />
+                    </div>` : (it.note ? `<div class="text-[10px] text-zinc-400 truncate">${escapeHtml(it.note)}</div>` : '')}
+                </div>
+              `).join('')}
+            </div>` : '<div class="text-xs text-zinc-400 py-2 text-center">Is department me koi naam nahi mila. Alter Stock me jakar entry karein.</div>'}
+        `;
+
+        document.getElementById('closeAlterWidgetBtn').addEventListener('click', () => {
+          alterWidgetOpen = false;
+          renderAlterStockWidget();
+        });
+        document.getElementById('openAlterFromWidgetBtn').addEventListener('click', openAlterStockModal);
+        box.querySelectorAll('[data-aw-dept]').forEach(b => {
+          b.addEventListener('click', () => {
+            alterWidgetDept = b.getAttribute('data-aw-dept');
+            renderAlterStockWidget();
+          });
+        });
+        box.querySelectorAll('[data-aw-pcs]').forEach(inp => {
+          inp.addEventListener('input', (e) => {
+            const d = e.target.getAttribute('data-aw-d');
+            const n = e.target.getAttribute('data-aw-n');
+            ensureAlterStockState();
+            if (!state.alterStock.entries[d]) state.alterStock.entries[d] = {};
+            if (!state.alterStock.entries[d][n]) state.alterStock.entries[d][n] = { pcs: '', note: '' };
+            state.alterStock.entries[d][n].pcs = e.target.value;
+            saveLocalState();
+          });
+          inp.addEventListener('change', () => renderAlterStockWidget());
+        });
+      }
+
+      function openAlterStockModal() {
+        ensureAlterStockState();
+        let activeDept = 'all';
+        let searchQuery = '';
+        const isView = appMode === 'view';
+        const ro = isView ? 'readonly disabled' : '';
+
+        function renderAlterStockBody() {
+          const depts = getAllAlterStockDepts();
+          const items = getAlterStockItems(activeDept, searchQuery);
+          const totalPcs = items.reduce((s, it) => s + it.pcs, 0);
+
+          openModal(`
+            <div class="p-4 sm:p-5 space-y-3">
+              <div class="flex items-center justify-between border-b border-zinc-700 pb-3">
+                <div>
+                  <h3 class="text-base font-bold text-amber-400">📦 Alter Stock (All Departments)</h3>
+                  <p class="text-xs text-zinc-400">Total Alter Stock: <strong id="asTotalPcs" class="text-orange-400">${totalPcs} pcs</strong></p>
+                </div>
+                <button type="button" data-close-modal class="w-8 h-8 rounded-full bg-zinc-800 text-zinc-300 font-bold">✕</button>
+              </div>
+
+              <!-- Search Bar -->
+              <input id="asSearchInput" type="search" value="${escapeHtml(searchQuery)}" placeholder="Search department, name, ya detail..." class="w-full border rounded-lg px-3 py-2 text-sm" />
+
+              <!-- Department Tabs + Add Custom Department -->
+              <div class="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                <button type="button" data-as-dept="all" class="px-2.5 py-1 rounded-lg text-xs font-bold border shrink-0 ${activeDept === 'all' ? 'bg-amber-500 text-zinc-950 border-amber-400' : 'bg-zinc-900 text-zinc-300 border-zinc-700'}">All</button>
+                ${depts.map(d => `
+                  <button type="button" data-as-dept="${escapeHtml(d)}" class="px-2.5 py-1 rounded-lg text-xs font-bold border shrink-0 ${activeDept === d ? 'bg-amber-500 text-zinc-950 border-amber-400' : 'bg-zinc-900 text-zinc-300 border-zinc-700'}">${escapeHtml(d)}</button>
+                `).join('')}
+              </div>
+
+              ${!isView ? `
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                  <form id="asAddDeptForm" class="flex gap-1.5">
+                    <input id="asNewDeptInput" type="text" placeholder="Naya Department (e.g. Press)" class="flex-1 border rounded-lg px-2.5 py-1 text-xs" />
+                    <button type="submit" class="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold whitespace-nowrap">+ Dept</button>
+                  </form>
+                  <form id="asAddEntryForm" class="flex gap-1.5">
+                    <select id="asEntryDeptSel" class="border rounded-lg px-1.5 py-1 text-xs max-w-[100px]">
+                      ${depts.map(d => `<option value="${escapeHtml(d)}" ${activeDept === d ? 'selected' : ''}>${escapeHtml(d)}</option>`).join('')}
+                    </select>
+                    <input id="asNewNameInput" type="text" placeholder="Naya Naam add karein" class="flex-1 border rounded-lg px-2.5 py-1 text-xs" />
+                    <button type="submit" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold whitespace-nowrap">+ Name</button>
+                  </form>
+                </div>` : ''}
+
+              <div class="overflow-x-auto border border-zinc-700 rounded-xl max-h-[48vh] overflow-y-auto">
+                <table class="w-full border-collapse text-xs">
+                  <thead class="bg-zinc-800 text-amber-300 sticky top-0">
+                    <tr>
+                      <th class="px-2.5 py-2 text-left border-r border-zinc-700">Dept</th>
+                      <th class="px-2.5 py-2 text-left border-r border-zinc-700">Name</th>
+                      <th class="px-2.5 py-2 text-right border-r border-zinc-700 w-24">Alter Stock</th>
+                      <th class="px-2.5 py-2 text-left">Detail / Note</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${items.length ? items.map((it, idx) => `
+                      <tr class="border-t border-zinc-800 hover:bg-zinc-900/60">
+                        <td class="px-2.5 py-1.5 border-r border-zinc-800 font-bold text-orange-300 whitespace-nowrap">${escapeHtml(it.dept)}</td>
+                        <td class="px-2.5 py-1.5 border-r border-zinc-800 font-bold text-white">${escapeHtml(it.name)}</td>
+                        <td class="px-1.5 py-1 border-r border-zinc-800">
+                          <input type="number" inputmode="numeric" ${ro} data-as-field="pcs" data-as-d="${escapeHtml(it.dept)}" data-as-n="${escapeHtml(it.name)}" value="${escapeHtml(it.pcsRaw)}" placeholder="0" class="w-20 text-right font-extrabold border rounded px-2 py-1 text-xs" />
+                        </td>
+                        <td class="px-1.5 py-1">
+                          <input type="text" ${ro} data-as-field="note" data-as-d="${escapeHtml(it.dept)}" data-as-n="${escapeHtml(it.name)}" value="${escapeHtml(it.note)}" placeholder="Note..." class="w-full min-w-[90px] border rounded px-2 py-1 text-xs" />
+                        </td>
+                      </tr>
+                    `).join('') : '<tr><td colspan="4" class="text-center py-6 text-zinc-500">Koi matching naam nahi mila.</td></tr>'}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          `);
+
+          const sInp = document.getElementById('asSearchInput');
+          sInp.addEventListener('input', (e) => {
+            searchQuery = e.target.value;
+            const pos = e.target.selectionStart;
+            renderAlterStockBody();
+            const newInp = document.getElementById('asSearchInput');
+            if (newInp) { newInp.focus(); try { newInp.setSelectionRange(pos, pos); } catch (err) {} }
+          });
+
+          document.querySelectorAll('[data-as-dept]').forEach(b => {
+            b.addEventListener('click', () => {
+              activeDept = b.getAttribute('data-as-dept');
+              renderAlterStockBody();
+            });
+          });
+
+          const addDeptForm = document.getElementById('asAddDeptForm');
+          if (addDeptForm) {
+            addDeptForm.addEventListener('submit', (e) => {
+              e.preventDefault();
+              const val = (document.getElementById('asNewDeptInput').value || '').trim();
+              if (!val) return;
+              if (!getAllAlterStockDepts().some(d => d.toLowerCase() === val.toLowerCase())) {
+                state.alterStock.customDepts.push(val);
+                saveLocalState();
+                renderAlterStockWidget();
+              }
+              activeDept = val;
+              renderAlterStockBody();
+              showToast('Department added: ' + val);
+            });
+          }
+
+          const addEntryForm = document.getElementById('asAddEntryForm');
+          if (addEntryForm) {
+            addEntryForm.addEventListener('submit', (e) => {
+              e.preventDefault();
+              const d = document.getElementById('asEntryDeptSel').value;
+              const nm = (document.getElementById('asNewNameInput').value || '').trim();
+              if (!d || !nm) return;
+              if (!state.alterStock.entries[d]) state.alterStock.entries[d] = {};
+              if (!state.alterStock.entries[d][nm]) state.alterStock.entries[d][nm] = { pcs: '', note: '' };
+              saveLocalState();
+              renderAlterStockWidget();
+              renderAlterStockBody();
+              showToast(nm + ' added to ' + d);
+            });
+          }
+
+          document.querySelectorAll('[data-as-field]').forEach(inp => {
+            inp.addEventListener('input', (e) => {
+              const d = e.target.getAttribute('data-as-d');
+              const n = e.target.getAttribute('data-as-n');
+              const f = e.target.getAttribute('data-as-field');
+              if (!state.alterStock.entries[d]) state.alterStock.entries[d] = {};
+              if (!state.alterStock.entries[d][n]) state.alterStock.entries[d][n] = { pcs: '', note: '' };
+              state.alterStock.entries[d][n][f] = e.target.value;
+              saveLocalState();
+              const totEl = document.getElementById('asTotalPcs');
+              if (totEl) {
+                const tot = getAlterStockItems(activeDept, searchQuery).reduce((s, it) => s + it.pcs, 0);
+                totEl.textContent = tot + ' pcs';
+              }
+              renderAlterStockWidget();
+            });
+          });
+        }
+
+        renderAlterStockBody();
+      }
+
       function getAlterBalance(name) {
         if (!name) return 0;
         const target = name.trim().toLowerCase();
@@ -6339,6 +6631,7 @@
           notifications: state.notifications,
           savedHisabs: state.savedHisabs,
           alterData: state.alterData,
+          alterStock: state.alterStock,
           supplyData: state.supplyData,
           daybook: state.daybook,
           daybookClearedBatches: state.daybookClearedBatches,
@@ -6863,6 +7156,8 @@
       });
       document.getElementById('daybookBtn').addEventListener('click', () => openDaybookModal(todayISO()));
       document.getElementById('alterBtn').addEventListener('click', openAlterListModal);
+      document.getElementById('alterStockBtn').addEventListener('click', openAlterStockModal);
+      document.getElementById('alterWidgetBtn').addEventListener('click', () => { alterWidgetOpen = !alterWidgetOpen; renderAlterStockWidget(); });
       document.getElementById('supplyBtn').addEventListener('click', openSupplyListModal);
       document.getElementById('pendingLotsBtn').addEventListener('click', openPendingLotsModal);
       document.getElementById('savedHisabBtn').addEventListener('click', openSavedHisabListModal);
@@ -6986,8 +7281,8 @@
       const TOP_ROW_IDS = ['topRow1', 'topRow2', 'topRow3'];
       const MOVABLE_BTN_IDS = [
         'userSwitchBtn', 'notifBellBtn', 'appModeToggleBtn', 'syncSettingsBtn', 'fullscreenToggleBtn',
-        'addRowBtn', 'hisabDropdownBtn', 'alterBtn', 'supplyBtn', 'pendingLotsBtn', 'savedHisabBtn', 'backupRestoreBtn',
-        'liveWidgetBtn', 'daybookBtn'
+        'addRowBtn', 'hisabDropdownBtn', 'alterBtn', 'alterStockBtn', 'supplyBtn', 'pendingLotsBtn', 'savedHisabBtn', 'backupRestoreBtn',
+        'liveWidgetBtn', 'alterWidgetBtn', 'daybookBtn'
       ];
       let activeMoveBtn = null;
 
