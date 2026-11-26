@@ -2096,7 +2096,7 @@
             <div class="flex flex-wrap items-center gap-1.5 py-1.5 border-b border-slate-200 last:border-b-0">
               <input type="date" ${ro} data-gone-field="date" data-gone-idx="${idx}" value="${escapeHtml(g.date || '')}" class="flex-1 min-w-[115px] border border-slate-300 rounded px-2 py-1 text-xs ${roClass}" />
               <input type="number" inputmode="numeric" ${ro} data-gone-field="peice" data-gone-idx="${idx}" value="${escapeHtml(g.peice || '')}" placeholder="Piece" class="w-20 border border-slate-300 rounded px-2 py-1 text-xs ${roClass}" />
-              ${isPacking ? `<input type="text" ${ro} data-gone-field="ripit" data-gone-idx="${idx}" value="${escapeHtml(g.ripit || '')}" placeholder="Ripit" class="w-20 border border-slate-300 rounded px-2 py-1 text-xs ${roClass}" />` : ''}
+
               ${(!isLocked && data.goneEntries.length > 1) ? `<button type="button" data-remove-gone="${idx}" class="text-rose-500 hover:text-rose-700 font-bold text-xs px-1.5 py-1" title="Remove">✕</button>` : ''}
             </div>
           `).join('');
@@ -2153,6 +2153,16 @@
                   <label class="block text-xs font-semibold text-slate-700 mb-1">Send To (Packing)</label>
                   <input id="stageSendToPackingInput" list="dl_send_packing" type="text" ${ro} value="${escapeHtml(row.packing?.name || '')}" placeholder="Packing party ka naam" class="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm ${roClass}" />
                   ${buildDatalistHtml('dl_send_packing', 'packing')}
+                </div>` : ''}
+                ${isPacking ? `
+                <div class="sm:col-span-2 flex items-center justify-between p-2.5 rounded-xl border border-zinc-700 bg-zinc-900">
+                  <div>
+                    <div class="text-xs font-bold text-white">Ripit Status</div>
+                    <div class="text-[10px] text-zinc-400">ON karne par Packing Hisab me Ripit likha aayega, OFF par X dikhega</div>
+                  </div>
+                  <button id="stageRipitToggleBtn" type="button" ${isLocked ? 'disabled' : ''} class="px-3.5 py-1.5 rounded-lg text-xs font-extrabold border transition ${data.ripitEnabled ? 'bg-amber-500 border-amber-400 text-zinc-950' : 'bg-zinc-800 border-zinc-600 text-zinc-300'}">
+                    ${data.ripitEnabled ? '✓ Ripit: ON' : 'Ripit: OFF'}
+                  </button>
                 </div>` : ''}
               </div>
 
@@ -2238,6 +2248,15 @@
           document.querySelectorAll('[data-gone-field]').forEach(inp => {
             inp.addEventListener('input', syncInputsToData);
           });
+
+          const ripitToggleBtn = document.getElementById('stageRipitToggleBtn');
+          if (ripitToggleBtn && !isLocked) {
+            ripitToggleBtn.addEventListener('click', () => {
+              syncInputsToData();
+              data.ripitEnabled = !data.ripitEnabled;
+              renderStageModalBody();
+            });
+          }
 
           const addBtn = document.getElementById('addGoneRowBtn');
           if (addBtn) {
@@ -2631,8 +2650,11 @@
         const sortBy = currentHisab.sortBy || 'lot';
         const matchingRows = getHisabSortedRows(getUnpaidDeptRows(type, name), type, name, sortBy);
         const isStageDept = ['fabrication', 'tanki', 'washing', 'packing'].includes(type);
+        const isFabHisab = type === 'fabrication';
         const isTankiHisab = type === 'tanki';
         const isWashingHisab = type === 'washing';
+        const isPackingHisab = type === 'packing';
+        const showAlterBal = !['master', 'embroidery', 'tanki'].includes(type);
 
         // Sort independent paymentRows by date ascending (blank dates at end)
         meta.paymentRows.sort((a, b) => {
@@ -2675,6 +2697,13 @@
               <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
                 <input type="number" inputmode="numeric" data-hisab-lot-field="gone" data-lot-id="${r.id}" value="${escapeHtml(vals.gone ? String(vals.gone) : '')}" placeholder="0" class="w-16 text-right font-semibold border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
               </td>
+              ${isFabHisab ? `
+              <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
+                <input type="text" data-hisab-lot-field="size" data-lot-id="${r.id}" value="${escapeHtml(r.size || '')}" placeholder="Size" class="w-20 border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
+              </td>
+              <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
+                <input type="text" data-hisab-lot-field="fabric" data-lot-id="${r.id}" value="${escapeHtml(r.fabric || '')}" placeholder="Fabric" class="w-24 border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
+              </td>` : ''}
               ${isTankiHisab ? `
               <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
                 <input type="text" list="dl_hisab_fabrication" data-hisab-lot-field="fabricationName" data-lot-id="${r.id}" value="${escapeHtml(r.fabrication?.name || '')}" placeholder="Fabrication" class="w-24 border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
@@ -2685,6 +2714,18 @@
               ${isWashingHisab ? `
               <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
                 <input type="text" data-hisab-lot-field="washingType" data-lot-id="${r.id}" value="${escapeHtml(r.washing?.washingType || '')}" placeholder="Washing Type" class="w-24 border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
+              </td>
+              <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
+                <input type="text" data-hisab-lot-field="packingName" data-lot-id="${r.id}" value="${escapeHtml(getPackingPrimaryName(r))}" placeholder="Packing" class="w-24 border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
+              </td>` : ''}
+              ${isPackingHisab ? `
+              <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
+                <input type="text" data-hisab-lot-field="washingName" data-lot-id="${r.id}" value="${escapeHtml(r.washing?.name || '')}" placeholder="Washing" class="w-24 border border-slate-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
+              </td>
+              <td class="px-2 py-2 border-r border-slate-200 whitespace-nowrap text-center">
+                ${r.packing?.ripitEnabled
+                  ? '<span class="inline-block px-2 py-0.5 rounded bg-amber-500 text-zinc-950 font-extrabold text-xs">Ripit</span>'
+                  : '<span class="inline-block w-12 py-0.5 rounded border border-zinc-600 bg-zinc-900 text-zinc-400 font-extrabold text-xs text-center">X</span>'}
               </td>` : ''}
             ` : `
               <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
@@ -2722,6 +2763,9 @@
               <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
                 <input type="number" inputmode="numeric" data-draft-field="gone" data-draft-idx="${dIdx}" value="${escapeHtml(dr.gone || '')}" placeholder="0" class="w-16 text-right font-semibold border border-slate-300 bg-white rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
               </td>
+              ${isFabHisab ? `
+              <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap"><input type="text" data-draft-field="size" data-draft-idx="${dIdx}" value="${escapeHtml(dr.size || '')}" placeholder="Size" class="w-20 border border-slate-300 bg-white rounded px-1.5 py-1 text-xs" /></td>
+              <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap"><input type="text" data-draft-field="fabric" data-draft-idx="${dIdx}" value="${escapeHtml(dr.fabric || '')}" placeholder="Fabric" class="w-24 border border-slate-300 bg-white rounded px-1.5 py-1 text-xs" /></td>` : ''}
               ${isTankiHisab ? `
               <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
                 <input type="text" list="dl_hisab_fabrication" data-draft-field="fabricationName" data-draft-idx="${dIdx}" value="${escapeHtml(dr.fabricationName || '')}" placeholder="Fabrication" class="w-24 border border-slate-300 bg-white rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
@@ -2732,7 +2776,15 @@
               ${isWashingHisab ? `
               <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
                 <input type="text" data-draft-field="washingType" data-draft-idx="${dIdx}" value="${escapeHtml(dr.washingType || '')}" placeholder="Washing Type" class="w-24 border border-slate-300 bg-white rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
+              </td>
+              <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
+                <input type="text" data-draft-field="packingName" data-draft-idx="${dIdx}" value="${escapeHtml(dr.packingName || '')}" placeholder="Packing" class="w-24 border border-slate-300 bg-white rounded px-1.5 py-1 text-xs" />
               </td>` : ''}
+              ${isPackingHisab ? `
+              <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
+                <input type="text" data-draft-field="washingName" data-draft-idx="${dIdx}" value="${escapeHtml(dr.washingName || '')}" placeholder="Washing" class="w-24 border border-slate-300 bg-white rounded px-1.5 py-1 text-xs" />
+              </td>
+              <td class="px-2 py-2 border-r border-slate-200 text-center text-zinc-400 font-extrabold text-xs">X</td>` : ''}
             ` : `
               <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
                 <input type="number" inputmode="numeric" data-draft-field="peice" data-draft-idx="${dIdx}" value="${escapeHtml(dr.peice || '')}" placeholder="0" class="w-16 text-right font-semibold border border-slate-300 bg-white rounded px-1.5 py-1 text-xs focus:outline-none focus:border-indigo-500" />
@@ -2815,7 +2867,7 @@
           </div>
 
           <!-- Top Summary Cards -->
-          <div class="grid grid-cols-2 sm:grid-cols-${isStageDept ? '7' : '6'} gap-2.5 mb-4">
+          <div class="grid grid-cols-2 sm:grid-cols-${(isStageDept ? 6 : 5) + (showAlterBal ? 1 : 0)} gap-2.5 mb-4">
             <div class="p-2.5 rounded-xl bg-[#181b22] border border-zinc-700">
               <div class="text-[11px] text-zinc-400 font-semibold">Total Piece</div>
               <div id="hisabTotalPeice" class="text-lg font-extrabold text-white">${totalPeice}</div>
@@ -2836,10 +2888,11 @@
               </div>
               <input id="hisabPcsBalAmtInput" type="number" step="0.01" value="${escapeHtml(meta.pcsBalAmount || '')}" placeholder="Rakam (-)" class="w-full mt-1 rounded px-2 py-0.5 text-sm font-bold focus:outline-none" />
             </div>` : ''}
+            ${showAlterBal ? `
             <div class="p-2.5 rounded-xl bg-orange-950/40 border border-orange-600/60">
               <div class="text-[11px] text-orange-300 font-semibold">Alter Bal</div>
               <div class="text-lg font-extrabold text-orange-400">${alterBal} pcs</div>
-            </div>
+            </div>` : ''}
             <div class="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-700/60">
               <div class="text-[11px] text-emerald-300 font-semibold">Total Payment</div>
               <div id="hisabTotalPayment" class="text-lg font-extrabold text-emerald-400">₹${totalPayment.toFixed(0)}</div>
@@ -2874,8 +2927,10 @@
                     ${isStageDept ? `
                       <th class="px-2.5 py-2 text-right border-r border-slate-700">Come</th>
                       <th class="px-2.5 py-2 text-right border-r border-slate-700">Gone</th>
+                      ${isFabHisab ? '<th class="px-2.5 py-2 text-left border-r border-slate-700">Size</th><th class="px-2.5 py-2 text-left border-r border-slate-700">Fabric</th>' : ''}
                       ${isTankiHisab ? '<th class="px-2.5 py-2 text-left border-r border-slate-700">Fabrication</th><th class="px-2.5 py-2 text-left border-r border-slate-700">Washing</th>' : ''}
-                      ${isWashingHisab ? '<th class="px-2.5 py-2 text-left border-r border-slate-700">Washing</th>' : ''}
+                      ${isWashingHisab ? '<th class="px-2.5 py-2 text-left border-r border-slate-700">Washing</th><th class="px-2.5 py-2 text-left border-r border-slate-700">Packing</th>' : ''}
+                      ${isPackingHisab ? '<th class="px-2.5 py-2 text-left border-r border-slate-700">Washing</th><th class="px-2.5 py-2 text-center border-r border-slate-700">Ripit</th>' : ''}
                     ` : `<th class="px-2.5 py-2 text-right border-r border-slate-700">Piece</th>`}
                     <th class="px-2.5 py-2 text-right border-r border-slate-700">Rate</th>
                     <th class="px-2.5 py-2 text-right border-r border-slate-700">Amount (Kaam)</th>
@@ -2883,7 +2938,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  ${(rowsHtml || draftRowsHtml) ? (rowsHtml + draftRowsHtml) : `<tr><td colspan="${isTankiHisab ? 8 : (isWashingHisab ? 7 : (isStageDept ? 6 : 5))}" class="text-center py-5 text-zinc-400">No unpaid lot entries</td></tr>`}
+                  ${(rowsHtml || draftRowsHtml) ? (rowsHtml + draftRowsHtml) : `<tr><td colspan="${(isFabHisab || isTankiHisab || isWashingHisab || isPackingHisab) ? 8 : (isStageDept ? 6 : 5)}" class="text-center py-5 text-zinc-400">No unpaid lot entries</td></tr>`}
                 </tbody>
                 <tfoot class="bg-amber-500/15 font-extrabold text-xs sm:text-sm border-t-2 border-amber-500">
                   <tr>
@@ -2891,8 +2946,10 @@
                     ${isStageDept ? `
                       <td id="hisabFooterComeTotal" class="px-2.5 py-2 text-right text-amber-300 border-r border-zinc-700">${totalPeice}</td>
                       <td id="hisabFooterGoneTotal" class="px-2.5 py-2 text-right text-emerald-300 border-r border-zinc-700">${totalGonePcs}</td>
+                      ${isFabHisab ? '<td class="border-r border-zinc-700"></td><td class="border-r border-zinc-700"></td>' : ''}
                       ${isTankiHisab ? '<td class="border-r border-zinc-700"></td><td class="border-r border-zinc-700"></td>' : ''}
-                      ${isWashingHisab ? '<td class="border-r border-zinc-700"></td>' : ''}
+                      ${isWashingHisab ? '<td class="border-r border-zinc-700"></td><td class="border-r border-zinc-700"></td>' : ''}
+                      ${isPackingHisab ? '<td class="border-r border-zinc-700"></td><td class="border-r border-zinc-700"></td>' : ''}
                     ` : `<td id="hisabFooterPeiceTotal" class="px-2.5 py-2 text-right text-amber-300 border-r border-zinc-700">${totalPeice}</td>`}
                     <td class="border-r border-zinc-700"></td>
                     <td id="hisabFooterAmountTotal" class="px-2.5 py-2 text-right text-amber-300 border-r border-zinc-700">₹${totalAmount.toFixed(0)}</td>
@@ -3195,12 +3252,19 @@
               row[type].goneEntries[0].peice = e.target.value;
               if (isStageDept && row[type]) row[type].status = 'Clear';
               if (type === 'packing') applyJamaAutoClear(row);
+            } else if (field === 'size') {
+              row.size = e.target.value;
+            } else if (field === 'fabric') {
+              row.fabric = e.target.value;
             } else if (field === 'fabricationName') {
               row.fabrication.name = e.target.value;
             } else if (field === 'washingName') {
               row.washing.name = e.target.value;
             } else if (field === 'washingType') {
               row.washing.washingType = e.target.value;
+            } else if (field === 'packingName') {
+              if (!row.packing) row.packing = {};
+              row.packing.name = e.target.value;
             } else if (field === 'peice') {
               if (type === 'master') row.peice = e.target.value;
               else {
@@ -3335,9 +3399,13 @@
             peice: vals.pcs,
             come: vals.come,
             gone: vals.gone,
+            size: r.size || '',
+            fabric: r.fabric || '',
             fabricationName: r.fabrication?.name || '',
             washingName: r.washing?.name || '',
             washingType: r.washing?.washingType || '',
+            packingName: getPackingPrimaryName(r),
+            ripitEnabled: !!(r.packing?.ripitEnabled),
             rate: vals.rate,
             amount: vals.amount
           };
@@ -3477,8 +3545,11 @@
         overlay.classList.add('flex');
 
         const isStage = ['fabrication', 'tanki', 'washing', 'packing'].includes(h.dept);
+        const isFab = h.dept === 'fabrication';
         const isTanki = h.dept === 'tanki';
         const isWash = h.dept === 'washing';
+        const isPack = h.dept === 'packing';
+        const showSavedAlterBal = !['master', 'embroidery', 'tanki'].includes(h.dept);
         if (!Array.isArray(h.paymentRows)) {
           h.paymentRows = h.rows.filter(r => r.payment || r.date).map(r => ({ date: r.date || '', payment: r.payment || 0 }));
         }
@@ -3509,7 +3580,7 @@
             <div id="savedPinErr" class="hidden text-xs text-rose-400 font-semibold">Galat PIN!</div>
           </div>` : ''}
 
-          <div class="grid grid-cols-2 sm:grid-cols-${isStage ? '7' : '6'} gap-2.5 mb-4">
+          <div class="grid grid-cols-2 sm:grid-cols-${(isStage ? 6 : 5) + (showSavedAlterBal ? 1 : 0)} gap-2.5 mb-4">
             <div class="p-2.5 rounded-xl bg-[#181b22] border border-zinc-700">
               <div class="text-[11px] text-zinc-400 font-semibold">Total Piece</div>
               <div id="savedHisabTotalPeice" class="text-lg font-extrabold text-white">${h.totalPeice}</div>
@@ -3530,10 +3601,11 @@
               </div>
               <input id="savedPcsBalAmtInput" type="number" step="0.01" ${ro} value="${escapeHtml(h.pcsBalAmount ? String(h.pcsBalAmount) : '')}" placeholder="Rakam (-)" class="w-full mt-1 rounded px-2 py-0.5 text-sm font-bold focus:outline-none" />
             </div>` : ''}
+            ${showSavedAlterBal ? `
             <div class="p-2.5 rounded-xl bg-orange-950/40 border border-orange-600/60">
               <div class="text-[11px] text-orange-300 font-semibold">Alter Bal</div>
               <div class="text-lg font-extrabold text-orange-400">${Number(h.alterBal ?? getAlterBalance(h.name))} pcs</div>
-            </div>
+            </div>` : ''}
             <div class="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-700/60">
               <div class="text-[11px] text-emerald-300 font-semibold">Total Payment</div>
               <div id="savedHisabTotalPay" class="text-lg font-extrabold text-emerald-400">₹${Number(h.totalPayment || 0).toFixed(0)}</div>
@@ -3554,8 +3626,10 @@
                     ${isStage ? `
                       <th class="px-2.5 py-2 text-right border-r border-slate-700">Come</th>
                       <th class="px-2.5 py-2 text-right border-r border-slate-700">Gone</th>
+                      ${isFab ? '<th class="px-2.5 py-2 text-left border-r border-slate-700">Size</th><th class="px-2.5 py-2 text-left border-r border-slate-700">Fabric</th>' : ''}
                       ${isTanki ? '<th class="px-2.5 py-2 text-left border-r border-slate-700">Fabrication</th><th class="px-2.5 py-2 text-left border-r border-slate-700">Washing</th>' : ''}
-                      ${isWash ? '<th class="px-2.5 py-2 text-left border-r border-slate-700">Washing</th>' : ''}
+                      ${isWash ? '<th class="px-2.5 py-2 text-left border-r border-slate-700">Washing</th><th class="px-2.5 py-2 text-left border-r border-slate-700">Packing</th>' : ''}
+                      ${isPack ? '<th class="px-2.5 py-2 text-left border-r border-slate-700">Washing</th><th class="px-2.5 py-2 text-center border-r border-slate-700">Ripit</th>' : ''}
                     ` : '<th class="px-2.5 py-2 text-right border-r border-slate-700">Piece</th>'}
                     <th class="px-2.5 py-2 text-right border-r border-slate-700">Rate</th>
                     <th class="px-2.5 py-2 text-right">Amount (Kaam)</th>
@@ -3572,8 +3646,10 @@
                         <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
                           <input type="number" ${ro} data-saved-row-field="gone" data-saved-row-idx="${rIdx}" value="${escapeHtml(String(r.gone ?? r.peice ?? ''))}" class="w-16 text-right font-semibold rounded px-1.5 py-1 text-xs" />
                         </td>
+                        ${isFab ? `<td class="px-2 py-2 border-r border-slate-200 whitespace-nowrap">${escapeHtml(r.size || '-')}</td><td class="px-2 py-2 border-r border-slate-200 whitespace-nowrap">${escapeHtml(r.fabric || '-')}</td>` : ''}
                         ${isTanki ? `<td class="px-2 py-2 border-r border-slate-200 whitespace-nowrap">${escapeHtml(r.fabricationName || '-')}</td><td class="px-2 py-2 border-r border-slate-200 whitespace-nowrap">${escapeHtml(r.washingName || '-')}</td>` : ''}
-                        ${isWash ? `<td class="px-2 py-2 border-r border-slate-200 whitespace-nowrap">${escapeHtml(r.washingType || '-')}</td>` : ''}
+                        ${isWash ? `<td class="px-2 py-2 border-r border-slate-200 whitespace-nowrap">${escapeHtml(r.washingType || '-')}</td><td class="px-2 py-2 border-r border-slate-200 whitespace-nowrap">${escapeHtml(r.packingName || '-')}</td>` : ''}
+                        ${isPack ? `<td class="px-2 py-2 border-r border-slate-200 whitespace-nowrap">${escapeHtml(r.washingName || '-')}</td><td class="px-2 py-2 border-r border-slate-200 text-center font-extrabold">${r.ripitEnabled ? 'Ripit' : 'X'}</td>` : ''}
                       ` : `
                         <td class="px-1.5 py-2 border-r border-slate-200 whitespace-nowrap">
                           <input type="number" ${ro} data-saved-row-field="peice" data-saved-row-idx="${rIdx}" value="${escapeHtml(String(r.peice ?? ''))}" class="w-16 text-right font-semibold rounded px-1.5 py-1 text-xs" />
@@ -3592,8 +3668,10 @@
                     ${isStage ? `
                       <td id="savedFooterCome" class="px-2 py-2 text-right text-amber-300 border-r border-zinc-700">${h.rows.reduce((s, r) => s + (Number(r.come ?? r.peice) || 0), 0)}</td>
                       <td id="savedFooterGone" class="px-2 py-2 text-right text-emerald-300 border-r border-zinc-700">${h.rows.reduce((s, r) => s + (Number(r.gone ?? r.peice) || 0), 0)}</td>
+                      ${isFab ? '<td class="border-r border-zinc-700"></td><td class="border-r border-zinc-700"></td>' : ''}
                       ${isTanki ? '<td class="border-r border-zinc-700"></td><td class="border-r border-zinc-700"></td>' : ''}
-                      ${isWash ? '<td class="border-r border-zinc-700"></td>' : ''}
+                      ${isWash ? '<td class="border-r border-zinc-700"></td><td class="border-r border-zinc-700"></td>' : ''}
+                      ${isPack ? '<td class="border-r border-zinc-700"></td><td class="border-r border-zinc-700"></td>' : ''}
                     ` : `<td id="savedFooterPeice" class="px-2 py-2 text-right text-amber-300 border-r border-zinc-700">${h.totalPeice}</td>`}
                     <td class="border-r border-zinc-700"></td>
                     <td id="savedFooterAmt" class="px-2 py-2 text-right text-amber-300">₹${Number(h.totalAmount || 0).toFixed(0)}</td>
@@ -5688,7 +5766,7 @@
         if (receipt.isStage) {
           sumLine('Pcs Bal (' + receipt.pcsBal + '):', '-Rs ' + receipt.pcsBalAmt.toFixed(0));
         }
-        sumLine('Alter Bal:', String(getAlterBalance(receipt.name)) + ' pcs');
+        if (!['master', 'embroidery', 'tanki'].includes(receipt.type)) sumLine('Alter Bal:', String(getAlterBalance(receipt.name)) + ' pcs');
         sumLine('Total Pay (-):', 'Rs ' + receipt.totalPayment.toFixed(0));
         pushText(eq48);
         pushBytes(0x1B, 0x45, 0x01, 0x1D, 0x21, 0x01);
@@ -5946,7 +6024,7 @@
                   <div class="flex justify-between"><span>Total Kaam:</span><strong>₹${totalAmount.toFixed(0)}</strong></div>
                   <div class="flex justify-between"><span>Last Bal (+):</span><strong>₹${lastBal.toFixed(0)}</strong></div>
                   ${isStage ? `<div class="flex justify-between"><span>Pcs Bal (${pcsBal}):</span><strong>-₹${pcsBalAmt.toFixed(0)}</strong></div>` : ''}
-                  <div class="flex justify-between"><span>Alter Bal:</span><strong>${getAlterBalance(name)} pcs</strong></div>
+                  ${!["master","embroidery","tanki"].includes(type) ? `<div class="flex justify-between"><span>Alter Bal:</span><strong>${getAlterBalance(name)} pcs</strong></div>` : ""}
                   <div class="flex justify-between"><span>Total Pay (-):</span><strong>₹${totalPayment.toFixed(0)}</strong></div>
                   <div class="flex justify-between text-xs font-extrabold border-t border-black pt-1 mt-1">
                     <span>FINAL BAL:</span><span>₹${finalBalance.toFixed(0)}</span>
@@ -6120,7 +6198,7 @@
             ? Number((state.savedHisabs.find(x => x.id === savedId)?.alterBal) ?? getAlterBalance(name))
             : getAlterBalance(name);
           const pcsBalLine = isStage ? `   |   Pcs Bal: ${pcsBalPdf} pcs (-Rs ${pcsBalAmtPdf.toFixed(0)})` : '';
-          const alterLine = alterBalPdf ? `   |   Alter Bal: ${alterBalPdf} pcs` : '';
+          const alterLine = (!['master', 'embroidery', 'tanki'].includes(type) && alterBalPdf) ? `   |   Alter Bal: ${alterBalPdf} pcs` : '';
           doc.text(
             `Total Piece: ${totalPeice}   |   Kaam: Rs ${totalAmount.toFixed(0)}   |   Last Bal: Rs ${lastBalance.toFixed(0)}${pcsBalLine}${alterLine}   |   Pay: Rs ${totalPayment.toFixed(0)}   |   Final Bal: Rs ${finalBalance.toFixed(0)}`,
             24,
